@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('b_c_s', function (Blueprint $table) {
+        Schema::create('layer_positions', function (Blueprint $table) {
             $table->id();
+            $table->string('code');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('b_c_s');
+        Schema::dropIfExists('layer_positions');
     }
 };

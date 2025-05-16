@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('moduls', function (Blueprint $table) {
+        Schema::create('finishings', function (Blueprint $table) {
             $table->id();
-            $table->string('code_cabinet');
-            $table->string('description_unit');
-            $table->string('box_carcase_shape');
-            $table->string('finishing');
-            $table->string('layer_position');
+            $table->string('code');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('moduls');
+        Schema::dropIfExists('finishings');
     }
 };
