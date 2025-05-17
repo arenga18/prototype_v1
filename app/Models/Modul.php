@@ -18,6 +18,11 @@ class Modul extends Model
         "layer_position",
     ];
 
+    public function components()
+    {
+        return $this->hasMany(Component::class);
+    }
+
     public function deskripsi_unit(): HasMany
     {
         return $this->hasMany(DescriptionUnit::class);
