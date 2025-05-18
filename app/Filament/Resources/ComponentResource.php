@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ComponentResource\Pages;
 use App\Filament\Resources\ComponentResource\RelationManagers;
-use App\Models\Component;
+use App\Models\PartComponent;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ComponentResource extends Resource
 {
-    protected static ?string $model = Component::class;
+    protected static ?string $model = PartComponent::class;
 
      protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
 

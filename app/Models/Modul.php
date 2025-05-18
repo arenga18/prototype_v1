@@ -20,7 +20,7 @@ class Modul extends Model
 
     public function components()
     {
-        return $this->hasMany(Component::class);
+        return $this->hasMany(PartComponent::class);
     }
 
     public function deskripsi_unit(): HasMany

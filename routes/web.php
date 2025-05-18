@@ -8,4 +8,4 @@ Route::get('/', function () {
 });
 
 
-Route::get('/test-livewire', KomponenTable::class);
+// Route::get('/test-livewire', KomponenTable::class);

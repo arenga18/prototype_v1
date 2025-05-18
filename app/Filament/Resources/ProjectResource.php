@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers;
 use App\Models\Project;
-use App\Models\Component;
+use App\Models\PartComponent;
 use App\Models\ModulComponent;
 use App\Models\Modul;
 use Filament\Forms;
@@ -19,6 +19,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Livewire;
+use Filament\Forms\Components\KeyValue;
 // use Filament\Forms\Actions\ButtonAction;
 // use Filament\Forms\Components\Actions\Button;
 use Filament\Forms\Components\Wizard;
@@ -35,111 +36,118 @@ class ProjectResource extends Resource
 
     protected static ?string $pluralLabel = "Projek";
 
+    
+
     public static function form(Form $form): Form
     {
+        return $form->schema([
+            Wizard::make([
+                // Step 1: Informasi Proyek dan Referensi Modul
+                Wizard\Step::make('Informasi Proyek')
+                    ->schema([
+                        Section::make('Informasi Dasar')
+                            ->schema([
+                                TextInput::make('no_contract')->label('No Kontrak')->required(),
+                                TextInput::make('nip')->label('NIP')->required(),
+                                TextInput::make('product_name')->label('Nama Produk')->required(),
+                                TextInput::make('project_name')->label('Nama Proyek')->required(),
+                                TextInput::make('coordinator')->label('Koordinator')->required(),
+                                TextInput::make('recap_coordinator')->label('Koordinator Rekap')->required(),
+                                Forms\Components\CheckboxList::make('project_status')
+                                    ->label('Status Proyek')
+                                    ->options([
+                                        'Pendingin' => 'Pendingin',
+                                        'Anti Rayap' => 'Anti Rayap',
+                                    ])
+                                    ->required(),
+                            ])->columns(2),
+                            
+                        Section::make('Spesifikasi')
+                            ->schema([
+                                KeyValue::make('product_spesification')
+                                    ->label('Spesifikasi Produk')
+                                    ->keyLabel('Nama')
+                                    ->valueLabel('Nilai')
+                                    ->addButtonLabel('Tambah Spesifikasi'),
+                                
+                                KeyValue::make('material_thickness_spesification')
+                                    ->label('Ketebalan Material')
+                                    ->keyLabel('Jenis')
+                                    ->valueLabel('Tebal')
+                                    ->addButtonLabel('Tambah Ketebalan'),
 
+                                    
+                                
+                                KeyValue::make('coating_spesification')
+                                    ->label('Coating')
+                                    ->keyLabel('Jenis')
+                                    ->valueLabel('Keterangan')
+                                    ->addButtonLabel('Tambah Coating'),
+                                
+                                KeyValue::make('alu_frame_spesification')
+                                    ->label('Aluminium Frame')
+                                    ->keyLabel('Nama')
+                                    ->valueLabel('Spesifikasi'),
+                                
+                                KeyValue::make('hinges_spesification')
+                                    ->label('Engsel (Hinges)')
+                                    ->keyLabel('Posisi')
+                                    ->valueLabel('Jenis Engsel'),
+                                
+                                KeyValue::make('rail_spesification')
+                                    ->label('Rel (Rail)')
+                                    ->keyLabel('Letak')
+                                    ->valueLabel('Tipe Rel'),
+                                
+                                KeyValue::make('glass_spesification')
+                                    ->label('Kaca')
+                                    ->keyLabel('Tipe')
+                                    ->valueLabel('Detail'),
+                                
+                                KeyValue::make('profile_spesification')
+                                    ->label('Profil')
+                                    ->keyLabel('Nama')
+                                    ->valueLabel('Ukuran / Bentuk'),
+                                
+                                KeyValue::make('size_distance_spesification')
+                                    ->label('Jarak Ukuran')
+                                    ->keyLabel('Komponen')
+                                    ->valueLabel('Jarak'),
+                            ])
+                            ->columns(1),
 
-    return $form->schema([
-        Wizard::make([
-            // Step 1: Informasi Proyek
-            Wizard\Step::make('Informasi Proyek')
-                ->schema([
-                    // SECTION 1: Informasi Dasar
-                    Forms\Components\Section::make('Informasi Dasar')
+                        Section::make('Referensi Modul')
                         ->schema([
-                            Forms\Components\TextInput::make('no_contract')->label('No Kontrak')->required(),
-                            Forms\Components\TextInput::make('nip')->label('NIP')->required(),
-                            Forms\Components\TextInput::make('product_name')->label('Nama Produk')->required(),
-                            Forms\Components\TextInput::make('project_name')->label('Nama Proyek')->required(),
-                            Forms\Components\TextInput::make('coordinator')->label('Koordinator')->required(),
-                            Forms\Components\TextInput::make('recap_coordinator')->label('Koordinator Rekap')->required(),
-                            Forms\Components\CheckboxList::make('project_status')
-                                ->label('Status Proyek')
-                                ->options([
-                                    'in_progress' => 'Dalam Proses',
-                                    'completed' => 'Selesai',
-                                    'cancelled' => 'Dibatalkan',
-                                ])
-                                ->required(),
-                        ])
-                        ->columns(2),
-
-                    // SECTION 2: Spesifikasi Produk
-                    Forms\Components\Section::make('Spesifikasi Produk')
-                        ->schema([
-                            self::buildSpesifikasiRepeater('product_spesification', 'Spesifikasi Produk'),
-                            self::buildSpesifikasiRepeater('material_thickness_spesification', 'Ketebalan Material'),
-                            self::buildSpesifikasiRepeater('coating_spesification', 'Coating'),
-                            self::buildSpesifikasiRepeater('alu_frame_spesification', 'Aluminium Frame'),
-                            self::buildSpesifikasiRepeater('hinges_spesification', 'Engsel (Hinges)'),
-                            self::buildSpesifikasiRepeater('rail_spesification', 'Rel (Rail)'),
-                            self::buildSpesifikasiRepeater('glass_spesification', 'Kaca'),
-                            self::buildSpesifikasiRepeater('profile_spesification', 'Profil'),
-                            self::buildSpesifikasiRepeater('size_distance_spesification', 'Jarak Ukuran'),
-                        ])
-                        ->columns(1),
-
-                    // SECTION 3: Referensi Modul
-                    Forms\Components\Section::make('Referensi Modul')
-                        ->schema([
-                            Forms\Components\Repeater::make('modul_reference')
+                            Select::make('modul_reference')
                                 ->label('Referensi Modul')
-                                ->schema([
-                                    Forms\Components\Select::make('modul')
-                                        ->label('Modul')
-                                        ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
-                                        ->required(),
-                                ])
-                                ->createItemButtonLabel('Tambah Modul'),
+                                ->multiple() // Enable multiple selections (tags input)
+                                ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
+                                ->searchable()
+                                ->preload()
+                                ->reactive()
+                                ->createOptionForm([]) // Kosongkan jika tidak perlu membuat opsi baru
+                                ->hint('Pilih satu atau lebih modul sebagai referensi')
+                                ->required(),
+                        ]),
+                    ]),
+
+                // Step 2: Breakdown Modul + Komponen
+               Wizard\Step::make('Breakdown Modul')
+                ->schema([
+                    Livewire::make('komponen-table')
+                        ->data([
+                            'moduls' => fn (callable $get) => $get('modul_reference'),  // ambil data dari state form step 1
                         ]),
                 ]),
-
-            // Step 2: Breakdown Modul
-                Wizard\Step::make('Breakdown Modul')
-    ->schema([
-        Repeater::make('modul_breakdown')
-            ->label('Breakdown Komponen')
-            ->schema([
-                TextInput::make('modul')->label('Kode Modul')->disabled(),
-                TextInput::make('p')->label('P')->required(),
-                TextInput::make('l')->label('L')->required(),
-                TextInput::make('t')->label('T')->required(),
-                Placeholder::make('spacer')->content(' '),
-                Livewire::make('komponen-table')
-                    ->key('komponen')
-                    ->reactive()
-                    ->afterStateHydrated(function ($component, $state) {
-                        $modulCode = $state['modul'] ?? null;
-
-                        if ($modulCode) {
-                            $komponen = ModulComponent::where('modul', $modulCode)->get();
-
-                            $component->fill(['komponen' => $komponen->map(function ($item) {
-                                return [
-                                    'component' => $item->component,
-                                    'p_value' => 0,
-                                    'l_value' => 0,
-                                    't_value' => 0,
-                                ];
-                            })->toArray()]);
-                        }
-                    }),
-            ])
-            ->columns(4),
-    ])
-
-        ]),
-        // The Wizard component already provides navigation and submit actions by default.
-    ]);
-
-
+            ])->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+                // Tambahkan kolom tabel sesuai kebutuhan
             ])
             ->filters([
                 //
@@ -148,65 +156,76 @@ class ProjectResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
-    public static function mutateFormDataBeforeCreate(array $data): array
-{
-    unset($data['modul_breakdown']); // hanya untuk preview/edit, tidak disimpan
-
-    return $data;
-}
-
+    /**
+     * Saat load data untuk edit form,
+     * kita generate modul_breakdowns dari modul_reference,
+     * sehingga data komponen dan ukuran dapat tampil di step 2
+     */
     public static function mutateFormDataBeforeFill(array $data): array
-{
-    $modulReference = $data['modul_reference'] ?? [];
+    {
+        $modulReference = $data['modul_reference'] ?? [];
 
-    $breakdown = collect($modulReference)->flatMap(function ($modul) {
-        $modulData = ModulComponent::where('modul', $modul['modul'])->first();
+        // Build modul_breakdowns dengan default ukuran 0 dan komponen dari modul_component
+        $modulBreakdowns = collect($modulReference)->map(function ($modul) {
+            // ambil data modul_component berdasarkan kode modul
+            $modulComponent = ModulComponent::where('modul', $modul['modul'])->first();
 
-        if (! $modulData) return [];
+            $components = [];
+            if ($modulComponent) {
+                $components = json_decode($modulComponent->component, true);
+            }
 
-        $components = json_decode($modulData->component, true);
-
-        return collect($components)->map(function ($c) use ($modul) {
             return [
                 'modul' => $modul['modul'],
-                'component' => $c['component'] ?? $c['name'] ?? '',
-                'p' => $c['p'] ?? '',
-                'l' => $c['l'] ?? '',
-                't' => $c['t'] ?? '',
+                'p' => 0,
+                'l' => 0,
+                't' => 0,
+                'components' => $components,
             ];
-        });
-    })->values();
+        })->toArray();
 
-    $data['modul_breakdown'] = $breakdown->toArray();
+        $data['modul_breakdowns'] = $modulBreakdowns;
 
-    return $data;
-}
-
-    public static function buildSpesifikasiRepeater(string $name, string $label): Forms\Components\Repeater
-    {
-    return Forms\Components\Repeater::make($name)
-        ->label($label)
-        ->schema([
-            Forms\Components\Select::make('cat')
-                ->label('Kategori')
-                ->options(Component::all()->pluck('cat', 'cat')->unique()->toArray())
-                ->required(),
-
-            Forms\Components\Select::make('name')
-                ->label('Nama Komponen')
-                ->options(Component::all()->pluck('name', 'name'))
-                ->required(),
-        ])
-        ->columns(2)
-        ->createItemButtonLabel("Tambah {$label}");
+        return $data;
     }
 
+    /**
+     * Jangan simpan data modul_breakdowns langsung ke table Project,
+     * karena field ini tidak ada di database Project.
+     */
+    public static function mutateFormDataBeforeCreate(array $data): array
+    {
+        unset($data['modul_breakdowns']);
+        return $data;
+    }
+
+    public static function mutateFormDataBeforeSave(array $data): array
+    {
+        unset($data['modul_breakdowns']);
+        return $data;
+    }
+
+    public static function buildSpesifikasiRepeater(string $name, string $label): Section
+    {
+        return Section::make($label)
+            ->schema([
+                Repeater::make($name)
+                    ->schema([
+                        Select::make('cat')
+                            ->label('Kategori')
+                            ->options(PartComponent::all()->pluck('cat', 'cat')->unique()->toArray()),
+                        Select::make('name')
+                            ->label('Nama Komponen')
+                            ->options(PartComponent::all()->pluck('name', 'name')),
+                    ])
+                    ->columns(2)
+                    ->createItemButtonLabel('Tambah Data'),
+            ]);
+    }
 
     public static function getRelations(): array
     {

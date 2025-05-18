@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ModulComponentResource\Pages;
 
 use App\Models\Modul;
-use App\Models\Component;
+use App\Models\PartComponent;
 use App\Models\ModulComponent;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -41,7 +41,7 @@ class ModulComponentResource extends Resource
         ->schema([
             Forms\Components\Select::make('component')
                 ->label('Component')
-                ->options(Component::all()->pluck('name', 'name'))
+                ->options(PartComponent::all()->pluck('name', 'name'))
                 ->required(),
 
             Forms\Components\TextInput::make('p')
