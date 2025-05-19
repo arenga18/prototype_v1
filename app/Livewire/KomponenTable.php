@@ -3,108 +3,83 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Filament\Tables;
+use Filament\Forms;
+use Filament\Support\Contracts\TranslatableContentDriver;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Hidden;
 use App\Models\ModulComponent;
-use Livewire\WithPagination;
-use Livewire\WithFileUploads;
 
-class KomponenTable extends Component
+class KomponenTable extends Component implements HasTable, HasForms
 {
-    public $komponen = [];
+    use InteractsWithTable, InteractsWithForms;
 
-    protected $rules = [
-        'komponen.*.component' => 'nullable|string',
-        'komponen.*.p_value' => 'nullable|numeric',
-        'komponen.*.l_value' => 'nullable|numeric',
-        'komponen.*.t_value' => 'nullable|numeric',
-        'komponen.*.qty' => 'nullable|numeric',
-    ];
+    public $moduls = [];
 
-    public $modul = [
-    'p_value' => null,
-    'l_value' => null,
-    't_value' => null,
-    'qty'     => null,
-];
-
-    public function mount()
-{
-    $modulName = "B'PanelPm║V→◄";
-
-    $modulComponent = ModulComponent::where('modul', $modulName)->first();
-
-    $data = [];
-
-    // Pastikan baris modul ditambahkan dulu
-    $data[] = [
-        'component' => $modulName,
-        'p_value'   => null,
-        'l_value'   => null,
-        't_value'   => null,
-        'qty'       => null,
-    ];
-
-    // Jika ada komponen dari DB, tambahkan
-    if ($modulComponent && is_array($modulComponent->component)) {
-        $komponenTambahan = collect($modulComponent->component)->map(function ($item) {
-            return [
-                'component' => $item['component'] ?? '',
-                'p_value'   => $item['p_value'] ?? null,
-                'l_value'   => $item['l_value'] ?? null,
-                't_value'   => $item['t_value'] ?? null,
-                'qty'       => $item['qty'] ?? 0,
-            ];
-        })->toArray();
-
-        $data = array_merge($data, $komponenTambahan);
+    public function mount($moduls)
+    {
+        $this->moduls = $moduls ?? [];
     }
 
-    $this->komponen = $data;
-}
-
-
-    public function updatedKomponen($value, $key)
-{
-    // Jika perubahan ada di baris pertama (index 0)
-    if (str_starts_with($key, '0.')) {
-        $this->hitungKomponenBerdasarkanModul();
+    public function makeFilamentTranslatableContentDriver(): ?TranslatableContentDriver
+    {
+        return null;
     }
-}
 
-public function hitungKomponenBerdasarkanModul()
-{
-    $modul = $this->komponen[0];
+    protected function getTableQuery()
+    {
+        $decodedModuls = array_map(function ($item) {
+            return json_decode('"' . $item . '"');
+        }, $this->moduls);
 
-    $p = (float) $modul['p_value'];
-    $l = (float) $modul['l_value'];
-    $t = (float) $modul['t_value'];
-    $qty = (float) $modul['qty'];
-
-    foreach ($this->komponen as $i => $item) {
-        if ($i === 0) continue;
-
-        switch ($item['component']) {
-            case 'Ganjelan top table':
-                $this->komponen[$i]['p_value'] = $t;
-                $this->komponen[$i]['l_value'] = $l;
-                $this->komponen[$i]['t_value'] = $l - $t;
-                $this->komponen[$i]['qty'] = $qty;
-                break;
-
-            case 'Kaki Meja':
-                $this->komponen[$i]['p_value'] = $p / 2;
-                $this->komponen[$i]['l_value'] = $l;
-                $this->komponen[$i]['t_value'] = $t;
-                $this->komponen[$i]['qty'] = $qty * 2;
-                break;
-
-            // Tambahkan komponen lainnya di sini
-
-            default:
-                // Tidak diubah
-                break;
-        }
+        return ModulComponent::query()
+            ->whereIn('modul', $decodedModuls);
     }
-}
+
+    protected function getTableColumns(): array
+    {
+        return [
+            Tables\Columns\TextColumn::make('modul')->label('Modul')->sortable()->searchable(),
+            Tables\Columns\TextColumn::make('component')->label('Nama Komponen')->sortable()->searchable(),
+        ];
+    }
+
+    protected function getTableActions(): array
+    {
+        return [
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\DeleteAction::make(),
+        ];
+    }
+
+    protected function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\DeleteBulkAction::make(),
+        ];
+    }
+
+    protected function getTableHeaderActions(): array
+    {
+        return [
+            Tables\Actions\CreateAction::make()
+                ->modalHeading('Tambah Komponen Modul')
+                ->form([
+                    TextInput::make('component')->required(),
+                    Textarea::make('description'),
+                    TextInput::make('quantity')->numeric()->default(1)->minValue(1),
+                    Hidden::make('modul')->default(fn() => is_array($this->moduls[0]) ? ($this->moduls[0]['modul_reference'] ?? null) : $this->moduls[0]),
+                ])
+                ->action(function (array $data): void {
+                    ModulComponent::create($data);
+                }),
+        ];
+    }
 
     public function render()
     {

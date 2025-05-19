@@ -22,21 +22,38 @@ use Filament\Forms\Components\Livewire;
 use Filament\Forms\Components\KeyValue;
 // use Filament\Forms\Actions\ButtonAction;
 // use Filament\Forms\Components\Actions\Button;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Forms\Components\Wizard;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+
+
 class ProjectResource extends Resource
 {
+
+    protected static $spesifikasiFields = [
+        'product_spesification' => 'Spesifikasi Produk',
+        'material_thickness_spesification' => 'Ketebalan Material',
+        'coating_spesification' => 'Coating',
+        'alu_frame_spesification' => 'Aluminium Frame',
+        'hinges_spesification' => 'Engsel (Hinges)',
+        'rail_spesification' => 'Rel (Rail)',
+        'glass_spesification' => 'Kaca',
+        'profile_spesification' => 'Profil',
+        'size_distance_spesification' => 'Jarak Ukuran',
+    ];
     protected static ?string $model = Project::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationLabel = "Projek";
 
     protected static ?string $pluralLabel = "Projek";
 
-    
+
 
     public static function form(Form $form): Form
     {
@@ -61,85 +78,70 @@ class ProjectResource extends Resource
                                     ])
                                     ->required(),
                             ])->columns(2),
-                            
-                        Section::make('Spesifikasi')
-                            ->schema([
-                                KeyValue::make('product_spesification')
-                                    ->label('Spesifikasi Produk')
-                                    ->keyLabel('Nama')
-                                    ->valueLabel('Nilai')
-                                    ->addButtonLabel('Tambah Spesifikasi'),
-                                
-                                KeyValue::make('material_thickness_spesification')
-                                    ->label('Ketebalan Material')
-                                    ->keyLabel('Jenis')
-                                    ->valueLabel('Tebal')
-                                    ->addButtonLabel('Tambah Ketebalan'),
 
-                                    
-                                
-                                KeyValue::make('coating_spesification')
-                                    ->label('Coating')
-                                    ->keyLabel('Jenis')
-                                    ->valueLabel('Keterangan')
-                                    ->addButtonLabel('Tambah Coating'),
-                                
-                                KeyValue::make('alu_frame_spesification')
-                                    ->label('Aluminium Frame')
-                                    ->keyLabel('Nama')
-                                    ->valueLabel('Spesifikasi'),
-                                
-                                KeyValue::make('hinges_spesification')
-                                    ->label('Engsel (Hinges)')
-                                    ->keyLabel('Posisi')
-                                    ->valueLabel('Jenis Engsel'),
-                                
-                                KeyValue::make('rail_spesification')
-                                    ->label('Rel (Rail)')
-                                    ->keyLabel('Letak')
-                                    ->valueLabel('Tipe Rel'),
-                                
-                                KeyValue::make('glass_spesification')
-                                    ->label('Kaca')
-                                    ->keyLabel('Tipe')
-                                    ->valueLabel('Detail'),
-                                
-                                KeyValue::make('profile_spesification')
-                                    ->label('Profil')
-                                    ->keyLabel('Nama')
-                                    ->valueLabel('Ukuran / Bentuk'),
-                                
-                                KeyValue::make('size_distance_spesification')
-                                    ->label('Jarak Ukuran')
-                                    ->keyLabel('Komponen')
-                                    ->valueLabel('Jarak'),
-                            ])
+
+                        Section::make('Spesifikasi')
+                            ->schema(
+                                collect(self::$spesifikasiFields)->map(function ($label, $fieldName) {
+                                    return TableRepeater::make($fieldName)
+                                        ->label($label)
+                                        ->schema([
+                                            Select::make('key')
+                                                ->label('Kategori')
+                                                ->options(PartComponent::all()->pluck('cat', 'cat'))
+                                                ->searchable()
+                                                ->extraAttributes([
+                                                    'style' => 'border: none !important; border-radius: 0 !important;',
+                                                ]),
+                                            Select::make('value')
+                                                ->label(label: 'Spesifikasi')
+                                                ->options(PartComponent::all()->pluck('name', 'name'))
+                                                ->searchable()
+                                                ->native(false)
+                                                ->extraAttributes([
+                                                    'style' => 'border: none !important; border-radius: 0 !important;',
+                                                ])
+                                        ])
+                                        ->minItems(1)
+                                        ->addActionLabel('Tambah Data')
+                                        ->columnSpanFull();
+                                })->toArray()
+                            )
                             ->columns(1),
 
                         Section::make('Referensi Modul')
-                        ->schema([
-                            Select::make('modul_reference')
-                                ->label('Referensi Modul')
-                                ->multiple() // Enable multiple selections (tags input)
-                                ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
-                                ->searchable()
-                                ->preload()
-                                ->reactive()
-                                ->createOptionForm([]) // Kosongkan jika tidak perlu membuat opsi baru
-                                ->hint('Pilih satu atau lebih modul sebagai referensi')
-                                ->required(),
-                        ]),
+                            ->schema([
+                                Select::make('modul_reference')
+                                    ->label('Referensi Modul')
+                                    ->multiple()
+                                    ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->reactive()
+                                    ->createOptionForm([]) // Kosongkan jika tidak perlu membuat opsi baru
+                                    ->hint('Pilih satu atau lebih modul sebagai referensi')
+                                    ->required(),
+                            ]),
                     ]),
 
                 // Step 2: Breakdown Modul + Komponen
-               Wizard\Step::make('Breakdown Modul')
-                ->schema([
-                    Livewire::make('komponen-table')
-                        ->data([
-                            'moduls' => fn (callable $get) => $get('modul_reference'),  // ambil data dari state form step 1
-                        ]),
-                ]),
-            ])->columnSpanFull(),
+                Wizard\Step::make('Breakdown Modul')
+                    ->schema([
+                        Livewire::make('komponen-table')
+                            ->data(function ($get) {
+                                return [
+                                    'moduls' => $get('modul_reference') ?? [],
+                                ];
+                            }),
+                    ]),
+            ])
+                ->nextAction(
+                    fn(Action $action) => $action->label(''),
+                )
+                ->startOnStep(
+                    request()->routeIs('filament.admin.resources.projects.edit') && request()->get('step') === '2' ? 2 : 1
+                )
+                ->columnSpanFull(),
         ]);
     }
 
@@ -147,7 +149,12 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                // Tambahkan kolom tabel sesuai kebutuhan
+                TextColumn::make('no_contract'),
+                TextColumn::make('nip'),
+                TextColumn::make('product_name'),
+                TextColumn::make('project_name'),
+                TextColumn::make('coordinator'),
+                TextColumn::make('recap_coordinator'),
             ])
             ->filters([
                 //
@@ -157,73 +164,6 @@ class ProjectResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ]);
-    }
-
-    /**
-     * Saat load data untuk edit form,
-     * kita generate modul_breakdowns dari modul_reference,
-     * sehingga data komponen dan ukuran dapat tampil di step 2
-     */
-    public static function mutateFormDataBeforeFill(array $data): array
-    {
-        $modulReference = $data['modul_reference'] ?? [];
-
-        // Build modul_breakdowns dengan default ukuran 0 dan komponen dari modul_component
-        $modulBreakdowns = collect($modulReference)->map(function ($modul) {
-            // ambil data modul_component berdasarkan kode modul
-            $modulComponent = ModulComponent::where('modul', $modul['modul'])->first();
-
-            $components = [];
-            if ($modulComponent) {
-                $components = json_decode($modulComponent->component, true);
-            }
-
-            return [
-                'modul' => $modul['modul'],
-                'p' => 0,
-                'l' => 0,
-                't' => 0,
-                'components' => $components,
-            ];
-        })->toArray();
-
-        $data['modul_breakdowns'] = $modulBreakdowns;
-
-        return $data;
-    }
-
-    /**
-     * Jangan simpan data modul_breakdowns langsung ke table Project,
-     * karena field ini tidak ada di database Project.
-     */
-    public static function mutateFormDataBeforeCreate(array $data): array
-    {
-        unset($data['modul_breakdowns']);
-        return $data;
-    }
-
-    public static function mutateFormDataBeforeSave(array $data): array
-    {
-        unset($data['modul_breakdowns']);
-        return $data;
-    }
-
-    public static function buildSpesifikasiRepeater(string $name, string $label): Section
-    {
-        return Section::make($label)
-            ->schema([
-                Repeater::make($name)
-                    ->schema([
-                        Select::make('cat')
-                            ->label('Kategori')
-                            ->options(PartComponent::all()->pluck('cat', 'cat')->unique()->toArray()),
-                        Select::make('name')
-                            ->label('Nama Komponen')
-                            ->options(PartComponent::all()->pluck('name', 'name')),
-                    ])
-                    ->columns(2)
-                    ->createItemButtonLabel('Tambah Data'),
             ]);
     }
 

@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('modul_breakdowns', function (Blueprint $table) {
             $table->id();
             $table->json('modul_reference');
-            $table->json('size');
-            $table->json('qty');
+            $table->json('components');
             $table->timestamps();
         });
     }

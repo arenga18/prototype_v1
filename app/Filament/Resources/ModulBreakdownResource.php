@@ -17,7 +17,10 @@ class ModulBreakdownResource extends Resource
 {
     protected static ?string $model = ModulBreakdown::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+
+    protected static ?string $navigationGroup = "Master data";
+
 
     public static function form(Form $form): Form
     {
