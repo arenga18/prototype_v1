@@ -106,7 +106,7 @@
                   @keydown.arrow-right.prevent="navigate('right', {{ $currentRow }}, '{{ $col }}')"
                   wire:model.lazy="groupedComponents.{{ $modul }}.{{ $row }}.{{ $col }}"
                   data-row="{{ $currentRow }}" data-col="{{ $col }}"
-                  class="w-full border-none p-1 text-sm   focus:outline-none focus:ring">
+                  class="w-full border-none p-1 text-sm bg-transparent focus:outline-none focus:ring">
               </td>
             @endforeach
 

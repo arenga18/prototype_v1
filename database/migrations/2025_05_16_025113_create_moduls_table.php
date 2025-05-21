@@ -13,11 +13,23 @@ return new class extends Migration
     {
         Schema::create('moduls', function (Blueprint $table) {
             $table->id();
+            $table->date('input_date');
+            $table->string('nip');
+            $table->string('height');
+            $table->string('project_name');
+            $table->string('product_name');
             $table->string('code_cabinet');
             $table->string('description_unit');
             $table->string('box_carcase_shape');
             $table->string('finishing');
             $table->string('layer_position');
+            $table->string('closing_system');
+            $table->string('number_of_closures');
+            $table->string('type_of_closure');
+            $table->string('handle');
+            $table->string('acc');
+            $table->string('lamp');
+            $table->string('plint');
             $table->timestamps();
         });
     }

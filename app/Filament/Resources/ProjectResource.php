@@ -26,6 +26,7 @@ use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Forms\Components\Wizard;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -64,8 +65,32 @@ class ProjectResource extends Resource
                     ->schema([
                         Section::make('Informasi Dasar')
                             ->schema([
+                                DatePicker::make('date')->label('Tanggal')->required(),
+                                TextInput::make('recap_number')->label('No Rekap')->required(),
                                 TextInput::make('no_contract')->label('No Kontrak')->required(),
-                                TextInput::make('nip')->label('NIP')->required(),
+                                TextInput::make('nip')
+                                    ->label('NIP')
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function (callable $set, $state) {
+
+                                        $moduls = Modul::where('nip', $state)->get();
+
+                                        if ($moduls->isNotEmpty()) {
+
+                                            $modulCodes = $moduls->pluck('code_cabinet')->toArray();
+                                            $set('modul_reference', $modulCodes);
+
+                                            $firstModul = $moduls->first();
+                                            $set('product_name', $firstModul->product_name);
+                                            $set('project_name', $firstModul->project_name);
+                                        } else {
+                                            $set('modul_reference', []);
+                                            $set('product_name', null);
+                                            $set('project_name', null);
+                                        }
+                                    }),
+
                                 TextInput::make('product_name')->label('Nama Produk')->required(),
                                 TextInput::make('project_name')->label('Nama Proyek')->required(),
                                 TextInput::make('coordinator')->label('Koordinator')->required(),
@@ -73,7 +98,7 @@ class ProjectResource extends Resource
                                 Forms\Components\CheckboxList::make('project_status')
                                     ->label('Status Proyek')
                                     ->options([
-                                        'Pendingin' => 'Pendingin',
+                                        'Pendingan' => 'Pendingan',
                                         'Anti Rayap' => 'Anti Rayap',
                                     ])
                                     ->required(),
@@ -118,10 +143,10 @@ class ProjectResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->reactive()
-                                    ->createOptionForm([]) // Kosongkan jika tidak perlu membuat opsi baru
+                                    ->createOptionForm([])
                                     ->hint('Pilih satu atau lebih modul sebagai referensi')
                                     ->required(),
-                            ]),
+                            ])
                     ]),
 
                 // Step 2: Breakdown Modul + Komponen
@@ -149,13 +174,16 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('no_contract'),
-                TextColumn::make('nip'),
-                TextColumn::make('product_name'),
-                TextColumn::make('project_name'),
-                TextColumn::make('coordinator'),
-                TextColumn::make('recap_coordinator'),
+                TextColumn::make('date')->label('Tanggal'),
+                TextColumn::make('recap_number')->label('No Rekap'),
+                TextColumn::make('no_contract')->label('No Kontrak'),
+                TextColumn::make('nip')->label('NIP'),
+                TextColumn::make('product_name')->label('Nama Produk'),
+                TextColumn::make('project_name')->label('Nama Projek'),
+                TextColumn::make('estimator')->label('Estimator'),
+                TextColumn::make('recap_coordinator')->label('Koordinator Rekap'),
             ])
+            ->searchable()
             ->filters([
                 //
             ])

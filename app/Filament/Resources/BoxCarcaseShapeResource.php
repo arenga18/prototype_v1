@@ -21,7 +21,7 @@ class BoxCarcaseShapeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
 
-    protected static ?string $navigationGroup = "Master data";
+    protected static ?string $navigationGroup = "Modul Master data";
 
     protected static ?string $navigationLabel = "Bentuk Box/Carcase";
 

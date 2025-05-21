@@ -11,11 +11,23 @@ class Modul extends Model
 {
 
     protected $fillable = [
-        "code_cabinet",
-        "description_unit",
-        "box_carcase_shape",
-        "finishing",
-        "layer_position",
+        'input_date',
+        'nip',
+        'height',
+        'project_name',
+        'product_name',
+        'code_cabinet',
+        'description_unit',
+        'box_carcase_shape',
+        'finishing',
+        'layer_position',
+        'closing_system',
+        'number_of_closures',
+        'type_of_closure',
+        'handle',
+        'acc',
+        'lamp',
+        'plinth',
     ];
 
     public function components()

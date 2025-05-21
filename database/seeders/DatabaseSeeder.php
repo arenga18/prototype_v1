@@ -18,6 +18,13 @@ class DatabaseSeeder extends Seeder
             BoxCarcaseShapeSeeder::class,
             FinishingSeeder::class,
             LayerPositionSeeder::class,
+            ClosingSystemSeeder::class,
+            NumberOfClosureSeeder::class,
+            TypeOfClousureSeeder::class,
+            HandleSeeder::class,
+            AccessoriesSeeder::class,
+            LampSeeder::class,
+            PlinthSeeder::class
         ]);
     }
 }
