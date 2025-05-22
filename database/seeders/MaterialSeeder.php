@@ -46,6 +46,22 @@ class MaterialSeeder extends Seeder
                 "unit" => "Lbr",
                 "note" => "Non Anti Rayap",
             ],
+            [
+                "id" => "205526",
+                "cat" => "Minifix",
+                "name" => "MINIFIX HETTICH",
+                "qty" => "",
+                "unit" => "SET",
+                "note" => "",
+            ],
+            [
+                "id" => "205554",
+                "cat" => "dowel",
+                "name" => "DOWEL KAYU 4X8",
+                "qty" => "",
+                "unit" => "BH",
+                "note" => "",
+            ],
         ]);
     }
 }

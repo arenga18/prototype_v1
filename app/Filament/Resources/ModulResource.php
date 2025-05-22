@@ -56,6 +56,10 @@ class ModulResource extends Resource
         'plinth' => ['label' => 'Plinth', 'model' => Plinth::class],
     ];
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {

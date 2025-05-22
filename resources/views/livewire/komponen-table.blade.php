@@ -1,4 +1,8 @@
-<div class="overflow-x-auto">
+<iframe
+  src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRrO6UATHaD4wWE2UJ7jkx-2tYYb4YGHZ3CsMFSZhU8ijvJ5HMiqMz-iHFBjh2AobDiMGR7h6VXRrJn/pubhtml?widget=true&amp;headers=false"
+  width="1000" height="1000"></iframe>
+
+{{-- <div class="overflow-x-auto">
   <table class="table-auto border border-collapse w-max text-sm">
     <thead>
       <tr>
@@ -153,4 +157,4 @@
       navigate: navigate
     }));
   });
-</script>
+</script> --}}

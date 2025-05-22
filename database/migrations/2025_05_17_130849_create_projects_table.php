@@ -25,6 +25,7 @@ return new class extends Migration
             $table->json('product_spesification');
             $table->json('material_thickness_spesification');
             $table->json('coating_spesification');
+            $table->json('komp_anodize_spesification');
             $table->json('alu_frame_spesification');
             $table->json('hinges_spesification');
             $table->json('rail_spesification');

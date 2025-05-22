@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName("METRIC")
+            ->topNavigation()
             ->colors([
                 'primary' => Color::Blue,
             ])

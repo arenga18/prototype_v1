@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers;
+use App\Models\Material;
 use App\Models\Project;
 use App\Models\PartComponent;
 use App\Models\ModulComponent;
@@ -54,7 +55,10 @@ class ProjectResource extends Resource
 
     protected static ?string $pluralLabel = "Projek";
 
-
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -93,7 +97,7 @@ class ProjectResource extends Resource
 
                                 TextInput::make('product_name')->label('Nama Produk')->required(),
                                 TextInput::make('project_name')->label('Nama Proyek')->required(),
-                                TextInput::make('coordinator')->label('Koordinator')->required(),
+                                TextInput::make('estimator')->label('Estimator ')->required(),
                                 TextInput::make('recap_coordinator')->label('Koordinator Rekap')->required(),
                                 Forms\Components\CheckboxList::make('project_status')
                                     ->label('Status Proyek')
@@ -106,32 +110,170 @@ class ProjectResource extends Resource
 
 
                         Section::make('Spesifikasi')
-                            ->schema(
-                                collect(self::$spesifikasiFields)->map(function ($label, $fieldName) {
-                                    return TableRepeater::make($fieldName)
-                                        ->label($label)
-                                        ->schema([
-                                            Select::make('key')
-                                                ->label('Kategori')
-                                                ->options(PartComponent::all()->pluck('cat', 'cat'))
-                                                ->searchable()
-                                                ->extraAttributes([
-                                                    'style' => 'border: none !important; border-radius: 0 !important;',
-                                                ]),
-                                            Select::make('value')
-                                                ->label(label: 'Spesifikasi')
-                                                ->options(PartComponent::all()->pluck('name', 'name'))
-                                                ->searchable()
-                                                ->native(false)
-                                                ->extraAttributes([
-                                                    'style' => 'border: none !important; border-radius: 0 !important;',
-                                                ])
-                                        ])
-                                        ->minItems(1)
-                                        ->addActionLabel('Tambah Data')
-                                        ->columnSpanFull();
-                                })->toArray()
-                            )
+                            ->schema([
+                                TableRepeater::make('product_spesification')
+                                    ->label('Spesifikasi Produk')
+                                    ->schema([
+                                        TextInput::make('key')->label('Bahan')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                        TextInput::make('value')->label('Spesifikasi')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                    ])
+                                    ->default([
+                                        ['key' => 'Kabinet 1', 'value' => ''],
+                                        ['key' => 'Kabinet 2', 'value' => ''],
+                                        ['key' => 'Kabinet 3', 'value' => ''],
+                                        ['key' => 'Kabinet 4', 'value' => ''],
+                                        ['key' => 'Kabinet 5', 'value' => ''],
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('material_thickness_spesification')
+                                    ->label('Ketebalan Material')
+                                    ->schema([
+                                        TextInput::make('key')->label('Komponen')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                        TextInput::make('value')->label('Tebal')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                    ])
+                                    ->default([
+                                        ['key' => 'Komponen Kabinet', 'value' => ''],
+                                        ['key' => 'Komponen Laci', 'value' => ''],
+                                        ['key' => 'Dinding blk/dasar', 'value' => ''],
+                                        ['key' => 'Tatakan S/s', 'value' => ''],
+                                        ['key' => 'Tatakan Worktop', 'value' => ''],
+                                    ])
+                                    ->minItems(5)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('coating_spesification')
+                                    ->label('Coating')
+                                    ->schema([
+                                        TextInput::make('key')->label('Komponen')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                        TextInput::make('value')->label('Lapisan')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
+                                    ])
+                                    ->default([
+                                        ['key' => 'Lapisan dibalik pintu', 'value' => ''],
+                                        ['key' => 'Lapisan tidak terlihat u/kab', 'value' => ''],
+                                        ['key' => 'Lapisan depan bhn pintu mlp', 'value' => ''],
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('komp_anodize_spesification')
+                                    ->label('Komp / Anodize')
+                                    ->schema([
+                                        Select::make('key')->label('Bahan')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('alu_frame_spesification')
+                                    ->label('Aluminium Frame')
+                                    ->schema([
+                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('hinges_spesification')
+                                    ->label('Engsel (Hinges)')
+                                    ->schema([
+                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('rail_spesification')
+                                    ->label('Rel (Rail)')
+                                    ->schema([
+                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Rel')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('glass_spesification')
+                                    ->label('Kaca')
+                                    ->schema([
+                                        TextInput::make('key')->label('Tipe')->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->default([
+                                        ['key' => 'Kaca type 1', 'value' => ''],
+                                        ['key' => 'Kaca type 2', 'value' => ''],
+                                        ['key' => 'Kaca type 3', 'value' => ''],
+                                        ['key' => 'Kaca type 4', 'value' => ''],
+                                        ['key' => 'Kaca type 5', 'value' => ''],
+                                    ])
+                                    ->minItems(5)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('profile_spesification')
+                                    ->label('Profil')
+                                    ->schema([
+                                        Select::make('key')->label('Kategori')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Data')
+                                    ->columnSpanFull(),
+                                TableRepeater::make('size_distance_spesification')
+                                    ->label('Jarak Ukuran')
+                                    ->schema([
+                                        TextInput::make('key')->label('Komponen')->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                        TextInput::make('value')->label('Jarak (mm)')->extraAttributes([
+                                            'style' => 'border: none !important; border-radius: 0 !important;',
+                                        ]),
+                                    ])
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambah Ukuran')
+                                    ->columnSpanFull(),
+                            ])
                             ->columns(1),
 
                         Section::make('Referensi Modul')
