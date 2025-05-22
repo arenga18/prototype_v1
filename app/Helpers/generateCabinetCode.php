@@ -41,13 +41,16 @@ if (!function_exists('generateCabinetCode')) {
         if ($unitCode && $boxCode) {
             return implode('', [
                 $unitCode,
+                "-",
                 $boxCode,
                 $fin,
                 $layerpos,
                 $closeSys,
+                "-",
                 $numClosures,
                 $typeClose,
                 $handleCode,
+                "-",
                 $accCode,
                 $lampCode,
                 $plinthCode,

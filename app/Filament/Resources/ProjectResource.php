@@ -8,7 +8,18 @@ use App\Models\Material;
 use App\Models\Project;
 use App\Models\PartComponent;
 use App\Models\ModulComponent;
+use App\Models\Accessories;
+use App\Models\BoxCarcaseShape;
+use App\Models\ClosingSystem;
+use App\Models\DescriptionUnit;
+use App\Models\Finishing;
+use App\Models\Handle;
+use App\Models\LayerPosition;
 use App\Models\Modul;
+use App\Models\NumberOfClosure;
+use App\Models\TypeOfClosure;
+use App\Models\Lamp;
+use App\Models\Plinth;
 use Filament\Forms;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
@@ -28,6 +39,7 @@ use Filament\Forms\Components\Wizard;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -47,6 +59,21 @@ class ProjectResource extends Resource
         'profile_spesification' => 'Profil',
         'size_distance_spesification' => 'Jarak Ukuran',
     ];
+
+    protected static $selectFields = [
+        'description_unit' => ['label' => 'Deskripsi Unit', 'model' => DescriptionUnit::class],
+        'box_carcase_shape' => ['label' => 'Bentuk Box/Carcase', 'model' => BoxCarcaseShape::class],
+        'finishing' => ['label' => 'Finishing', 'model' => Finishing::class],
+        'layer_position' => ['label' => 'Posisi Lapisan', 'model' => LayerPosition::class],
+        'closing_system' => ['label' => 'Sistem Tutup', 'model' => ClosingSystem::class],
+        'number_of_closures' => ['label' => 'Jumlah Tutup', 'model' => NumberOfClosure::class],
+        'type_of_closure' => ['label' => 'Jenis Tutup', 'model' => TypeOfClosure::class],
+        'handle' => ['label' => 'Handle', 'model' => Handle::class],
+        'acc' => ['label' => 'Accessories', 'model' => Accessories::class],
+        'lamp' => ['label' => 'Lampu', 'model' => Lamp::class],
+        'plinth' => ['label' => 'Plinth', 'model' => Plinth::class],
+    ];
+
     protected static ?string $model = Project::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -62,6 +89,14 @@ class ProjectResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $textInputs = [
+            DatePicker::make('input_date')->label('Tanggal Input')->required(),
+            TextInput::make('nip')->label('NIP')->required(),
+            TextInput::make('height')->label('Tinggi')->required(),
+            TextInput::make('project_name')->label('Nama Proyek')->required(),
+            TextInput::make('product_name')->label('Nama Produk')->required(),
+        ];
+
         return $form->schema([
             Wizard::make([
                 // Step 1: Informasi Proyek dan Referensi Modul
@@ -178,9 +213,13 @@ class ProjectResource extends Resource
                                 TableRepeater::make('komp_anodize_spesification')
                                     ->label('Komp / Anodize')
                                     ->schema([
-                                        Select::make('key')->label('Bahan')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        Select::make('key')
+                                            ->label('Bahan')
+                                            ->options(
+                                                Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
+                                            )->searchable()->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
                                         Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
                                             'style' => 'border: none !important; border-radius: 0 !important;',
                                         ]),
@@ -191,7 +230,9 @@ class ProjectResource extends Resource
                                 TableRepeater::make('alu_frame_spesification')
                                     ->label('Aluminium Frame')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                        Select::make('key')->label('Tipe')->options(
+                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
+                                        )->searchable()->extraAttributes([
                                             'style' => 'border: none !important; border-radius: 0 !important;',
                                         ]),
                                         Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
@@ -204,7 +245,9 @@ class ProjectResource extends Resource
                                 TableRepeater::make('hinges_spesification')
                                     ->label('Engsel (Hinges)')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                        Select::make('key')->label('Tipe')->options(
+                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
+                                        )->searchable()->extraAttributes([
                                             'style' => 'border: none !important; border-radius: 0 !important;',
                                         ]),
                                         Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
@@ -217,7 +260,9 @@ class ProjectResource extends Resource
                                 TableRepeater::make('rail_spesification')
                                     ->label('Rel (Rail)')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                        Select::make('key')->label('Tipe')->options(
+                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
+                                        )->searchable()->extraAttributes([
                                             'style' => 'border: none !important; border-radius: 0 !important;',
                                         ]),
                                         Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
@@ -250,7 +295,9 @@ class ProjectResource extends Resource
                                 TableRepeater::make('profile_spesification')
                                     ->label('Profil')
                                     ->schema([
-                                        Select::make('key')->label('Kategori')->options(Material::pluck('cat', 'cat'))->searchable()->extraAttributes([
+                                        Select::make('key')->label('Kategori')->options(
+                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
+                                        )->searchable()->extraAttributes([
                                             'style' => 'border: none !important; border-radius: 0 !important;',
                                         ]),
                                         Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
@@ -276,19 +323,75 @@ class ProjectResource extends Resource
                             ])
                             ->columns(1),
 
-                        Section::make('Referensi Modul')
-                            ->schema([
-                                Select::make('modul_reference')
-                                    ->label('Referensi Modul')
-                                    ->multiple()
-                                    ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
-                                    ->searchable()
-                                    ->preload()
-                                    ->reactive()
-                                    ->createOptionForm([])
-                                    ->hint('Pilih satu atau lebih modul sebagai referensi')
-                                    ->required(),
+                        Select::make('modul_reference')
+                            ->label('Referensi Modul')
+                            ->multiple()
+                            ->options(Modul::pluck('code_cabinet', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->reactive()
+                            ->required()
+                            ->hint('Pilih satu atau lebih modul sebagai referensi')
+                            ->createOptionForm([
+                                Section::make('Informasi Data')
+                                    ->schema($textInputs)
+                                    ->collapsible(),
+                                TextInput::make('code_cabinet')
+                                    ->label('Kode Cabinet')
+                                    ->readOnly()
+                                    ->dehydrated(true)
+                                    ->required()
+                                    ->rule('unique:moduls,code_cabinet')
+                                    ->validationMessages([
+                                        'unique' => 'Kode Cabinet tersebut sudah pernah dibuat.',
+                                        'required' => 'Kode Cabinet wajib diisi.',
+                                    ]),
+                                Grid::make(2)->schema(
+                                    collect(self::$selectFields)->map(function ($config, $field) {
+                                        return Select::make($field)
+                                            ->label($config['label'])
+                                            ->options(fn() => $config['model']::pluck('name', 'name'))
+                                            ->searchable()
+                                            ->reactive()
+                                            ->afterStateUpdated(function (callable $set, callable $get) {
+                                                $set('code_cabinet', generateCabinetCode(
+                                                    $get('description_unit'),
+                                                    $get('box_carcase_shape'),
+                                                    finishing: $get('finishing'),
+                                                    layerposition: $get('layer_position'),
+                                                    closingSystem: $get('closing_system'),
+                                                    numberOfClosures: $get('number_of_closures'),
+                                                    typeOfClosure: $get('type_of_closure'),
+                                                    handle: $get('handle'),
+                                                    accessories: $get('acc'),
+                                                    lamp: $get('lamp'),
+                                                    plinth: $get('plinth'),
+                                                ));
+                                            });
+                                    })->toArray()
+                                )
                             ])
+                            ->createOptionUsing(function (array $data) {
+                                $modul = Modul::create($data);
+                                return $modul->id;
+                            })
+                            ->createOptionAction(function ($record, callable $set, callable $get) {
+                                // Pastikan record adalah Modul
+                                if (! $record instanceof Modul) {
+                                    return;
+                                }
+
+                                $existing = $get('modul_reference');
+                                if (!is_array($existing)) {
+                                    $existing = [];
+                                }
+
+                                $existing = array_unique(array_merge($existing, [$record->id]));
+                                $set('modul_reference', $existing);
+                            })
+
+
+
                     ]),
 
                 // Step 2: Breakdown Modul + Komponen

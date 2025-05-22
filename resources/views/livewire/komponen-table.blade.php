@@ -1,6 +1,62 @@
-<iframe
-  src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRrO6UATHaD4wWE2UJ7jkx-2tYYb4YGHZ3CsMFSZhU8ijvJ5HMiqMz-iHFBjh2AobDiMGR7h6VXRrJn/pubhtml?widget=true&amp;headers=false"
-  width="1000" height="1000"></iframe>
+<div style="width: 100%; height: 70vh;"> <!-- contoh parent container full height viewport -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/pluginsCss.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/plugins.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/assets/iconfont/iconfont.css" />
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/js/plugin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
+
+  <div id="luckysheet" style="margin: 0; padding: 0; width: 100%; height: 100%;"></div>
+
+  <script>
+    const groupedComponents = @json($groupedComponents);
+    const columns = @json($columns);
+
+    console.log(groupedComponents);
+
+    let celldata = [];
+
+    columns.forEach((col, idx) => {
+      celldata.push({
+        r: 0,
+        c: idx,
+        v: {
+          v: col
+        }
+      });
+    });
+
+    let rowIndex = 1;
+    Object.keys(groupedComponents).forEach(modul => {
+      const components = groupedComponents[modul];
+      components.forEach(comp => {
+        columns.forEach((col, colIndex) => {
+          let val = comp[col] !== undefined ? comp[col] : '';
+          celldata.push({
+            r: rowIndex,
+            c: colIndex,
+            v: {
+              v: val
+            }
+          });
+        });
+        rowIndex++;
+      });
+    });
+
+    luckysheet.create({
+      container: 'luckysheet',
+      data: [{
+        name: 'Sheet1',
+        celldata: celldata,
+      }],
+    });
+  </script>
+</div>
+
+
+
+
 
 {{-- <div class="overflow-x-auto">
   <table class="table-auto border border-collapse w-max text-sm">

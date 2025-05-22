@@ -11,7 +11,7 @@ class KomponenTable extends Component
     public $groupedComponents = [];
 
     public $columns = [
-        'komponen',
+        'component',
         'p',
         'l',
         't',

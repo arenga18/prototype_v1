@@ -30,6 +30,11 @@ class Modul extends Model
         'plinth',
     ];
 
+    protected $casts = [
+        'modul_reference' => 'array',
+    ];
+
+
     public function components()
     {
         return $this->hasMany(PartComponent::class);
