@@ -10,45 +10,12 @@ class KomponenTable extends Component
     public $moduls = [];
     public $groupedComponents = [];
 
-    public $columns = [
-        'component',
-        'p',
-        'l',
-        't',
-        'qty',
-        'sub',
-        'jml',
-        'bahan',
-        't_bahan',
-        'l_kedua',
-        'd',
-        't_kedua',
-        'dalam',
-        't_ketiga',
-        'p1',
-        'p2',
-        'l1',
-        'l2',
-        'profile',
-        'rel',
-        'v',
-        'v2',
-        'h',
-        'nama_barang',
-        'panjang',
-        'v_lap',
-        'v_edg',
-        'deskripsi_lapisan',
-        'deskripsi_edging',
-        'engsel',
-        'rel_kedua',
-        'bahan_dasar',
-        'jumlah_anodize',
-        'minifix',
-        'dowel',
-        'jml_siku',
-        'jml_screw'
-    ];
+    public $columns;
+
+    public function __construct()
+    {
+        $this->columns = config('breakdown_fields.breakdown_col');
+    }
 
     public function mount($moduls)
     {

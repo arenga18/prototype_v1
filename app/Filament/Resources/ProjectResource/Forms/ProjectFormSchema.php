@@ -16,21 +16,12 @@ use Filament\Forms\Components\Grid;
 use App\Models\Material;
 use App\Models\Modul;
 
-
 class ProjectFormSchema
 {
-
     public static function getSchema(): array
     {
-        $selectFields = config('project_fields.select_fields');
-
-        $textInputs = [
-            DatePicker::make('input_date')->label('Tanggal Input')->required(),
-            TextInput::make('nip')->label('NIP')->required(),
-            TextInput::make('height')->label('Tinggi')->required(),
-            TextInput::make('project_name')->label('Nama Proyek')->required(),
-            TextInput::make('product_name')->label('Nama Produk')->required(),
-        ];
+        $selectFields = config('project_fields.selectFields', []);
+        $textInputs = config('project_fields.textInputs', []);
 
         return [
             Wizard::make([
@@ -309,10 +300,9 @@ class ProjectFormSchema
                             ])
                             ->createOptionUsing(function (array $data) {
                                 $modul = Modul::create($data);
-                                return $modul->id;
+                                return $modul->code_cabinet;
                             })
                             ->createOptionAction(function ($record, callable $set, callable $get) {
-                                // Pastikan record adalah Modul
                                 if (! $record instanceof Modul) {
                                     return;
                                 }

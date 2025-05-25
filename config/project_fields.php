@@ -17,6 +17,13 @@ use App\Models\Lamp;
 use App\Models\Plinth;
 
 return [
+    'textInputs' => [
+        DatePicker::make('input_date')->label('Tanggal Input')->required(),
+        TextInput::make('nip')->label('NIP')->required(),
+        TextInput::make('height')->label('Tinggi')->required(),
+        TextInput::make('project_name')->label('Nama Proyek')->required(),
+        TextInput::make('product_name')->label('Nama Produk')->required(),
+    ],
 
     'spesifikasiFields' => [
         'product_spesification' => 'Spesifikasi Produk',
