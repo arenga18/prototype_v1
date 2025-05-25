@@ -21,6 +21,7 @@ class Modul extends Model
         'box_carcase_shape',
         'finishing',
         'layer_position',
+        'box_carcase_content',
         'closing_system',
         'number_of_closures',
         'type_of_closure',

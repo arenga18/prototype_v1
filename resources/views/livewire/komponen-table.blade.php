@@ -1,4 +1,5 @@
-<div style="width: 100%; height: 70vh;"> <!-- contoh parent container full height viewport -->
+<div style="width: 100%; height: 70vh;">
+  <!-- Stylesheets and scripts -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/pluginsCss.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/plugins.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css" />
@@ -7,15 +8,16 @@
   <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
 
   <div id="luckysheet" style="margin: 0; padding: 0; width: 100%; height: 100%;"></div>
+  <button onclick="saveSheet()">Simpan</button>
 
   <script>
     const groupedComponents = @json($groupedComponents);
     const columns = @json($columns);
 
-    console.log(groupedComponents);
 
     let celldata = [];
 
+    // Header row
     columns.forEach((col, idx) => {
       celldata.push({
         r: 0,
@@ -26,10 +28,10 @@
       });
     });
 
+    // Component rows
     let rowIndex = 1;
     Object.keys(groupedComponents).forEach(modul => {
-      const components = groupedComponents[modul];
-      components.forEach(comp => {
+      groupedComponents[modul].forEach(comp => {
         columns.forEach((col, colIndex) => {
           let val = comp[col] !== undefined ? comp[col] : '';
           celldata.push({
@@ -44,173 +46,81 @@
       });
     });
 
+    // Dropdown setup
+    let dataVerification = {};
+    columns.forEach((col, idx) => {
+      const colLetter = String.fromCharCode(65 + idx); // 'A', 'B', ...
+      if (col === 'type') {
+        dataVerification[`${colLetter}2:${colLetter}1000`] = {
+          type: 'dropdown',
+          value1: typeOptions.join(','),
+          allowBlank: true,
+          showInputMessage: true,
+          prompt: 'Pilih type'
+        };
+      }
+      if (col === 'component') {
+        dataVerification[`${colLetter}2:${colLetter}1000`] = {
+          type: 'dropdown',
+          value1: componentOptions.join(','),
+          allowBlank: true,
+          showInputMessage: true,
+          prompt: 'Pilih komponen'
+        };
+      }
+    });
+
+    // Init luckysheet
     luckysheet.create({
       container: 'luckysheet',
       data: [{
-        name: 'Sheet1',
+        name: 'Komponen',
         celldata: celldata,
-      }],
+        config: {
+          dataVerification
+        }
+      }]
     });
+
+    // Save handler
+    function saveSheet() {
+      const sheetsData = luckysheet.getAllSheets();
+      const btn = document.querySelector('button[onclick="saveSheet()"]');
+      const originalText = btn.textContent;
+
+      btn.textContent = 'Menyimpan...';
+      btn.disabled = true;
+
+      fetch('/save-luckysheet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            modul_id: modulId,
+            name: 'Sheet Komponen',
+            data: JSON.stringify(sheetsData)
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Gagal menyimpan');
+          return res.json();
+        })
+        .then(data => {
+          if (data.success) {
+            alert('Berhasil disimpan! ID: ' + data.id);
+          } else {
+            throw new Error(data.message || 'Gagal menyimpan');
+          }
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+        })
+        .finally(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        });
+    }
   </script>
 </div>
-
-
-
-
-
-{{-- <div class="overflow-x-auto">
-  <table class="table-auto border border-collapse w-max text-sm">
-    <thead>
-      <tr>
-        @foreach (['Komponen', 'P', 'L', 'T', 'Qty', 'Sub', 'Jml', 'Bahan', 'T Bahan', 'L (kedua)', 'D', 'T (kedua)', 'Dalam', 'T (ketiga)', 'P1', 'P2', 'L1', 'L2', 'Profile', 'Rel', 'V', 'V2', 'H', 'Nama Barang', 'Panjang', 'V lap', 'V edg', 'Deskripsi Lapisan', 'Deskripsi Edging', 'Engsel', 'Rel (kedua)', 'Bahan Dasar', 'Jumlah Anodize', 'minifix', 'dowel', 'jml siku', 'jml screw'] as $header)
-          @php
-            $wideCols = ['P', 'L', 'T', 'Qty', 'Sub', 'Jml']; // kolom yang dilebarkan
-            if ($header === 'Komponen') {
-                $widthClass = 'w-48'; // lebih lebar untuk kolom Komponen
-            } elseif (in_array($header, $wideCols)) {
-                $widthClass = 'w-36'; // sekitar 9rem = 144px
-            } else {
-                $widthClass = 'w-28'; // sekitar 7rem = 112px untuk kolom lain
-            }
-          @endphp
-          <th class="border px-2 py-1 whitespace-nowrap {{ $widthClass }} text-center">{{ $header }}</th>
-        @endforeach
-      </tr>
-    </thead>
-
-    <tbody>
-      @php $globalRow = 0; @endphp
-      @foreach ($groupedComponents as $modul => $components)
-        @foreach ($components as $row => $comp)
-          @php
-            $isModulRow = $loop->first;
-            $trClass = $isModulRow ? 'bg-gray-100 font-semibold' : '';
-            $currentRow = $globalRow;
-            $globalRow++;
-          @endphp
-          <tr class="{{ $trClass }}">
-            <td class="border px-2 py-1 whitespace-nowrap w-48">
-              @if ($isModulRow)
-                {{ $modul }}
-              @else
-                {{ $comp['component'] ?? '' }}
-              @endif
-            </td>
-
-            @php
-              $inputColumns = [
-                  'p',
-                  'l',
-                  't',
-                  'qty',
-                  'sub',
-                  'jml',
-                  'bahan',
-                  't_bahan',
-                  'l_kedua',
-                  'd',
-                  't_kedua',
-                  'dalam',
-                  't_ketiga',
-                  'p1',
-                  'p2',
-                  'l1',
-                  'l2',
-                  'profile',
-                  'rel',
-                  'v',
-                  'v2',
-                  'h',
-                  'nama_barang',
-                  'panjang',
-                  'v_lap',
-                  'v_edg',
-                  'deskripsi_lapisan',
-                  'deskripsi_edging',
-                  'engsel',
-                  'rel_kedua',
-                  'bahan_dasar',
-                  'jumlah_anodize',
-                  'minifix',
-                  'dowel',
-                  'jml_siku',
-                  'jml_screw',
-              ];
-              $colToHeader = [
-                  'p' => 'P',
-                  'l' => 'L',
-                  't' => 'T',
-                  'qty' => 'Qty',
-                  'sub' => 'Sub',
-                  'jml' => 'Jml',
-                  // kolom lain tidak perlu mapping karena width default
-              ];
-              $wideCols = ['P', 'L', 'T', 'Qty', 'Sub', 'Jml'];
-            @endphp
-
-            @foreach ($inputColumns as $col)
-              @php
-                $headerName = $colToHeader[$col] ?? null;
-                if (in_array($headerName, $wideCols)) {
-                    $widthClass = 'w-36';
-                } else {
-                    $widthClass = 'w-28';
-                }
-              @endphp
-              <td class="border px-2 py-1 {{ $widthClass }} ">
-                <input type="text" x-data
-                  @keydown.enter.prevent="navigate('down', {{ $currentRow }}, '{{ $col }}')"
-                  @keydown.arrow-down.prevent="navigate('down', {{ $currentRow }}, '{{ $col }}')"
-                  @keydown.arrow-up.prevent="navigate('up', {{ $currentRow }}, '{{ $col }}')"
-                  @keydown.arrow-left.prevent="navigate('left', {{ $currentRow }}, '{{ $col }}')"
-                  @keydown.arrow-right.prevent="navigate('right', {{ $currentRow }}, '{{ $col }}')"
-                  wire:model.lazy="groupedComponents.{{ $modul }}.{{ $row }}.{{ $col }}"
-                  data-row="{{ $currentRow }}" data-col="{{ $col }}"
-                  class="w-full border-none p-1 text-sm bg-transparent focus:outline-none focus:ring">
-              </td>
-            @endforeach
-
-          </tr>
-        @endforeach
-      @endforeach
-    </tbody>
-  </table>
-</div>
-
-<script>
-  // Daftar kolom sesuai inputColumns lengkap
-  const cols = [
-    'p', 'l', 't', 'qty', 'sub', 'jml', 'bahan', 't_bahan', 'l_kedua', 'd',
-    't_kedua', 'dalam', 't_ketiga', 'p1', 'p2', 'l1', 'l2', 'profile', 'rel',
-    'v', 'v2', 'h', 'nama_barang', 'panjang', 'v_lap', 'v_edg', 'deskripsi_lapisan',
-    'deskripsi_edging', 'engsel', 'rel_kedua', 'bahan_dasar', 'jumlah_anodize',
-    'minifix', 'dowel', 'jml_siku', 'jml_screw'
-  ];
-
-  // Fungsi navigasi keyboard
-  function navigate(direction, row, col) {
-    let newRow = row;
-    let newCol = col;
-    const idx = cols.indexOf(col);
-
-    if (direction === 'down') {
-      newRow = row + 1;
-    } else if (direction === 'up') {
-      newRow = row - 1;
-    } else if (direction === 'left') {
-      if (idx > 0) newCol = cols[idx - 1];
-    } else if (direction === 'right') {
-      if (idx < cols.length - 1) newCol = cols[idx + 1];
-    }
-
-    const next = document.querySelector(`input[data-row="${newRow}"][data-col="${newCol}"]`);
-    if (next) next.focus();
-  }
-
-  // Alpine.js helper supaya bisa dipakai di x-data
-  document.addEventListener('alpine:init', () => {
-    Alpine.data('navigate', () => ({
-      navigate: navigate
-    }));
-  });
-</script> --}}

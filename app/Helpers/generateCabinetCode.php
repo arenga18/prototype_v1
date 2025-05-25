@@ -9,6 +9,7 @@ use App\Models\NumberOfClosure;
 use App\Models\TypeOfClosure;
 use App\Models\Handle;
 use App\Models\Accessories;
+use App\Models\BoxCarcaseContent;
 use App\Models\Lamp;
 use App\Models\Plinth;
 
@@ -18,6 +19,7 @@ if (!function_exists('generateCabinetCode')) {
         $boxShapeName,
         $finishing = null,
         $layerposition = null,
+        $boxContent = null,
         $closingSystem = null,
         $numberOfClosures = null,
         $typeOfClosure = null,
@@ -30,6 +32,7 @@ if (!function_exists('generateCabinetCode')) {
         $boxCode         = BoxCarcaseShape::where('name', $boxShapeName)->value('code');
         $fin             = Finishing::where('name', $finishing)->value('code');
         $layerpos        = LayerPosition::where('name', $layerposition)->value('code');
+        $boxContent        = BoxCarcaseContent::where('name', $layerposition)->value('code');
         $closeSys        = ClosingSystem::where('name', $closingSystem)->value('code');
         $numClosures     = NumberOfClosure::where('name', $numberOfClosures)->value('code');
         $typeClose       = TypeOfClosure::where('name', $typeOfClosure)->value('code');
@@ -45,8 +48,9 @@ if (!function_exists('generateCabinetCode')) {
                 $boxCode,
                 $fin,
                 $layerpos,
-                $closeSys,
+                $boxContent,
                 "-",
+                $closeSys,
                 $numClosures,
                 $typeClose,
                 $handleCode,

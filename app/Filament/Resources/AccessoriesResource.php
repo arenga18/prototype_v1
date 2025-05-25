@@ -31,7 +31,8 @@ class AccessoriesResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('name'),
+                TextInput::make('code')
             ]);
     }
 
@@ -39,7 +40,8 @@ class AccessoriesResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('name'),
+                TextColumn::make('code'),
             ])
             ->filters([
                 //

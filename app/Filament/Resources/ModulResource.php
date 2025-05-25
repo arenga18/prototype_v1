@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ModulResource\Pages;
 use App\Filament\Resources\ModulResource\RelationManagers;
 use App\Models\Accessories;
+use App\Models\BoxCarcaseContent;
 use App\Models\BoxCarcaseShape;
 use App\Models\ClosingSystem;
 use App\Models\DescriptionUnit;
@@ -47,6 +48,7 @@ class ModulResource extends Resource
         'box_carcase_shape' => ['label' => 'Bentuk Box/Carcase', 'model' => BoxCarcaseShape::class],
         'finishing' => ['label' => 'Finishing', 'model' => Finishing::class],
         'layer_position' => ['label' => 'Posisi Lapisan', 'model' => LayerPosition::class],
+        'box_carcase_contents' => ['label' => 'Isi Box/Carcase', 'model' => BoxCarcaseContent::class],
         'closing_system' => ['label' => 'Sistem Tutup', 'model' => ClosingSystem::class],
         'number_of_closures' => ['label' => 'Jumlah Tutup', 'model' => NumberOfClosure::class],
         'type_of_closure' => ['label' => 'Jenis Tutup', 'model' => TypeOfClosure::class],
@@ -74,6 +76,7 @@ class ModulResource extends Resource
         $code_cabinet = TextInput::make('code_cabinet')
             ->label('Kode Cabinet')
             ->readOnly()
+            ->columnSpanFull()
             ->required();
 
         $selectComponents = [];
@@ -90,6 +93,7 @@ class ModulResource extends Resource
                         $get('box_carcase_shape'),
                         finishing: $get('finishing'),
                         layerposition: $get('layer_position'),
+                        boxContent: $get('box_carcase_content'),
                         closingSystem: $get('closing_system'),
                         numberOfClosures: $get('number_of_closures'),
                         typeOfClosure: $get('type_of_closure'),
@@ -112,6 +116,7 @@ class ModulResource extends Resource
 
             Section::make('Komponen')
                 ->schema([
+
                     Grid::make()
                         ->columns(2)
                         ->schema($sectionComponents),
@@ -155,6 +160,9 @@ class ModulResource extends Resource
                     ->searchable(),
                 TextColumn::make('layer_position')
                     ->label("Posisi Lapisan")
+                    ->searchable(),
+                TextColumn::make('box_carcase_contents')
+                    ->label("Isi Box/Carcase")
                     ->searchable(),
                 TextColumn::make('closing_system')
                     ->label("Sistem Tutup")
