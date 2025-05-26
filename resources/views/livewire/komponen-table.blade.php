@@ -7,72 +7,169 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
 
   <div id="spreadsheet" style="width:100%;"></div>
-  <button onclick="saveSheet()">Simpan</button>
+
+  <x-filament::modal width="3xl">
+
+    <x-slot name="trigger">
+      <x-filament::button>
+        Create Modul
+      </x-filament::button>
+    </x-slot>
+
+    <x-slot name="heading">
+      Create Modul
+    </x-slot>
+
+    <x-slot name="description">
+      <x-filament::grid style="--cols-lg: repeat(1, minmax(0, 1fr));" class="lg:grid-cols-[--cols-lg]">
+        <div class="">
+          <div class="grid grid-cols-12 gap-4">
+            <x-filament::input.wrapper class="col-span-12">
+              <x-filament::input type="text" wire:model="name" />
+            </x-filament::input.wrapper>
+          </div>
+
+        </div>
+        <div class="">
+          <x-filament-forms::field-wrapper.label>
+            Label
+          </x-filament-forms::field-wrapper.label>
+
+          <x-filament::input.wrapper class="col-span-full">
+            <x-filament::input type="text" wire:model="name" />
+          </x-filament::input.wrapper>
+        </div>
+        <div class="">
+          <x-filament-forms::field-wrapper.label>
+            Label
+          </x-filament-forms::field-wrapper.label>
+
+          <x-filament::input.wrapper>
+            <x-filament::input type="text" wire:model="name" />
+          </x-filament::input.wrapper>
+        </div>
+        <div class="">
+          <x-filament-forms::field-wrapper.label>
+            Label
+          </x-filament-forms::field-wrapper.label>
+
+          <x-filament::input.wrapper>
+            <x-filament::input type="text" wire:model="name" />
+          </x-filament::input.wrapper>
+        </div>
+
+      </x-filament::grid>
+    </x-slot>
+
+    <x-slot name="footer">
+
+    </x-slot>
+
+    {{-- Modal content --}}
+  </x-filament::modal>
+
+
+
 
   <script>
     const groupedComponents = @json($groupedComponents ?? []);
     const columns = @json($columns ?? []);
-    const namaModulIndex = columns.indexOf('nama_modul'); // Find component name column index
-    const componentIndex = columns.indexOf('component'); // Find component column index
+    const namaModulIndex = columns.indexOf('nama_modul');
+    const componentIndex = columns.indexOf('component');
+    const componentTypes = @json($componentTypes ?? []);
+    console.log('Component Types:', componentTypes);
+    const componentOptions = @json($componentOptions ?? []);
 
-    // Prepare data with all columns
-    let data = [];
-    let mergeCellsConfig = {}; // Object to store merge configurations
+    // Fungsi untuk memetakan data ke kolom spreadsheet
+    function mapDataToColumns(comp) {
+      const fieldMapping = {
+        'cat': 'cat',
+        'code': 'type',
+        'KS': 'kode',
+        'name': 'component',
+        'material': 'bahan',
+        'thickness': 't_bahan',
+        'number_of_sub': 'jumlah',
+        'V': 'v',
+        'V2': 'v2',
+        'H': 'h',
+        'profile3': 'profile3',
+        'profile2': 'profile2',
+        'profile': 'profile',
+        'outside': 'luar',
+        'inside': 'dalam',
+        'P1': 'p1',
+        'P2': 'p2',
+        'L1': 'l1',
+        'L2': 'l2',
+        'rail': 'rel',
+        'hinge': 'engsel',
+        'number_of_anodize': 'jumlah_anodize@',
+        'minifix': 'minifix',
+        'dowel': 'dowel'
+      };
 
-    Object.entries(groupedComponents).forEach(([modul, components], modulIndex) => {
-      // Track the starting row for this modul
-      const modulStartRow = data.length;
+      let componentRow = new Array(columns.length).fill('');
 
-      // Add modul name row (only nama_modul column filled)
-      let modulRow = new Array(columns.length).fill('');
-      modulRow[namaModulIndex] = modul; // Modul name in nama_modul column
-      data.push(modulRow);
+      // Isi kolom component
+      componentRow[componentIndex] = comp.component || comp.name || '';
 
-      // Parse the components if they're in JSON format
-      if (typeof components === 'string') {
-        try {
-          components = JSON.parse(components);
-        } catch (e) {
-          console.error('Error parsing component JSON:', e);
-          components = [];
+      // Mapping data lainnya
+      Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
+        const colIndex = columns.indexOf(targetColumn);
+        if (colIndex >= 0 && comp[sourceField] !== undefined && comp[sourceField] !== null) {
+          componentRow[colIndex] = comp[sourceField];
+        }
+      });
+
+      // Isi kolom lain yang mungkin ada di data
+      columns.forEach((col, index) => {
+        if (comp[col] && index !== componentIndex) {
+          componentRow[index] = comp[col];
+        }
+      });
+
+      // Hitung ukuran jika ada p dan l
+      const pIndex = columns.indexOf('p');
+      const lIndex = columns.indexOf('l');
+      const ukuranIndex = columns.indexOf('ukuran');
+      if (pIndex >= 0 && lIndex >= 0 && ukuranIndex >= 0) {
+        const p = comp['P1'] || comp['P2'] || comp['p'];
+        const l = comp['L1'] || comp['L2'] || comp['l'];
+        if (p && l) {
+          componentRow[ukuranIndex] = `${p} x ${l}`;
         }
       }
 
-      // Count actual components (non-empty)
+      return componentRow;
+    }
+
+    // Prepare data with all columns
+    let data = [];
+    let mergeCellsConfig = {};
+
+    Object.entries(groupedComponents).forEach(([modul, components], modulIndex) => {
+      const modulStartRow = data.length;
+
+      // Add modul name row
+      let modulRow = new Array(columns.length).fill('');
+      modulRow[namaModulIndex] = modul;
+      data.push(modulRow);
+
+      // Count actual components
       let componentCount = 0;
 
-      // Add each component (only component column filled)
       if (Array.isArray(components)) {
         components.forEach(comp => {
-          let componentRow = new Array(columns.length).fill('');
-
-          // Fill component column
-          if (comp.component) {
-            componentRow[componentIndex] = comp.component;
-          } else if (typeof comp === 'string') {
-            componentRow[componentIndex] = comp;
-          } else if (comp[columns[componentIndex]]) {
-            componentRow[componentIndex] = comp[columns[componentIndex]];
+          if (comp && typeof comp === 'object') {
+            const componentRow = mapDataToColumns(comp);
+            data.push(componentRow);
+            componentCount++;
           }
-
-          // Skip if component is empty
-          if (!componentRow[componentIndex]) {
-            return;
-          }
-
-          // Copy other properties if they exist in the component object
-          columns.forEach((col, index) => {
-            if (comp[col] && index !== componentIndex) {
-              componentRow[index] = comp[col];
-            }
-          });
-
-          data.push(componentRow);
-          componentCount++;
         });
       }
 
-      // Add merge configuration if there are components
+      // Add merge configuration
       if (componentCount > 0) {
         const modulCell = `${String.fromCharCode(65 + namaModulIndex)}${modulStartRow + 1}`;
         mergeCellsConfig[modulCell] = [1, componentCount + 1];
@@ -84,18 +181,52 @@
       }
     });
 
-    // Prepare column definitions for all columns
+    // Prepare column definitions
     let columnDefs = columns.map((col, index) => {
       let columnDef = {
         title: col,
-        width: index === namaModulIndex ? 300 : (index === componentIndex ? 400 : 60),
-        readonly: index !== componentIndex // Only component column is editable
+        width: index === namaModulIndex ? 250 : (index === componentIndex ? 250 : 50),
+        readonly: index !== componentIndex
       };
 
-      // Add special formatting for specific columns
       if (col === 'type') {
         columnDef.type = 'dropdown';
-        columnDef.source = ['Option 1', 'Option 2', 'Option 3'];
+        columnDef.source = componentTypes.map(type => type.value);
+        columnDef.afterChange = (changes, source) => {
+          if (source === 'edit') {
+            const [row, prop, oldValue, newValue] = changes[0];
+            if (prop === 'type' && newValue !== oldValue) {
+              Livewire.emit('typeChanged', newValue);
+            }
+          }
+        };
+      } else if (col === 'component') {
+        columnDef.type = 'dropdown';
+        columnDef.source = componentOptions.map(comp => comp.value);
+
+        columnDef.renderer = function(instance, td, row, col, prop, value, cellProperties) {
+          Handsontable.renderers.TextRenderer.apply(this, arguments);
+          return td;
+        };
+
+        columnDef.afterChange = (changes, source) => {
+          if (source === 'edit') {
+            const [row, prop, oldValue, newValue] = changes[0];
+            if (prop === 'component' && newValue !== oldValue) {
+              const selectedComponent = componentOptions.find(c => c.value === newValue);
+              if (selectedComponent && selectedComponent.data) {
+                const hot = this;
+                // Update semua kolom yang sesuai
+                Object.entries(selectedComponent.data).forEach(([key, val]) => {
+                  const colIndex = columns.indexOf(key);
+                  if (colIndex >= 0) {
+                    hot.setDataAtCell(row, colIndex, val);
+                  }
+                });
+              }
+            }
+          }
+        };
       } else if (col === 'no' || col === 'jml' || col === 'jumlah') {
         columnDef.type = 'numeric';
       }
@@ -111,9 +242,9 @@
         data: data,
         columns: columnDefs,
         minDimensions: [columns.length, Math.max(10, data.length)],
-        freezeColumns: 5,
-        freezeRows: 5,
-        mergeCells: mergeCellsConfig, // Dynamic merge configuration
+        freezeColumns: 7,
+        freezeRows: 7,
+        mergeCells: mergeCellsConfig,
         allowInsertColumn: false,
         allowDeleteColumn: false,
         tableOverflow: true,
@@ -136,19 +267,13 @@
       let componentsForCurrentModul = [];
 
       sheetsData.forEach(row => {
-        // If row has modul name (in nama_modul column), it's a new group
         if (row[namaModulIndex]) {
-          // Save previous modul's components if exists
           if (currentModul && componentsForCurrentModul.length > 0) {
             updatedComponents[currentModul] = componentsForCurrentModul;
           }
-          // Start new modul group
           currentModul = row[namaModulIndex];
           componentsForCurrentModul = [];
-        }
-        // If row has component data and we're in a modul group
-        else if (row[componentIndex] && currentModul) {
-          // Create component object with all columns
+        } else if (row[componentIndex] && currentModul) {
           let componentObj = {};
           columns.forEach((col, colIndex) => {
             if (row[colIndex]) {
@@ -159,7 +284,6 @@
         }
       });
 
-      // Save the last modul's components
       if (currentModul && componentsForCurrentModul.length > 0) {
         updatedComponents[currentModul] = componentsForCurrentModul;
       }

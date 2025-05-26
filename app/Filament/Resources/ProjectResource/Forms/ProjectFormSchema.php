@@ -312,7 +312,9 @@ class ProjectFormSchema
                                     $existing = [];
                                 }
 
+
                                 $existing = array_unique(array_merge($existing, [$record->id]));
+                                dd($existing, $record->id);
                                 $set('modul_reference', $existing);
                             })
                     ]),

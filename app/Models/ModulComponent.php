@@ -14,4 +14,10 @@ class ModulComponent extends Model
     protected $casts = [
         'component' => 'array'
     ];
+
+    // app/Models/ModulComponent.php
+    public function partComponents()
+    {
+        return $this->hasMany(PartComponent::class, 'Nama', 'component');
+    }
 }
