@@ -2,7 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\KomponenTable;
-use App\Livewire\ModulModal;
-use App\Livewire\Modulsss;
+use App\Livewire\KomponenModul;
 
-Route::get('/', ModulModal::class);
+use App\Livewire\ModulModal;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/load-luckysheet/{sheetId}', [KomponenTable::class, 'loadLuckysheet']);
+
+Route::post('/save-luckysheet', [KomponenTable::class, 'saveLuckysheet']);
+
+Route::get('modulmodal', ModulModal::class);
+
+Route::post('/save-spreadsheet', [KomponenModul::class, 'save']);
+
+Route::get('/get-modul-data', [KomponenModul::class, 'getModulData']);

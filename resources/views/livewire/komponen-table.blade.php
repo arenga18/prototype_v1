@@ -6,70 +6,7 @@
   <link rel="stylesheet" href="https://jsuites.net/v5/jsuites.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
 
-  <div id="spreadsheet" style="width:100%;"></div>
-
-  <x-filament::modal width="3xl">
-
-    <x-slot name="trigger">
-      <x-filament::button>
-        Create Modul
-      </x-filament::button>
-    </x-slot>
-
-    <x-slot name="heading">
-      Create Modul
-    </x-slot>
-
-    <x-slot name="description">
-      <x-filament::grid style="--cols-lg: repeat(1, minmax(0, 1fr));" class="lg:grid-cols-[--cols-lg]">
-        <div class="">
-          <div class="grid grid-cols-12 gap-4">
-            <x-filament::input.wrapper class="col-span-12">
-              <x-filament::input type="text" wire:model="name" />
-            </x-filament::input.wrapper>
-          </div>
-
-        </div>
-        <div class="">
-          <x-filament-forms::field-wrapper.label>
-            Label
-          </x-filament-forms::field-wrapper.label>
-
-          <x-filament::input.wrapper class="col-span-full">
-            <x-filament::input type="text" wire:model="name" />
-          </x-filament::input.wrapper>
-        </div>
-        <div class="">
-          <x-filament-forms::field-wrapper.label>
-            Label
-          </x-filament-forms::field-wrapper.label>
-
-          <x-filament::input.wrapper>
-            <x-filament::input type="text" wire:model="name" />
-          </x-filament::input.wrapper>
-        </div>
-        <div class="">
-          <x-filament-forms::field-wrapper.label>
-            Label
-          </x-filament-forms::field-wrapper.label>
-
-          <x-filament::input.wrapper>
-            <x-filament::input type="text" wire:model="name" />
-          </x-filament::input.wrapper>
-        </div>
-
-      </x-filament::grid>
-    </x-slot>
-
-    <x-slot name="footer">
-
-    </x-slot>
-
-    {{-- Modal content --}}
-  </x-filament::modal>
-
-
-
+  <div id="spreadsheet" style="width:100%; font-size:14px;"></div>
 
   <script>
     const groupedComponents = @json($groupedComponents ?? []);
@@ -77,7 +14,6 @@
     const namaModulIndex = columns.indexOf('nama_modul');
     const componentIndex = columns.indexOf('component');
     const componentTypes = @json($componentTypes ?? []);
-    console.log('Component Types:', componentTypes);
     const componentOptions = @json($componentOptions ?? []);
 
     // Fungsi untuk memetakan data ke kolom spreadsheet

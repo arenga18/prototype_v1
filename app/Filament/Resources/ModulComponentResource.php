@@ -6,14 +6,22 @@ use App\Filament\Resources\ModulComponentResource\Pages;
 
 use App\Models\Modul;
 use App\Models\PartComponent;
+use Filament\Forms\Components\Section;
 use App\Models\ModulComponent;
+use Filament\Forms\Components\Select;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Livewire;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Button;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Set;
+use Filament\Forms\Get;
+use Filament\Facades\Filament;
+use Closure;
 
 class ModulComponentResource extends Resource
 {
@@ -27,25 +35,24 @@ class ModulComponentResource extends Resource
 
     protected static ?string $pluralLabel = "Komponen Modul";
 
+    public static function booted(): void
+    {
+        Filament::registerRenderHook(
+            'panels::body.end',
+            fn(): string => '<script>console.log("Form sudah dirender!")</script>'
+        );
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('modul')
-                    ->label('Modul')
-                    ->options(Modul::all()->pluck('code_cabinet', 'code_cabinet'))
-                    ->required(),
-
-                Forms\Components\Repeater::make('component')
-                    ->label('Komponen')
-                    ->schema([
-                        Forms\Components\Select::make('component')
-                            ->label('Component')
-                            ->options(PartComponent::all()->pluck('name', 'name'))
-                            ->required(),
+                Livewire::make('komponen-modul')
+                    ->data(fn($get, $livewire) => [
+                        'modul' => $get('modul') ?? [],
+                        'recordId' => $livewire->getRecord()?->id,
                     ])
-                    ->required(),
-            ]);
+            ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -53,8 +60,6 @@ class ModulComponentResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('modul'),
-                Tables\Columns\TextColumn::make('component'),
-                Tables\Columns\TextColumn::make('formula'),
             ])
             ->filters([
                 //
@@ -69,19 +74,7 @@ class ModulComponentResource extends Resource
             ]);
     }
 
-    public static function mutateFormDataBeforeCreate(array $data): array
-    {
-        return [
-            'modul' => $data['modul'],
-            'component' => json_encode($data['component']),
-        ];
-    }
 
-    public static function mutateFormDataBeforeFill(array $data): array
-    {
-        $data['component'] = json_decode($data['component'] ?? '[]', true);
-        return $data;
-    }
 
     public static function getRelations(): array
     {
