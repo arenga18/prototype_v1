@@ -258,6 +258,75 @@ class KomponenModul extends Component
         }
     }
 
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'modul' => 'required|string',
+            'reference_modul' => 'nullable|string',
+            'data' => 'required|array',
+            'columns' => 'required|array',
+            'recordId' => 'required|integer'
+        ]);
+
+        try {
+            $modul = $validated['modul'];
+            $referenceModul = $validated['reference_modul'];
+            $spreadsheetData = $validated['data'];
+            $columns = $validated['columns'];
+            $recordId = $validated['recordId'];
+
+            // Cari record modul yang akan diupdate
+            $modulComponent = ModulComponent::findOrFail($recordId);
+
+            // Proses data spreadsheet
+            $components = [];
+            $currentModul = '';
+
+            foreach ($spreadsheetData as $row) {
+                // Skip baris kosong
+                if (empty(array_filter($row))) continue;
+
+                // Cek jika baris berisi nama modul
+                $modulIndex = array_search('nama_modul', $columns);
+                if ($modulIndex !== false && !empty($row[$modulIndex])) {
+                    $currentModul = $row[$modulIndex];
+                    continue;
+                }
+
+                // Skip jika tidak ada modul yang aktif
+                if (empty($currentModul)) continue;
+
+                // Proses baris komponen
+                $component = [];
+                foreach ($columns as $index => $column) {
+                    if (isset($row[$index])) {
+                        $component[$column] = $row[$index];
+                    }
+                }
+
+                if (!empty($component)) {
+                    $components[] = $component;
+                }
+            }
+
+            // Update data
+            $modulComponent->component = json_encode($components);
+            $modulComponent->reference_modul = $referenceModul;
+            $modulComponent->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data berhasil diupdate',
+                'modul' => $modulComponent->modul
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengupdate data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function render()
     {
         return view('livewire.komponen-modul');

@@ -1,4 +1,4 @@
-<div style="width: 100%; overflow-x: scroll;">
+<div style="width: 100%;">
   <!-- Stylesheets and scripts -->
   <script src="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.js"></script>
   <script src="https://jsuites.net/v5/jsuites.js"></script>
@@ -121,7 +121,7 @@
     let columnDefs = columns.map((col, index) => {
       let columnDef = {
         title: col,
-        width: index === namaModulIndex ? 250 : (index === componentIndex ? 250 : 50),
+        width: index === namaModulIndex ? 150 : (index === componentIndex ? 150 : 40),
         readonly: index !== componentIndex
       };
 

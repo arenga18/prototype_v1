@@ -1,4 +1,4 @@
-<div style="width: 100%; overflow-x: scroll;">
+<div style="width: 100%;">
   <!-- Stylesheets and scripts -->
   <script src="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.js"></script>
   <script src="https://jsuites.net/v5/jsuites.js"></script>
@@ -17,6 +17,10 @@
       line-height: 36px !important;
     }
 
+    .select2-container--default .select2-selection--single {
+      border-color: #d1d5db !important;
+    }
+
     .select2-selection__arrow {
       height: 38px !important;
 
@@ -25,6 +29,10 @@
     #select2-modulReference-results {
       padding: 8px !important;
       font-size: 14px !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+      height: 38px !important;
     }
   </style>
 
@@ -76,6 +84,7 @@
     const componentOptions = @json($componentOptions ?? []);
     const modul = @json($modul ?? []);
     const modulData = @json($modulData ?? []);
+    const recordId = @json($recordId);
 
     const namaModulIndex = columns.indexOf('nama_modul');
     const componentIndex = columns.indexOf('component');
@@ -284,8 +293,6 @@
       console.warn('Tidak ada data component untuk modul:', modul);
     }
 
-
-
     $('#modulSelect').on('change', function() {
       const selectedValue = $('#modulSelect').val();
       if (!selectedValue) return;
@@ -307,7 +314,7 @@
         const modulValue = $(this).val();
         if (!modulValue) return;
 
-        console.log('Modul dipilih:', modulValue);
+        console.log('Cell dipilih:', spreadsheet[0].getCell('E1'));
 
         $.ajax({
           url: '/get-modul-data',
@@ -322,12 +329,16 @@
               let components = [];
               try {
                 components = JSON.parse(response.components);
+                console.log('Components:', components);
               } catch (err) {
                 console.error('Gagal parse JSON:', err);
                 return;
               }
 
               const componentIndex = columns.indexOf('component');
+              const PIndex = columns.indexOf('P');
+              const LIndex = columns.indexOf('L');
+              const TIndex = columns.indexOf('T');
               console.log('Component Index:', componentIndex);
               if (componentIndex < 0) {
                 console.error('Kolom component tidak ditemukan.');
@@ -346,6 +357,9 @@
 
                 if (spreadsheet[0].options.data[rowIndex]) {
                   spreadsheet[0].setValueFromCoords(componentIndex, rowIndex, compObj.component);
+                  spreadsheet[0].setValueFromCoords(PIndex, rowIndex, compObj.P);
+                  spreadsheet[0].setValueFromCoords(LIndex, rowIndex, compObj.L);
+                  spreadsheet[0].setValueFromCoords(TIndex, rowIndex, compObj.T);
                 } else {
                   spreadsheet[0].insertRow([null, null, null]); // Sesuaikan jumlah kolom
                   spreadsheet[0].setValueFromCoords(componentIndex, rowIndex, compObj.component);
@@ -398,6 +412,51 @@
         },
         error: function(xhr, status, error) {
           console.error('Error:', error);
+        }
+      });
+    });
+
+    $(document).on('click', '#key-bindings-2', function() {
+      const spreadsheetData = spreadsheet[0].getData();
+      const selectedModul = $('#modulSelect').val();
+      const referenceModul = $('#modulReference').val();
+      console.log(recordId);
+
+      if (!selectedModul) {
+        alert('Pilih modul terlebih dahulu!');
+        return;
+      }
+
+      const payload = {
+        modul: selectedModul,
+        reference_modul: referenceModul,
+        data: spreadsheetData,
+        columns: columns,
+        recordId: recordId
+      };
+
+      $.ajax({
+        url: '/update-spreadsheet',
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+          'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(payload),
+        success: function(response) {
+          if (response.status === 'success') {
+            Livewire.emit('refresh');
+          } else {
+            alert('Error: ' + response.message);
+          }
+        },
+        error: function(xhr) {
+          let errorMsg = 'Terjadi kesalahan';
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMsg = xhr.responseJSON.message;
+          }
+          alert(errorMsg);
+          console.error('Error details:', xhr.responseJSON);
         }
       });
     });

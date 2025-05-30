@@ -17,5 +17,6 @@ Route::post('/save-luckysheet', [KomponenTable::class, 'saveLuckysheet']);
 Route::get('modulmodal', ModulModal::class);
 
 Route::post('/save-spreadsheet', [KomponenModul::class, 'save']);
+Route::post('/update-spreadsheet', [KomponenModul::class, 'update']);
 
 Route::get('/get-modul-data', [KomponenModul::class, 'getModulData']);
