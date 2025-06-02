@@ -121,6 +121,17 @@ class KomponenModul extends Component
 
     public function loadDropdownData()
     {
+        $this->componentTypes = PartComponent::select('code')
+            ->distinct()
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'value' => $item->code,
+                    'label' => $item->code,
+                ];
+            })
+            ->toArray();
+
         $this->componentOptions = PartComponent::all()
             ->map(function ($item) {
                 return [
@@ -196,59 +207,38 @@ class KomponenModul extends Component
         $validated = $request->validate([
             'modul' => 'required|string',
             'reference_modul' => 'nullable|string',
-            'data' => 'required|array',
+            'components' => 'required|array',
             'columns' => 'required|array'
         ]);
 
         try {
-            $modul = $validated['modul'];
+            $mainModul = $validated['modul'];
             $referenceModul = $validated['reference_modul'];
-            $spreadsheetData = $validated['data'];
+            $componentsData = $validated['components'];
             $columns = $validated['columns'];
 
-            // Cari atau buat record modul
-            $modulComponent = ModulComponent::firstOrNew(['modul' => $modul]);
-
-            // Proses data spreadsheet
-            $components = [];
-            $currentModul = '';
-
-            foreach ($spreadsheetData as $row) {
-                // Skip baris kosong
-                if (empty(array_filter($row))) continue;
-
-                // Cek jika baris berisi nama modul
-                $modulIndex = array_search('nama_modul', $columns);
-                if ($modulIndex !== false && !empty($row[$modulIndex])) {
-                    $currentModul = $row[$modulIndex];
-                    continue;
+            // Kelompokkan komponen berdasarkan modul
+            $modulComponents = [];
+            foreach ($componentsData as $component) {
+                $modulName = $component['modul'];
+                if (!isset($modulComponents[$modulName])) {
+                    $modulComponents[$modulName] = [];
                 }
-
-                // Skip jika tidak ada modul yang aktif
-                if (empty($currentModul)) continue;
-
-                // Proses baris komponen
-                $component = [];
-                foreach ($columns as $index => $column) {
-                    if (isset($row[$index]) && $row[$index] !== '') {
-                        $component[$column] = $row[$index];
-                    }
-                }
-
-                if (!empty($component)) {
-                    $components[] = $component;
-                }
+                $modulComponents[$modulName][] = $component['data'];
             }
 
-            // Simpan ke database
-            $modulComponent->component = json_encode($components);
-            $modulComponent->reference_modul = $referenceModul;
-            $modulComponent->save();
+            // Simpan setiap modul
+            foreach ($modulComponents as $modulName => $components) {
+                $modulComponent = ModulComponent::firstOrNew(['modul' => $modulName]);
+                $modulComponent->component = json_encode($components);
+                $modulComponent->reference_modul = ($modulName === $mainModul) ? $referenceModul : null;
+                $modulComponent->save();
+            }
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data berhasil disimpan',
-                'modul' => $modul
+                'modul' => $mainModul
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -263,49 +253,26 @@ class KomponenModul extends Component
         $validated = $request->validate([
             'modul' => 'required|string',
             'reference_modul' => 'nullable|string',
-            'data' => 'required|array',
+            'components' => 'required|array',
             'columns' => 'required|array',
             'recordId' => 'required|integer'
         ]);
 
         try {
-            $modul = $validated['modul'];
+            $mainModul = $validated['modul'];
             $referenceModul = $validated['reference_modul'];
-            $spreadsheetData = $validated['data'];
+            $componentsData = $validated['components'];
             $columns = $validated['columns'];
             $recordId = $validated['recordId'];
 
             // Cari record modul yang akan diupdate
             $modulComponent = ModulComponent::findOrFail($recordId);
 
-            // Proses data spreadsheet
+            // Filter hanya komponen yang sesuai dengan modul utama
             $components = [];
-            $currentModul = '';
-
-            foreach ($spreadsheetData as $row) {
-                // Skip baris kosong
-                if (empty(array_filter($row))) continue;
-
-                // Cek jika baris berisi nama modul
-                $modulIndex = array_search('nama_modul', $columns);
-                if ($modulIndex !== false && !empty($row[$modulIndex])) {
-                    $currentModul = $row[$modulIndex];
-                    continue;
-                }
-
-                // Skip jika tidak ada modul yang aktif
-                if (empty($currentModul)) continue;
-
-                // Proses baris komponen
-                $component = [];
-                foreach ($columns as $index => $column) {
-                    if (isset($row[$index])) {
-                        $component[$column] = $row[$index];
-                    }
-                }
-
-                if (!empty($component)) {
-                    $components[] = $component;
+            foreach ($componentsData as $component) {
+                if ($component['modul'] === $mainModul) {
+                    $components[] = $component['data'];
                 }
             }
 
@@ -326,7 +293,6 @@ class KomponenModul extends Component
             ], 500);
         }
     }
-
     public function render()
     {
         return view('livewire.komponen-modul');
