@@ -15,6 +15,8 @@ use Filament\Forms\Components\Grid;
 
 use App\Models\Material;
 use App\Models\Modul;
+use Filament\Forms\Get;
+use App\Filament\Resources\ProjectResource\Forms\SelectComponents;
 
 class ProjectFormSchema
 {
@@ -139,16 +141,8 @@ class ProjectFormSchema
                                 TableRepeater::make('komp_anodize_spesification')
                                     ->label('Komp / Anodize')
                                     ->schema([
-                                        Select::make('key')
-                                            ->label('Bahan')
-                                            ->options(
-                                                Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
-                                            )->searchable()->extraAttributes([
-                                                'style' => 'border: none !important; border-radius: 0 !important;',
-                                            ]),
-                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        SelectComponents::materialNameSelect("Nama barang"),
                                     ])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Data')
@@ -156,14 +150,8 @@ class ProjectFormSchema
                                 TableRepeater::make('alu_frame_spesification')
                                     ->label('Aluminium Frame')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(
-                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
-                                        )->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
-                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        SelectComponents::materialNameSelect("Nama barang"),
                                     ])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Data')
@@ -171,14 +159,8 @@ class ProjectFormSchema
                                 TableRepeater::make('hinges_spesification')
                                     ->label('Engsel (Hinges)')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(
-                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
-                                        )->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
-                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        SelectComponents::materialNameSelect("Nama barang"),
                                     ])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Data')
@@ -186,14 +168,8 @@ class ProjectFormSchema
                                 TableRepeater::make('rail_spesification')
                                     ->label('Rel (Rail)')
                                     ->schema([
-                                        Select::make('key')->label('Tipe')->options(
-                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
-                                        )->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
-                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        SelectComponents::materialNameSelect("Nama barang"),
                                     ])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Rel')
@@ -221,14 +197,8 @@ class ProjectFormSchema
                                 TableRepeater::make('profile_spesification')
                                     ->label('Profil')
                                     ->schema([
-                                        Select::make('key')->label('Kategori')->options(
-                                            Material::all()->mapWithKeys(fn($item) => [(string) $item->cat => $item->cat])
-                                        )->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
-                                        Select::make('value')->label('Nama barang')->options(Material::pluck('name', 'name'))->searchable()->extraAttributes([
-                                            'style' => 'border: none !important; border-radius: 0 !important;',
-                                        ]),
+                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        SelectComponents::materialNameSelect("Nama barang"),
                                     ])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Data')
@@ -330,9 +300,6 @@ class ProjectFormSchema
                             }),
                     ]),
             ])
-                ->nextAction(
-                    fn(Action $action) => $action->label(''),
-                )
                 ->startOnStep(
                     request()->routeIs('filament.admin.resources.projects.edit') && request()->get('step') === '2' ? 2 : 1
                 )

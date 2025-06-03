@@ -76,15 +76,15 @@
           'name': 'component',
           'material': 'bahan',
           'thickness': 't_bahan',
-          'number_of_sub': 'jumlah',
+          'number_of_sub': 'sub',
           'V': 'v',
           'V2': 'v2',
           'H': 'h',
           'profile3': 'profile3',
           'profile2': 'profile2',
           'profile': 'profile',
-          'outside': 'luar',
-          'inside': 'dalam',
+          'outside': 'l_bahan',
+          'inside': 'd_bahan',
           'P1': 'p1',
           'P2': 'p2',
           'L1': 'l1',
@@ -275,6 +275,8 @@
         };
       }
 
+
+
       // Buat workbook
       const {
         data: cellData,
@@ -288,6 +290,7 @@
             id: "sheet1",
             name: "Components",
             tabColor: "#FF0000",
+            zoomRatio: 0.8,
             hidden: BooleanNumber.FALSE,
             freeze: {
               xSplit: 7,

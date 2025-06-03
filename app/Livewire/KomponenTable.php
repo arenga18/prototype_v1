@@ -24,13 +24,9 @@ class KomponenTable extends Component
         $this->emit('updateComponentOptions', $this->componentOptions);
     }
 
-    public function __construct()
-    {
-        $this->columns = config('breakdown_fields.breakdown_col');
-    }
-
     public function mount($moduls)
     {
+        $this->columns = config('breakdown_fields.breakdown_col');
         $this->moduls = $moduls ?? [];
         $this->loadGroupedComponents();
         $this->loadDropdownData();
