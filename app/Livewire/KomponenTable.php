@@ -11,6 +11,7 @@ class KomponenTable extends Component
     public $moduls = [];
     public $groupedComponents = [];
     public $columns;
+    public $fieldMapping;
     public $componentTypes = []; // Untuk dropdown type
     public $componentOptions = [];
     protected $listeners = ['typeChanged'];
@@ -27,6 +28,7 @@ class KomponenTable extends Component
     public function mount($moduls)
     {
         $this->columns = config('breakdown_fields.breakdown_col');
+        $this->fieldMapping = config('breakdown_fields.fields_mapping');
         $this->moduls = $moduls ?? [];
         $this->loadGroupedComponents();
         $this->loadDropdownData();

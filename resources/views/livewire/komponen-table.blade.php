@@ -29,6 +29,7 @@
       const componentOptions = @json($componentOptions ?? []);
       const modul = @json($modul ?? []);
       const modulData = @json($modulData ?? []);
+      const fieldMapping = @json($fieldMapping ?? []);
 
       const namaModulIndex = columns.indexOf('nama_modul');
       const componentIndex = columns.indexOf('component');
@@ -69,32 +70,6 @@
 
       // Fungsi untuk memetakan data ke kolom
       function mapDataToColumns(comp) {
-        const fieldMapping = {
-          'cat': 'cat',
-          'code': 'type',
-          'KS': 'kode',
-          'name': 'component',
-          'material': 'bahan',
-          'thickness': 't_bahan',
-          'number_of_sub': 'sub',
-          'V': 'v',
-          'V2': 'v2',
-          'H': 'h',
-          'profile3': 'profile3',
-          'profile2': 'profile2',
-          'profile': 'profile',
-          'outside': 'l_bahan',
-          'inside': 'd_bahan',
-          'P1': 'p1',
-          'P2': 'p2',
-          'L1': 'l1',
-          'L2': 'l2',
-          'rail': 'rel',
-          'hinge': 'engsel',
-          'number_of_anodize': 'jumlah_anodize@',
-          'minifix': 'minifix',
-          'dowel': 'dowel'
-        };
 
         let componentRow = {};
 

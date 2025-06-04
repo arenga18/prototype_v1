@@ -27,6 +27,26 @@
       height: 100%;
     }
 
+    .fullscreen-mode {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 90vh !important;
+      z-index: 100 !important;
+      background: white;
+      padding: 20px;
+    }
+
+    .fullscreen-mode #app {
+      height: calc(90vh - 40px) !important;
+    }
+
+    .fullscreen-mode #fullscreen-btn {
+      top: 10px !important;
+      right: 20px !important;
+    }
+
     .selection .select2-selection {
       height: 38px !important;
     }
@@ -57,7 +77,7 @@
   </style>
 
   <!-- Form controls -->
-  <div class="flex w-full gap-x-6">
+  <div class="flex w-full gap-x-6 items-center">
     <div class="mb-4">
       <label for="modul" class="block mb-2 text-sm font-medium text-gray-700">Modul</label>
       <select id="modulSelect" wire:model="modul" class="border border-gray-300 text-sm rounded p-2">
@@ -77,7 +97,17 @@
         @endforeach
       </select>
     </div>
+    <button id="fullscreen-btn"
+      style="z-index: 1000; width: fit-content; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 5px 10px; cursor: pointer; display: flex; align-items: center; gap: 5px; height: fit-content;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path
+          d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z" />
+      </svg>
+      <span>Fullscreen</span>
+    </button>
   </div>
+
+
 
   <!-- Spreadsheet container -->
   <div id="app" style="height: 55vh;"></div>
@@ -91,6 +121,54 @@
       });
     });
 
+
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const container = document.querySelector('div[style="width: 100%; position: relative;"]');
+
+    fullscreenBtn.addEventListener('click', function() {
+      container.classList.toggle('fullscreen-mode');
+
+      // Update icon dan teks tombol
+      const icon = fullscreenBtn.querySelector('svg');
+      const isFullscreen = container.classList.contains('fullscreen-mode');
+
+      if (isFullscreen) {
+        fullscreenBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
+            </svg>
+            Exit Fullscreen
+          `;
+      } else {
+        fullscreenBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+            </svg>
+            Fullscreen
+          `;
+      }
+
+      // Trigger resize event untuk Univer agar menyesuaikan ukuran
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+    });
+
+    // Handle ESC key untuk keluar dari fullscreen
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && container.classList.contains('fullscreen-mode')) {
+        container.classList.remove('fullscreen-mode');
+        fullscreenBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+            </svg>
+            Fullscreen
+          `;
+        window.dispatchEvent(new Event('resize'));
+      }
+    });
+
+
     // Data dari server
     const groupedComponents = @json($groupedComponents ?? []);
     const columns = @json($columns ?? []);
@@ -99,12 +177,11 @@
     const modul = @json($modul ?? []);
     const modulData = @json($modulData ?? []);
     const recordId = @json($recordId);
+    const fieldMapping = @json($fieldMapping ?? []);
 
     const namaModulIndex = columns.indexOf('nama_modul');
     const componentIndex = columns.indexOf('component');
     const typeIndex = columns.indexOf('type');
-
-    console.log(componentTypes);
 
     // Inisialisasi Univer
     const {
@@ -245,32 +322,7 @@
 
     // Fungsi untuk memetakan data ke kolom
     function mapDataToColumns(comp) {
-      const fieldMapping = {
-        'cat': 'cat',
-        'code': 'type',
-        'KS': 'kode',
-        'name': 'component',
-        'material': 'bahan',
-        'thickness': 't_bahan',
-        'number_of_sub': 'jumlah',
-        'V': 'v',
-        'V2': 'v2',
-        'H': 'h',
-        'profile3': 'profile3',
-        'profile2': 'profile2',
-        'profile': 'profile',
-        'outside': 'luar',
-        'inside': 'dalam',
-        'P1': 'p1',
-        'P2': 'p2',
-        'L1': 'l1',
-        'L2': 'l2',
-        'rail': 'rel',
-        'hinge': 'engsel',
-        'number_of_anodize': 'jumlah_anodize@',
-        'minifix': 'minifix',
-        'dowel': 'dowel'
-      };
+
 
       let componentRow = {};
 
@@ -332,6 +384,7 @@
             startRow: 1,
             startColumn: 7
           },
+          zoomRatio: 0.8,
           rowCount: Math.max(2, Object.keys(cellData).length),
           columnCount: columns.length,
           defaultColumnWidth: 30,
@@ -363,47 +416,96 @@
       }
     });
 
-    // Fungsi untuk menambahkan dropdown ke kolom component
-    function applyComponentDropdown() {
-      if (componentIndex >= 0 && componentOptions.length > 0) {
-        const componentDropdownRule = univerAPI
+    function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
+      if (columnIndex <= 0 || !options?.length) return;
+
+      try {
+        const dropdownRule = univerAPI
           .newDataValidation()
-          .requireValueInList(componentOptions.map(option => option.value))
+          .requireValueInList(options.map(opt => opt.value || opt))
           .setOptions({
             renderMode: univerAPI.Enum.DataValidationRenderMode.ARROW,
-            allowInvalid: true,
+            allowInvalid: false,
             showDropDown: true,
-            showErrorMessage: false
+            showErrorMessage: true
           })
           .build();
 
-        // Apply to ALL rows in the column (including header)
-        worksheet.getRange(1, componentIndex, worksheet.getMaxRows(), 1).setDataValidation(componentDropdownRule);
+        const range = worksheet.getRange(1, columnIndex, worksheet.getMaxRows(), 1);
+
+        if (clearInvalid) {
+          const values = range.getValue() || [];
+          const safeValues = Array.isArray(values) ? values : [
+            [values]
+          ];
+
+          safeValues.forEach((row, i) => {
+            const cellValue = Array.isArray(row) ? row[0] : row;
+            if (cellValue && !options.some(opt => (opt.value || opt) === cellValue)) {
+              worksheet.getRange(i + 1, columnIndex).clearValue();
+            }
+          });
+        }
+
+        range.setDataValidation(dropdownRule);
+      } catch (error) {
+        console.error(`Error applying dropdown to column ${columnIndex}:`, error);
       }
     }
 
-    // Fungsi untuk menambahkan dropdown ke kolom type
-    function applyTypeDropdown() {
-      if (typeIndex >= 0 && componentTypes.length > 0) {
-        const typeDropdownRule = univerAPI
-          .newDataValidation()
-          .requireValueInList(componentTypes.map(option => option.value))
-          .setOptions({
-            renderMode: univerAPI.Enum.DataValidationRenderMode.ARROW,
-            allowInvalid: true,
-            showDropDown: true,
-            showErrorMessage: false
-          })
-          .build();
+    const COLUMN_DROPDOWNS = {
+      type: {
+        index: 1,
+        options: componentOptions
+      },
+      component: {
+        index: 6,
+        options: componentOptions
+      },
+      luar: {
+        index: 18,
+        options: componentOptions
+      },
+      dalam: {
+        index: 20,
+        options: componentOptions
+      },
+      rel: {
+        index: 36,
+        options: componentOptions
+      },
+      engsel: {
+        index: 37,
+        options: componentOptions
+      },
+      v: {
+        index: 38,
+        options: componentOptions
+      },
+      v2: {
+        index: 39,
+        options: componentOptions
+      },
+      h: {
+        index: 40,
+        options: componentOptions
+      },
+      nama_barang: {
+        index: 41,
+        options: componentOptions
+      },
+    };
 
-        // Apply to ALL rows in the column (including header)
-        worksheet.getRange(1, typeIndex, worksheet.getMaxRows(), 1).setDataValidation(typeDropdownRule);
-      }
+    function applyAllDropdowns() {
+      Object.values(COLUMN_DROPDOWNS).forEach(({
+        index,
+        options
+      }) => {
+        applyDropdownToColumn(index, options);
+      });
     }
 
-    // Panggil fungsi untuk menambahkan dropdown saat pertama kali load
-    applyComponentDropdown();
-    applyTypeDropdown();
+    applyAllDropdowns()
 
     // Fungsi untuk mendapatkan semua data dari worksheet
     function getAllData() {
@@ -426,9 +528,7 @@
           // Jika tidak ada formula, simpan nilai biasa
           else if (cell?.v !== undefined) {
             rowData[colIndex] = cell.v || '';
-          }
-          // Default empty string
-          else {
+          } else {
             rowData[colIndex] = '';
           }
         });
@@ -466,97 +566,83 @@
       if (sheet.getMaxRows() < 2) {
         sheet.insertRows(1, 1);
       }
-
-      // Terapkan kembali dropdown untuk kolom component dan type
-      applyComponentDropdown();
-      applyTypeDropdown();
+      applyAllDropdowns()
     });
 
-    $('#modulReference').on('change', function() {
+    $('#modulReference').on('change', async function() {
       const modulValue = $(this).val();
       if (!modulValue) return;
 
-      $.ajax({
-        url: '/get-modul-data',
-        method: 'GET',
-        data: {
-          modul: modulValue
-        },
-        success: function(response) {
-          if (response.success) {
-            let components = [];
-            try {
-              components = JSON.parse(response.components);
-              if (!Array.isArray(components)) {
-                throw new Error('Data komponen bukan array');
-              }
-            } catch (err) {
-              console.error('Gagal parse JSON:', err);
-              return;
-            }
-
-            const workbook = univerAPI.getActiveWorkbook();
-            const sheet = workbook.getActiveSheet();
-            const componentIndex = columns.indexOf('component');
-
-            if (componentIndex < 0) {
-              console.error('Kolom component tidak ditemukan.');
-              return;
-            }
-
-            // Kosongkan data yang ada kecuali header (baris 0)
-            for (let row = 2; row < sheet.getMaxRows(); row++) {
-              for (let col = 0; col < sheet.getMaxColumns(); col++) {
-                const range = sheet.getRange(row, col);
-                if (range) {
-                  range.clear();
-                }
-              }
-            }
-
-            // Masukkan data baru mulai dari baris 2
-            components.forEach((compObj, i) => {
-              const rowIndex = i + 2; // Mulai dari baris 2 (setelah header)
-
-              // Jika baris belum ada, tambahkan
-              if (rowIndex >= sheet.getMaxRows()) {
-                sheet.insertRows(rowIndex, 1);
-              }
-
-              // Loop melalui semua property di compObj
-              Object.keys(compObj).forEach(key => {
-                // Cari index kolom berdasarkan nama field
-                const colIndex = columns.indexOf(key);
-
-                // Jika kolom ditemukan di spreadsheet
-                if (colIndex >= 0) {
-                  const value = compObj[key];
-                  if (value !== undefined && value !== null) {
-                    sheet.getRange(rowIndex, colIndex).setValue(value);
-                  }
-                }
-              });
-
-              // Pastikan component diisi (fallback ke name jika ada)
-              const componentValue = compObj.component || compObj.name || '';
-              sheet.getRange(rowIndex, componentIndex).setValue(componentValue);
-            });
-
-            // Terapkan kembali dropdown
-            applyComponentDropdown();
-            applyTypeDropdown();
-
-          } else {
-            console.warn('Tidak ada data untuk modul:', modulValue);
+      try {
+        const response = await $.ajax({
+          url: '/get-modul-data',
+          method: 'GET',
+          data: {
+            modul: modulValue
           }
-        },
-        error: function(xhr, status, error) {
-          console.error('Gagal ambil data:', error);
+        });
+
+        if (!response.success) {
+          console.warn('Tidak ada data untuk modul:', modulValue);
+          return;
         }
-      });
+
+        let components = [];
+        try {
+          components = JSON.parse(response.components);
+          if (!Array.isArray(components)) {
+            throw new Error('Data komponen bukan array');
+          }
+        } catch (err) {
+          console.error('Gagal parse JSON:', err);
+          return;
+        }
+
+        const workbook = univerAPI.getActiveWorkbook();
+        const sheet = workbook.getActiveSheet();
+        const componentIndex = columns.indexOf('component');
+
+        if (componentIndex < 0) {
+          console.error('Kolom component tidak ditemukan.');
+          return;
+        }
+
+        // Kosongkan sheet (kecuali header)
+        sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns()).clear();
+
+        // Gunakan for...of untuk sequential execution
+        for (const [i, compObj] of components.entries()) {
+          const rowIndex = i + 2;
+
+          // Tambahkan baris jika diperlukan
+          if (rowIndex >= sheet.getMaxRows()) {
+            sheet.insertRows(rowIndex, 1);
+          }
+
+          // Proses semua kolom secara synchronous
+          for (const key of Object.keys(compObj)) {
+            const colIndex = columns.indexOf(key);
+            if (colIndex >= 0) {
+              const value = compObj[key];
+              if (value != null) {
+                await sheet.getRange(rowIndex, colIndex).setValue(value);
+              }
+            }
+          }
+
+          // Isi component column
+          const componentValue = compObj.component || compObj.name || '';
+          await sheet.getRange(rowIndex, componentIndex).setValue(componentValue);
+        }
+
+        // Terapkan dropdown setelah semua data terisi
+        await applyAllDropdowns();
+
+      } catch (error) {
+        console.error('Error:', error);
+      }
     });
 
-    // Event handler untuk tombol simpan
     // Event handler untuk tombol simpan
     $(document).on('click', '#key-bindings-1', function() {
       const spreadsheetData = getAllData();

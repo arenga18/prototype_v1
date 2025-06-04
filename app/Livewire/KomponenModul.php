@@ -17,6 +17,7 @@ class KomponenModul extends Component
     public $modulReference = [];
     public $groupedComponents = [];
     public $columns;
+    public $fieldMapping;
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
@@ -29,6 +30,7 @@ class KomponenModul extends Component
     public function mount($modul = [], $recordId = null)
     {
         $this->columns = config('breakdown_fields.breakdown_col') ?? [];
+        $this->fieldMapping = config('breakdown_fields.field_mapping') ?? [];
         $this->recordId = $recordId;
 
         if ($recordId) {
