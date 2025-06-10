@@ -21,7 +21,6 @@ class KomponenModul extends Component
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
-
     protected $listeners = [
         'modulUpdated' => 'handleModulUpdate',
         'refresh' => '$refresh'
@@ -43,8 +42,13 @@ class KomponenModul extends Component
                 $this->modulList = [];
             }
         } else {
-            // Jika tidak ada recordId, tampilkan semua
-            $this->modulList = Modul::all()->pluck('code_cabinet')->toArray();
+            // Ambil semua code_cabinet yang sudah ada di modulComponent
+            $usedModuls = ModulComponent::pluck('modul')->toArray();
+
+            // Ambil semua modul yang belum digunakan
+            $this->modulList = Modul::whereNotIn('code_cabinet', $usedModuls)
+                ->pluck('code_cabinet')
+                ->toArray();
         }
 
         $this->modulReference = ModulComponent::all()->pluck('modul')->toArray();

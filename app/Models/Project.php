@@ -27,6 +27,7 @@ class Project extends Model
         'profile_spesification',
         'size_distance_spesification',
         'modul_reference',
+        'modul_breakdown',
     ];
 
     protected $casts = [
@@ -42,5 +43,6 @@ class Project extends Model
         'profile_spesification' => 'array',
         'size_distance_spesification' => 'array',
         'modul_reference' => 'array',
+        'modul_breakdown' => 'array',
     ];
 }

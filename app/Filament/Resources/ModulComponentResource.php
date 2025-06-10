@@ -59,8 +59,9 @@ class ModulComponentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('modul'),
-            ])
+                Tables\Columns\TextColumn::make('modul')
+                    ->searchable(),
+            ])->searchable()
             ->filters([
                 //
             ])

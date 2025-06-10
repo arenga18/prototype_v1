@@ -293,9 +293,10 @@ class ProjectFormSchema
                 Wizard\Step::make('Breakdown Modul')
                     ->schema([
                         Livewire::make('komponen-table')
-                            ->data(function ($get) {
+                            ->data(function ($get, $livewire) {
                                 return [
                                     'moduls' => $get('modul_reference') ?? [],
+                                    'recordId' => $livewire->getRecord()?->id,
                                 ];
                             }),
                     ]),
