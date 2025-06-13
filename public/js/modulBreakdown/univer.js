@@ -3,6 +3,8 @@ const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
 console.log("parts : ", partComponentsData);
+console.log("groupComponent: ", groupedComponents);
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -103,6 +105,7 @@ function prepareComponentSheetData() {
                 processedModuls.add(modulName);
             }
         });
+        console.log("uniqueGroup: ", uniqueGroups);
 
         uniqueGroups.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
@@ -266,9 +269,6 @@ const workbook = univerAPI.createWorkbook({
 });
 
 const worksheet = workbook.getActiveSheet();
-const sheetName = worksheet.getSheetName();
-
-// worksheet.setCellData(cellData);
 
 // Atur lebar kolom
 columns.forEach((col, index) => {

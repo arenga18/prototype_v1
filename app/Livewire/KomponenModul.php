@@ -21,6 +21,7 @@ class KomponenModul extends Component
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
+
     protected $listeners = [
         'modulUpdated' => 'handleModulUpdate',
         'refresh' => '$refresh'
@@ -33,7 +34,6 @@ class KomponenModul extends Component
         $this->recordId = $recordId;
 
         if ($recordId) {
-            // Ambil modul berdasarkan ID dari URL
             $modulComponent = ModulComponent::find($recordId);
             if ($modulComponent) {
                 $this->modulList = [$modulComponent->modul];
@@ -42,10 +42,7 @@ class KomponenModul extends Component
                 $this->modulList = [];
             }
         } else {
-            // Ambil semua code_cabinet yang sudah ada di modulComponent
             $usedModuls = ModulComponent::pluck('modul')->toArray();
-
-            // Ambil semua modul yang belum digunakan
             $this->modulList = Modul::whereNotIn('code_cabinet', $usedModuls)
                 ->pluck('code_cabinet')
                 ->toArray();
@@ -58,7 +55,6 @@ class KomponenModul extends Component
     public function getModulData(Request $request)
     {
         $modul = $request->query('modul');
-
         $modulData = ModulComponent::where('modul', $modul)->first();
 
         if ($modulData) {
@@ -66,21 +62,20 @@ class KomponenModul extends Component
                 'success' => true,
                 'components' => $modulData->component
             ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'components' => null
-            ]);
         }
-    }
 
+        return response()->json([
+            'success' => false,
+            'components' => null
+        ]);
+    }
 
     public function updateGroupedComponent($payload)
     {
-        $modul = $payload['modul'];
-        $index = $payload['index'];
-        $field = $payload['field'];
-        $value = $payload['value'];
+        $modul = $payload['modul'] ?? null;
+        $index = $payload['index'] ?? null;
+        $field = $payload['field'] ?? null;
+        $value = $payload['value'] ?? null;
 
         if (!$modul || $index === null || !$field) return;
 
@@ -88,29 +83,55 @@ class KomponenModul extends Component
         if (!$modulComponent) return;
 
         $componentList = $this->parseComponentData($modulComponent->component);
+        $relativeIndex = $index - 1; // Adjust for zero-based index
 
-        // Cari index relatif terhadap komponen (bukan row di spreadsheet)
-        $relativeIndex = $index - 1; // Adjust jika baris pertama modul = 0
         if (!isset($componentList[$relativeIndex])) return;
 
+        // Update the specific field
         $componentList[$relativeIndex][$field] = $value;
 
-        if ($field === 'component') {
-            $partComponent = PartComponent::where('name', $value)->first();
+        // If component name changed, merge with PartComponent data
+        if ($field === 'name') {
+            $partComponent = $this->getPartComponentByName($value);
             if ($partComponent) {
-                $componentList[$relativeIndex] = array_merge(
-                    $componentList[$relativeIndex],
-                    $partComponent->toArray()
-                );
+                $componentData = $this->extractPartComponentData($partComponent);
+                if ($componentData) {
+                    $componentList[$relativeIndex] = array_merge(
+                        $componentList[$relativeIndex],
+                        $componentData
+                    );
+                }
             }
         }
 
         $modulComponent->component = json_encode($componentList);
         $modulComponent->save();
-
         $this->loadGroupedComponents();
     }
 
+    protected function getPartComponentByName($name)
+    {
+        return PartComponent::where('part_component', 'like', '%"name":"' . $name . '"%')->first();
+    }
+
+    protected function extractPartComponentData($partComponent)
+    {
+        if (empty($partComponent->part_component)) {
+            return null;
+        }
+
+        $decoded = json_decode($partComponent->part_component, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !isset($decoded[0]['data'])) {
+            return null;
+        }
+
+        return $decoded[0]['data'];
+    }
+
+    protected function transformPartComponent($partComponent)
+    {
+        return $this->extractPartComponentData($partComponent) ?? [];
+    }
 
     public function handleModulUpdate($modul)
     {
@@ -119,7 +140,6 @@ class KomponenModul extends Component
         $this->loadDropdownData();
     }
 
-
     public function updatedModul()
     {
         $this->loadGroupedComponents();
@@ -127,35 +147,59 @@ class KomponenModul extends Component
 
     public function loadDropdownData()
     {
-        $this->componentTypes = PartComponent::select('code')
-            ->distinct()
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'value' => $item->code,
-                    'label' => $item->code,
-                ];
-            })
-            ->toArray();
+        $parts = PartComponent::all();
+        $types = [];
+        $options = [];
 
-        $this->componentOptions = PartComponent::all()
-            ->map(function ($item) {
-                return [
-                    'value' => $item->name,
-                    'label' => $item->name,
-                    'data' => $item->toArray()
+        foreach ($parts as $part) {
+            // Decode the JSON string from part_component
+            $decoded = json_decode($part->part_component, true);
+
+            // Skip if JSON is invalid
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                continue;
+            }
+
+            // Process each item in the array
+            foreach ($decoded as $item) {
+                // Skip if item doesn't have data
+                if (!isset($item['data'])) {
+                    continue;
+                }
+
+                $componentData = $item['data'];
+
+                // Skip if no name is set
+                if (!isset($componentData['name'])) {
+                    continue;
+                }
+
+                // Build component types
+                if (isset($componentData['code'])) {
+                    $types[$componentData['code']] = [
+                        'value' => $componentData['code'],
+                        'label' => $componentData['code']
+                    ];
+                }
+
+                // Build component options
+                $options[] = [
+                    'value' => $componentData['name'],
+                    'label' => $componentData['name'],
+                    'data' => $componentData
                 ];
-            })
-            ->toArray();
+            }
+        }
+
+        $this->componentTypes = array_values($types);
+        $this->componentOptions = $options;
     }
 
     public function loadGroupedComponents()
     {
         $this->groupedComponents = [];
 
-        echo "Modul yang dipilih: " . implode(', ', $this->modul) . "\n";
-
-        if ($this->modul) {
+        if (!empty($this->modul)) {
             $modulData = ModulComponent::where('modul', $this->modul)->first();
             if ($modulData) {
                 $componentData = $this->parseComponentData($modulData->component);
@@ -169,7 +213,8 @@ class KomponenModul extends Component
     protected function parseComponentData($componentData)
     {
         if (is_string($componentData)) {
-            return json_decode($componentData, true) ?? [];
+            $data = json_decode($componentData, true) ?? [];
+            return is_array($data) ? $data : [];
         }
 
         return is_array($componentData) ? $componentData : [];
@@ -191,20 +236,21 @@ class KomponenModul extends Component
 
         $componentList[$index][$field] = $value;
 
-        // Jika component diubah, update data terkait
-        if ($field === 'component') {
-            $partComponent = PartComponent::where('name', $value)->first();
+        if ($field === 'name') {
+            $partComponent = $this->getPartComponentByName($value);
             if ($partComponent) {
-                $componentList[$index] = array_merge(
-                    $componentList[$index],
-                    $partComponent->toArray()
-                );
+                $componentData = $this->extractPartComponentData($partComponent);
+                if ($componentData) {
+                    $componentList[$index] = array_merge(
+                        $componentList[$index],
+                        $componentData
+                    );
+                }
             }
         }
 
         $modulComponent->component = json_encode($componentList);
         $modulComponent->save();
-
         $this->loadGroupedComponents();
     }
 
@@ -223,7 +269,6 @@ class KomponenModul extends Component
             $componentsData = $validated['components'];
             $columns = $validated['columns'];
 
-            // Kelompokkan komponen berdasarkan modul
             $modulComponents = [];
             foreach ($componentsData as $component) {
                 $modulName = $component['modul'];
@@ -233,7 +278,6 @@ class KomponenModul extends Component
                 $modulComponents[$modulName][] = $component['data'];
             }
 
-            // Simpan setiap modul
             foreach ($modulComponents as $modulName => $components) {
                 $modulComponent = ModulComponent::firstOrNew(['modul' => $modulName]);
                 $modulComponent->component = json_encode($components);
@@ -271,18 +315,15 @@ class KomponenModul extends Component
             $columns = $validated['columns'];
             $recordId = $validated['recordId'];
 
-            // Cari record modul yang akan diupdate
             $modulComponent = ModulComponent::findOrFail($recordId);
-
-            // Filter hanya komponen yang sesuai dengan modul utama
             $components = [];
+
             foreach ($componentsData as $component) {
                 if ($component['modul'] === $mainModul) {
                     $components[] = $component['data'];
                 }
             }
 
-            // Update data
             $modulComponent->component = json_encode($components);
             $modulComponent->reference_modul = $referenceModul;
             $modulComponent->save();
@@ -299,6 +340,7 @@ class KomponenModul extends Component
             ], 500);
         }
     }
+
     public function render()
     {
         return view('livewire.komponen-modul');

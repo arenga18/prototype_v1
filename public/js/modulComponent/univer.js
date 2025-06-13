@@ -2,6 +2,9 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
+console.log("componentTypes : ", componentTypes);
+console.log("componentOption : ", componentOptions);
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -298,7 +301,7 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
 const COLUMN_DROPDOWNS = {
     type: {
         index: 1,
-        options: componentOptions,
+        options: componentTypes,
     },
     component: {
         index: 6,
@@ -586,7 +589,6 @@ $(document).on("click", "#key-bindings-1", function () {
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
-    console.log("Spreadsheet Data:", spreadsheetData);
     const selectedModul = $("#modulSelect").val();
     const referenceModul = $("#modulReference").val();
 

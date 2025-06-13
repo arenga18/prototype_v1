@@ -3,25 +3,13 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ModulComponentResource\Pages;
-
-use App\Models\Modul;
-use App\Models\PartComponent;
-use Filament\Forms\Components\Section;
 use App\Models\ModulComponent;
-use Filament\Forms\Components\Select;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Livewire;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Button;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Set;
-use Filament\Forms\Get;
 use Filament\Facades\Filament;
-use Closure;
 
 class ModulComponentResource extends Resource
 {
