@@ -165,6 +165,7 @@ function prepareUniverData() {
 function mapDataToColumns(comp) {
     let componentRow = {};
 
+    // Map standard fields
     componentRow[componentIndex] = comp.component || comp.name || "";
 
     if (typeIndex >= 0) {
@@ -175,6 +176,15 @@ function mapDataToColumns(comp) {
         componentRow[namaModulIndex] = comp.modul || "";
     }
 
+    // Map all fields from the component data to their respective columns
+    Object.keys(comp).forEach((key) => {
+        const colIndex = columns.indexOf(key);
+        if (colIndex >= 0 && comp[key] !== undefined && comp[key] !== null) {
+            componentRow[colIndex] = comp[key];
+        }
+    });
+
+    // Map fields according to fieldMapping
     Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
         const colIndex = columns.indexOf(targetColumn);
         if (
@@ -183,17 +193,6 @@ function mapDataToColumns(comp) {
             comp[sourceField] !== null
         ) {
             componentRow[colIndex] = comp[sourceField];
-        }
-    });
-
-    columns.forEach((col, index) => {
-        if (
-            index !== componentIndex &&
-            index !== namaModulIndex &&
-            comp[col] !== undefined &&
-            comp[col] !== null
-        ) {
-            componentRow[index] = comp[col];
         }
     });
 
@@ -253,6 +252,32 @@ const worksheet = workbook.getActiveSheet();
 console.log("worksheet : ", worksheet);
 console.log("workbook : ", workbook);
 
+function handleComponentChange(rowIndex, componentName) {
+    const workbook = univerAPI.getActiveWorkbook();
+    const sheet = workbook.getActiveSheet();
+
+    // Find the matching component data
+    const componentData = componentOptions.find(
+        (opt) => opt.value === componentName
+    )?.data;
+
+    if (!componentData) return;
+
+    // Map the component data to columns
+    const rowData = mapDataToColumns(componentData);
+
+    // Update the row with the component data
+    Object.keys(rowData).forEach((colIndex) => {
+        const value = rowData[colIndex];
+        if (value !== undefined && value !== null && value !== "") {
+            sheet.getRange(rowIndex, parseInt(colIndex)).setValue(value);
+        }
+    });
+
+    // Reapply dropdowns to maintain validation
+    applyAllDropdowns();
+}
+
 function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
     if (columnIndex <= 0 || !options?.length) return;
 
@@ -289,7 +314,18 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
                 }
             });
         }
+
         range.setDataValidation(dropdownRule);
+
+        // Add change listener for component column
+        if (columnIndex === COLUMN_DROPDOWNS.component.index) {
+            range.onChange(({ row, col, value }) => {
+                if (row > 0) {
+                    // Skip header row
+                    handleComponentChange(row + 1, value); // +1 because onChange uses 0-based index
+                }
+            });
+        }
     } catch (error) {
         console.error(
             `Error applying dropdown to column ${columnIndex}:`,
