@@ -173,6 +173,7 @@ function prepareComponentSheetData() {
 }
 
 function prepareValidationSheetData() {
+    const formula = univerAPI.getFormula();
     let data = {};
     data[0] = {};
 
@@ -191,6 +192,13 @@ function prepareValidationSheetData() {
 
     let rowIndex = 1;
 
+    // Fungsi untuk menyesuaikan formula
+    const adjustFormula = (formulaText) => {
+        return formulaText.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+            return `${col}${parseInt(rowNum)}`; // Basic adjustment, modify as needed
+        });
+    };
+
     // Loop setiap part langsung (bukan per modul)
     partComponentsData.forEach((comp) => {
         const row = {};
@@ -201,14 +209,27 @@ function prepareValidationSheetData() {
                 (key) => dataValMap[key] === col
             );
 
-            row[index] = {
-                v: fieldKey ? comp[fieldKey] || "" : "",
-            };
+            const value = fieldKey ? comp[fieldKey] || "" : "";
+
+            // Handle formula cells
+            if (typeof value === "string" && value.startsWith("=")) {
+                row[index] = {
+                    f: adjustFormula(value),
+                    v: "", // Nilai akan dihitung oleh engine formula
+                };
+            } else {
+                row[index] = {
+                    v: value,
+                };
+            }
         });
 
         data[rowIndex] = row;
         rowIndex++;
     });
+
+    // Eksekusi formula setelah data dimuat
+    setTimeout(() => formula.executeCalculation(), 100);
 
     return {
         data,
@@ -216,18 +237,140 @@ function prepareValidationSheetData() {
     };
 }
 
+function prepareSpecSheetData() {
+    let data = {};
+    let rowIndex = 0;
+
+    // Header (starting from column B)
+    data[rowIndex] = {
+        1: {
+            v: "",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+        2: {
+            v: "",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+        3: {
+            v: "",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+        4: {
+            v: "Val",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+        5: {
+            v: "Note",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+        6: {
+            v: "KS",
+            s: { bl: 1, ht: 2, vt: 2, fs: 11 },
+        },
+    };
+    rowIndex++;
+
+    // Style untuk judul kategori
+    const categoryStyle = {
+        bl: 1,
+        fs: 12,
+        it: 1,
+        ul: {
+            s: 1,
+        },
+    };
+
+    // Style untuk data
+    const dataStyle = {
+        bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } },
+        fs: 11,
+    };
+
+    // Style untuk nilai null
+    const nullValueStyle = {
+        ...dataStyle,
+    };
+
+    // Format nama kategori
+    const formatCategoryName = (name) => {
+        return name
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())
+            .trim();
+    };
+
+    // Loop melalui semua kategori spesifikasi
+    Object.entries(projectData).forEach(([category, items]) => {
+        console.log(category);
+        // Tambahkan judul kategori (mulai dari kolom B)
+        data[rowIndex] = {
+            1: {
+                v: formatCategoryName(category),
+                s: categoryStyle,
+            },
+        };
+        rowIndex++;
+
+        // Tambahkan item-item dalam kategori
+        items.forEach((item) => {
+            if (item && (item.key !== null || item.value !== null)) {
+                data[rowIndex] = {
+                    1: { v: item.key || "", s: dataStyle }, // Deskripsi
+                    2: {
+                        v: ":",
+                        s: {
+                            bd: {
+                                t: { s: 1 },
+                                b: { s: 1 },
+                                l: { s: 1 },
+                                r: { s: 1 },
+                            },
+                            fs: 11,
+                            bl: 1,
+                            ht: 2,
+                        },
+                    }, // Colon
+                    3: {
+                        v: item.value !== null ? item.value : "",
+                        s: item.value !== null ? dataStyle : nullValueStyle,
+                    },
+                    4: { v: "", s: dataStyle },
+                    5: { v: "", s: dataStyle },
+                    6: { v: "", s: dataStyle },
+                };
+                rowIndex++;
+            }
+        });
+
+        // Tambahkan 1 baris kosong setelah setiap kategori
+        data[rowIndex] = {}; // Baris kosong
+        rowIndex++;
+    });
+
+    return {
+        data,
+        mergeCells: [],
+        rowCount: rowIndex,
+    };
+}
+
 const { data: componentData, mergeCells: componentMerge } =
     prepareComponentSheetData();
 const { data: validationData, mergeCells: validationMerge } =
     prepareValidationSheetData();
+const {
+    data: specData,
+    mergeCells: specMerge,
+    rowCount: specRowCount,
+} = prepareSpecSheetData();
 
 const workbook = univerAPI.createWorkbook({
     name: "Components Sheet",
-    sheetCount: 2,
+    sheetCount: 3,
     sheets: {
         sheet1: {
             id: "sheet1",
-            name: "Components",
+            name: "Breakdown",
             tabColor: "#FF0000",
             zoomRatio: 0.8,
             hidden: BooleanNumber.FALSE,
@@ -250,8 +393,31 @@ const workbook = univerAPI.createWorkbook({
         },
         sheet2: {
             id: "sheet2",
+            name: "Spek",
+            tabColor: "#fcc203",
+            zoomRatio: 0.8,
+            hidden: BooleanNumber.FALSE,
+            rowCount: Math.max(10, specRowCount),
+            columnCount: 7, // Kolom A sampai G
+            defaultColumnWidth: 100,
+            defaultRowHeight: 25,
+            mergeData: specMerge,
+            cellData: specData,
+            rowData: [],
+            columnData: [],
+            rowHeader: { width: 40 },
+            columnHeader: { height: 20 },
+            freeze: {
+                xSplit: 1, // Freeze kolom A
+                ySplit: 1, // Freeze baris header
+                startRow: 1,
+                startColumn: 1,
+            },
+        },
+        sheet3: {
+            id: "sheet3",
             name: "Data Validation",
-            tabColor: "#FF0000",
+            tabColor: "#2563EB",
             zoomRatio: 0.8,
             hidden: BooleanNumber.FALSE,
             rowCount: Math.max(10, Object.keys(validationData).length),
@@ -278,6 +444,73 @@ columns.forEach((col, index) => {
         worksheet.setColumnWidth(index, 40);
     }
 });
+
+const specSheet = workbook.getSheets("sheet2")[1];
+
+if (specSheet) {
+    specSheet.setColumnWidth(0, 40); // Kolom A: 30px
+    specSheet.setColumnWidth(1, 200);
+    specSheet.setColumnWidth(2, 15); // Kolom C: 15px
+    specSheet.setColumnWidth(3, 250);
+
+    // Get the cell data by reading the range
+    const maxRows = specSheet.getMaxRows();
+    const maxCols = specSheet.getMaxColumns();
+
+    let kabinetRows = [];
+
+    // Loop through rows to find Kabinet entries
+    for (let row = 0; row < maxRows; row++) {
+        // Get cell value from column B (index 1)
+        const range = specSheet.getRange(row, 1, 1, 1); // Single cell at row, column 1 (B)
+        const cellData = range.getCellDatas();
+
+        if (
+            cellData[0] &&
+            cellData[0][0] &&
+            cellData[0][0].v &&
+            typeof cellData[0][0].v === "string" &&
+            cellData[0][0].v.includes("Kabinet")
+        ) {
+            const kabinetNumber = cellData[0][0].v.match(/\d+/)?.[0] || "0";
+            kabinetRows.push({
+                row: row + 1, // Convert to 1-based index
+                number: kabinetNumber,
+            });
+        }
+    }
+
+    // Create defined names for each Kabinet's value (Column D - index 3)
+    kabinetRows.forEach(({ row, number }) => {
+        const definedName = `bahan${number}`;
+        const columnLetter = "D"; // Column D
+        const cellRef = `Spek!$${columnLetter}$${row}`;
+
+        // Create the defined name
+        specSheet.insertDefinedName(
+            definedName,
+            cellRef,
+            `Nilai bahan untuk Kabinet ${number}`
+        );
+
+        console.log(`Created defined name: ${definedName} for ${cellRef}`);
+    });
+
+    // Optional: Create defined name for entire product_spesification
+    const lastRow = maxRows;
+    if (lastRow) {
+        specSheet.insertDefinedName(
+            "product_spesification",
+            `Spek!$B$1:$D$${lastRow}`,
+            "Range seluruh spesifikasi produk"
+        );
+    }
+}
+
+const validationSheet = workbook.getSheets()[2];
+if (validationSheet) {
+    validationSheet.setColumnWidth(2, 200);
+}
 
 // Fungsi untuk dropdown component
 function applyComponentDropdown() {

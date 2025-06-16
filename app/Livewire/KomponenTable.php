@@ -21,6 +21,16 @@ class KomponenTable extends Component
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
+    public $allSpecs = [
+        'product_spesification' => [],
+        'material_thickness_spesification' => [],
+        'coating_spesification' => [],
+        'komp_anodize_spesification' => [],
+        'alu_frame_spesification' => [],
+        'hinges_spesification' => [],
+        'rail_spesification' => [],
+        'glass_spesification' => [],
+    ];
     protected $listeners = ['typeChanged'];
 
     public function typeChanged($type)
@@ -84,6 +94,7 @@ class KomponenTable extends Component
         $this->recordId = $recordId;
         $this->moduls = $moduls ?? [];
         $this->loadInitialData();
+        $this->loadSpecData();
     }
 
     protected function loadInitialData()
@@ -399,6 +410,44 @@ class KomponenTable extends Component
                 'message' => 'Gagal mengupdate data: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getSpecData()
+    {
+        // Langsung kembalikan variabel allSpecs
+        return $this->allSpecs;
+    }
+
+    public function loadSpecData()
+    {
+        if (!$this->recordId) {
+            return;
+        }
+
+        $project = Project::find($this->recordId);
+        if (!$project) {
+            return;
+        }
+
+        $this->allSpecs = [
+            'product_spesification' => $this->parseSpecData($project->product_spesification),
+            'material_thickness_spesification' => $this->parseSpecData($project->material_thickness_spesification),
+            'coating_spesification' => $this->parseSpecData($project->coating_spesification),
+            'komp_anodize_spesification' => $this->parseSpecData($project->komp_anodize_spesification),
+            'alu_frame_spesification' => $this->parseSpecData($project->alu_frame_spesification),
+            'hinges_spesification' => $this->parseSpecData($project->hinges_spesification),
+            'rail_spesification' => $this->parseSpecData($project->rail_spesification),
+            'glass_spesification' => $this->parseSpecData($project->glass_spesification),
+        ];
+    }
+
+    protected function parseSpecData($data)
+    {
+        if (is_string($data)) {
+            $decoded = json_decode($data, true);
+            return json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+        return is_array($data) ? $data : [];
     }
 
     public function render()

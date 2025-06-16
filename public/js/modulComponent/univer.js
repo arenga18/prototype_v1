@@ -685,7 +685,7 @@ $(document).on("click", "#key-bindings-2", function () {
         data: JSON.stringify(payload),
         success: function (response) {
             if (response.status === "success") {
-                // alert("data berhasil diperbarui");
+                Livewire.emit("refresh");
             } else {
                 alert("Error: " + response.message);
             }

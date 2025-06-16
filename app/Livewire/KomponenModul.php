@@ -36,7 +36,8 @@ class KomponenModul extends Component
         if ($recordId) {
             $modulComponent = ModulComponent::find($recordId);
             if ($modulComponent) {
-                $this->modulList = [$modulComponent->modul];
+                $this->modul = $modulComponent->modul;
+                $this->modulList = [$modulComponent->modul]; // Still keep as array for the dropdown
                 $this->modulData = [$modulComponent->modul => $modulComponent->component];
             } else {
                 $this->modulList = [];
@@ -83,7 +84,7 @@ class KomponenModul extends Component
         if (!$modulComponent) return;
 
         $componentList = $this->parseComponentData($modulComponent->component);
-        $relativeIndex = $index - 1; // Adjust for zero-based index
+        $relativeIndex = $index - 1;
 
         if (!isset($componentList[$relativeIndex])) return;
 
@@ -301,7 +302,7 @@ class KomponenModul extends Component
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'modul' => 'required|string',
+            'modul' => 'string',
             'reference_modul' => 'nullable|string',
             'components' => 'required|array',
             'columns' => 'required|array',

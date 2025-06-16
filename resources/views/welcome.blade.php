@@ -10,7 +10,7 @@
 
 <body>
   <div class="p-4">
-    <livewire:modul-modal />
+
   </div>
 
   @livewireScripts

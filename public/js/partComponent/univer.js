@@ -5,8 +5,6 @@ const { defaultTheme } = UniverDesign;
 const { UniverSheetsCorePreset } = UniverPresetSheetsCore;
 const { UniverSheetsDataValidationPreset } = UniverPresetSheetsDataValidation;
 
-console.log("part data:", partData);
-
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
     locales: {
@@ -154,7 +152,6 @@ function getAllData() {
     );
 
     const cellDatas = range.getCellDatas();
-    console.log(cellDatas);
     const formulas = range.getFormulas();
 
     const result = [];
@@ -236,7 +233,6 @@ $(document).on("click", "#key-bindings-1", function () {
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
     console.log("Spreadsheet Data:", spreadsheetData);
-    console.log("columns : ", dataValidationCol);
 
     const processedData = [];
 
