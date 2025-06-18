@@ -66,18 +66,20 @@ class PartComponentLivewire extends Component
         $validated = $request->validate([
             'part_component' => 'required|array',
             'columns' => 'required|array',
+            'defined_names' => 'array',
             'recordId' => 'required|integer'
         ]);
 
         try {
             $partComponent = $validated['part_component'];
+            $definedNames = $validated['defined_names'];
             $recordId = $validated['recordId'];
 
             // Cari record modul yang akan diupdate
             $data = PartComponent::findOrFail($recordId);
-
             // Update data
             $data->part_component = json_encode($partComponent);
+            $data->defined_names = json_encode($definedNames);
             $data->save();
 
             return response()->json([

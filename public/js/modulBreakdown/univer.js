@@ -2,8 +2,7 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
-console.log("parts : ", partComponentsData);
-console.log("groupComponent: ", groupedComponents);
+console.log(allModuls);
 
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
@@ -216,10 +215,18 @@ function prepareValidationSheetData() {
                 row[index] = {
                     f: adjustFormula(value),
                     v: "", // Nilai akan dihitung oleh engine formula
+                    s: {
+                        ht: 2,
+                        vt: 2,
+                    },
                 };
             } else {
                 row[index] = {
                     v: value,
+                    s: {
+                        ht: 2,
+                        vt: 2,
+                    },
                 };
             }
         });
@@ -300,8 +307,8 @@ function prepareSpecSheetData() {
     };
 
     // Loop melalui semua kategori spesifikasi
+    console.log(projectData);
     Object.entries(projectData).forEach(([category, items]) => {
-        console.log(category);
         // Tambahkan judul kategori (mulai dari kolom B)
         data[rowIndex] = {
             1: {
@@ -480,6 +487,7 @@ if (specSheet) {
         }
     }
 
+    console.log(groupedComponents);
     // Create defined names for each Kabinet's value (Column D - index 3)
     kabinetRows.forEach(({ row, number }) => {
         const definedName = `bahan${number}`;
@@ -492,8 +500,6 @@ if (specSheet) {
             cellRef,
             `Nilai bahan untuk Kabinet ${number}`
         );
-
-        console.log(`Created defined name: ${definedName} for ${cellRef}`);
     });
 
     // Optional: Create defined name for entire product_spesification
@@ -509,7 +515,30 @@ if (specSheet) {
 
 const validationSheet = workbook.getSheets()[2];
 if (validationSheet) {
-    validationSheet.setColumnWidth(2, 200);
+    validationSheet.setColumnWidth(2, 300);
+    const definedNamed = JSON.parse(definedNames);
+    console.log("names: ", definedNamed);
+    definedNamed.forEach((defName) => {
+        try {
+            validationSheet.insertDefinedName(
+                defName.name,
+                defName.formulaOrRefString,
+                `Defined name untuk ${defName.sheetReference}`
+            );
+        } catch (error) {
+            console.error(`Gagal membuat defined name ${defName.name}:`, error);
+        }
+    });
+
+    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
+    const maxRows = validationSheet.getMaxRows();
+    if (maxRows > 0) {
+        validationSheet.insertDefinedName(
+            "data_validation_range",
+            `'Data Validation'!$A$1:$Z$${maxRows}`,
+            "Range seluruh data validasi"
+        );
+    }
 }
 
 // Fungsi untuk dropdown component
@@ -685,3 +714,106 @@ $(document).on("click", "#key-bindings-2", function () {
         },
     });
 });
+
+function addModulToSpreadsheet(modulName) {
+    try {
+        const breakdownSheet = workbook.getSheets()[0];
+
+        // Cari baris terakhir yang berisi data
+        let lastDataRow = 0;
+        const maxRows = breakdownSheet.getMaxRows();
+
+        // Cari dari bawah ke atas untuk menemukan baris terakhir yang berisi data
+        for (let i = maxRows - 1; i >= 0; i--) {
+            const cellData = breakdownSheet
+                .getRange(i, namaModulIndex, 1, 1)
+                .getCellDatas()[0][0];
+            if (cellData && cellData.v && String(cellData.v).trim() !== "") {
+                lastDataRow = i;
+                break;
+            }
+        }
+
+        // Hitung baris untuk modul baru (2 baris setelah data terakhir)
+        let newRow = lastDataRow > 0 ? lastDataRow + 2 : 1;
+
+        // Jika baris melebihi maxRows, tambahkan baris baru
+        if (newRow >= maxRows) {
+            breakdownSheet.insertRows(maxRows, newRow - maxRows + 1);
+        }
+
+        console.log("Menambahkan modul di baris:", newRow);
+
+        // Style untuk modul
+        const modulStyle = {
+            bg: { rgb: "#faf59b" },
+            bl: 1,
+            bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } },
+            fs: 12,
+        };
+
+        // Set data modul menggunakan getRange dan setValue
+        const targetRange = breakdownSheet.getRange(
+            newRow,
+            namaModulIndex,
+            1,
+            1
+        );
+        targetRange.setValue(modulName);
+
+        try {
+            // Cara 1: Jika setStyle tersedia
+            targetRange.setStyle(modulStyle);
+        } catch (e) {
+            // Cara 2: Alternatif jika setStyle tidak tersedia
+            breakdownSheet
+                .getRange(newRow, namaModulIndex)
+                .setValue([[{ v: modulName, s: modulStyle }]]);
+        }
+
+        // Auto-resize kolom
+        breakdownSheet.setColumnWidth(namaModulIndex, 200);
+
+        // Scroll ke modul yang baru ditambahkan
+        breakdownSheet.scrollToCell(newRow, namaModulIndex);
+
+        console.log("Modul berhasil ditambahkan di baris:", newRow);
+        return true;
+    } catch (error) {
+        console.error("Gagal menambahkan modul:", error);
+        return false;
+    }
+}
+
+// 2. Event handler untuk tombol Tambah
+$(document).on(
+    "click",
+    "#modulModal .btn-primary:not([data-bs-dismiss])",
+    function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const selectElement = $("#modulSelect");
+        const selectedModul = selectElement.val();
+
+        if (!selectedModul) {
+            alert("Silakan pilih modul terlebih dahulu");
+            return;
+        }
+
+        console.log("Memproses modul:", selectedModul);
+
+        // Tambahkan ke spreadsheet
+        if (addModulToSpreadsheet(selectedModul)) {
+            // Tutup modal
+            $("#modulModal").modal("hide");
+
+            // Reset select
+            selectElement.val(null).trigger("change");
+
+            alert("Modul berhasil ditambahkan!");
+        } else {
+            alert("Gagal menambahkan modul ke spreadsheet");
+        }
+    }
+);

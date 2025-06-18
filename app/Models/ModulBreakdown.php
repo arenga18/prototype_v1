@@ -6,22 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class ModulBreakdown extends Model
 {
-    protected $fillable = ['modul_id', 'name', 'data'];
-
-    protected $casts = [
-        'data' => 'array',
+    protected $fillable = [
+        'modul',
+        'component'
     ];
 
-    // Scope untuk pencarian
-    public function scopeSearch($query, $search)
-    {
-        return $query->where('name', 'like', '%' . $search . '%')
-            ->orWhereJsonContains('data', ['name' => $search]);
-    }
+    protected $casts = [
+        'component' => 'array'
+    ];
 
-    // Relasi ke modul
-    public function modul()
+    // app/Models/ModulComponent.php
+    public function partComponents()
     {
-        return $this->belongsTo(Modul::class);
+        return $this->hasMany(PartComponent::class, 'Nama', 'component');
     }
 }

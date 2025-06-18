@@ -13,8 +13,11 @@ class KomponenTable extends Component
 {
     public $moduls = [];
     public $groupedComponents = [];
+    public $modulList = [];
     public $partComponentsData = [];
     public $columns;
+    public $allModuls = [];
+    public $definedNames = [];
     public $fieldMapping;
     public $dataValidationCol;
     public $dataValMap;
@@ -32,6 +35,21 @@ class KomponenTable extends Component
         'glass_spesification' => [],
     ];
     protected $listeners = ['typeChanged'];
+
+    public function mount($moduls, $recordId = null)
+    {
+        $this->columns = config('breakdown_fields.breakdown_col');
+        $this->fieldMapping = config('breakdown_fields.fields_mapping');
+        $this->dataValidationCol = config("breakdown_fields.data_validation_col");
+        $this->dataValMap = config("breakdown_fields.data_val_map");
+        $this->recordId = $recordId;
+        $this->moduls = $moduls ?? [];
+        $this->modulList = ModulComponent::all()->pluck('modul')->toArray();
+        $this->loadInitialData();
+        $this->loadSpecData();
+        $this->loadDefinedNames();
+        $this->loadDropdownData();
+    }
 
     public function typeChanged($type)
     {
@@ -85,59 +103,63 @@ class KomponenTable extends Component
         }
         return $data;
     }
-    public function mount($moduls, $recordId = null)
-    {
-        $this->columns = config('breakdown_fields.breakdown_col');
-        $this->fieldMapping = config('breakdown_fields.fields_mapping');
-        $this->dataValidationCol = config("breakdown_fields.data_validation_col");
-        $this->dataValMap = config("breakdown_fields.data_val_map");
-        $this->recordId = $recordId;
-        $this->moduls = $moduls ?? [];
-        $this->loadInitialData();
-        $this->loadSpecData();
-    }
 
     protected function loadInitialData()
     {
         $this->loadDropdownData();
         $this->loadGroupedComponents();
         $this->loadPartComponentData();
+        $this->loadAllModuls();
     }
 
     public function loadDropdownData()
     {
-        $this->componentTypes = PartComponent::query()
-            ->get()
-            ->map(function ($part) {
-                $data = $this->parsePartComponentData($part);
-                return $data['code'] ?? null;
-            })
-            ->filter()
-            ->unique()
-            ->map(function ($code) {
-                return [
-                    'value' => $code,
-                    'label' => $code
-                ];
-            })
-            ->values()
-            ->toArray();
+        $parts = PartComponent::all();
+        $types = [];
+        $options = [];
 
-        $this->componentOptions = PartComponent::query()
-            ->get()
-            ->map(function ($part) {
-                $data = $this->parsePartComponentData($part);
-                return [
-                    'value' => $data['name'] ?? '',
-                    'label' => $data['name'] ?? '',
-                    'data' => $data
+        foreach ($parts as $part) {
+            // Decode the JSON string from part_component
+            $decoded = json_decode($part->part_component, true);
+
+            // Skip if JSON is invalid
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                continue;
+            }
+
+            // Process each item in the array
+            foreach ($decoded as $item) {
+                // Skip if item doesn't have data
+                if (!isset($item['data'])) {
+                    continue;
+                }
+
+                $componentData = $item['data'];
+
+                // Skip if no name is set
+                if (!isset($componentData['name'])) {
+                    continue;
+                }
+
+                // Build component types
+                if (isset($componentData['code'])) {
+                    $types[$componentData['code']] = [
+                        'value' => $componentData['code'],
+                        'label' => $componentData['code']
+                    ];
+                }
+
+                // Build component options
+                $options[] = [
+                    'value' => $componentData['name'],
+                    'label' => $componentData['name'],
+                    'data' => $componentData
                 ];
-            })
-            ->filter(function ($option) {
-                return !empty($option['value']);
-            })
-            ->values()
-            ->toArray();
+            }
+        }
+
+        $this->componentTypes = array_values($types);
+        $this->componentOptions = $options;
     }
 
     public function loadGroupedComponents()
@@ -217,6 +239,12 @@ class KomponenTable extends Component
                 'isFilled' => false
             ];
         }
+    }
+
+    protected function loadAllModuls()
+    {
+        $moduls = ModulComponent::all()->toArray();
+        dd($moduls);
     }
 
     protected function ensureAllModulsPresent($decodedModuls)
@@ -348,16 +376,26 @@ class KomponenTable extends Component
             ->collapse();
 
         // Filter part components that match the names from modul components
-        $this->partComponentsData = $allPartComponents
-            ->filter(function ($partComponent) use ($componentNames) {
-                $name = $partComponent['name'] ?? null;
-                return $componentNames->contains(function ($componentName) use ($name) {
-                    return $componentName === $name;
-                });
-            })
-            ->unique('name')
-            ->values()
-            ->toArray();
+        $this->partComponentsData = $allPartComponents;
+        // $this->partComponentsData = $allPartComponents
+        //     ->filter(function ($partComponent) use ($componentNames) {
+        //         $name = $partComponent['name'] ?? null;
+        //         return $componentNames->contains(function ($componentName) use ($name) {
+        //             return $componentName === $name;
+        //         });
+        //     })
+        //     ->unique('name')
+        //     ->values()
+        //     ->toArray();
+    }
+
+    public function loadDefinedNames()
+    {
+        $allPartComponents = PartComponent::all()->toArray();
+
+        $definedNames = $allPartComponents[0]["defined_names"];
+
+        $this->definedNames = $definedNames;
     }
 
     public function save(Request $request)
@@ -438,6 +476,8 @@ class KomponenTable extends Component
             'hinges_spesification' => $this->parseSpecData($project->hinges_spesification),
             'rail_spesification' => $this->parseSpecData($project->rail_spesification),
             'glass_spesification' => $this->parseSpecData($project->glass_spesification),
+            'profile_spesification' => $this->parseSpecData($project->profile_spesification),
+            'size_distance_spesification' => $this->parseSpecData($project->size_distance_spesification),
         ];
     }
 

@@ -72,6 +72,10 @@
       const modulData = @json($modulData ?? []);
       const recordId = @json($recordId);
       const fieldMapping = @json($fieldMapping ?? []);
+      const dataValMap = @json($dataValMap ?? []);
+      const dataValidationCol = @json($dataValidationCol ?? []);
+      const partComponentsData = @json($partComponentsData ?? []);
+      const definedNames = @json($definedNames);
     </script>
     <script src="{{ asset('js/modulComponent/univer.js') }}"></script>
   </div>

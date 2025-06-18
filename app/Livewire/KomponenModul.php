@@ -15,7 +15,11 @@ class KomponenModul extends Component
     public $modulList = [];
     public $modulData = [];
     public $modulReference = [];
+    public $partComponentsData = [];
     public $groupedComponents = [];
+    public $definedNames = [];
+    public $dataValidationCol;
+    public $dataValMap;
     public $columns;
     public $fieldMapping;
     public $componentTypes = [];
@@ -31,6 +35,8 @@ class KomponenModul extends Component
     {
         $this->columns = config('breakdown_fields.breakdown_col') ?? [];
         $this->fieldMapping = config('breakdown_fields.field_mapping') ?? [];
+        $this->dataValidationCol = config("breakdown_fields.data_validation_col");
+        $this->dataValMap = config("breakdown_fields.data_val_map");
         $this->recordId = $recordId;
 
         if ($recordId) {
@@ -51,6 +57,8 @@ class KomponenModul extends Component
 
         $this->modulReference = ModulComponent::all()->pluck('modul')->toArray();
         $this->loadDropdownData();
+        $this->loadPartComponentData();
+        $this->loadDefinedNames();
     }
 
     public function getModulData(Request $request)
@@ -253,6 +261,58 @@ class KomponenModul extends Component
         $modulComponent->component = json_encode($componentList);
         $modulComponent->save();
         $this->loadGroupedComponents();
+    }
+
+    protected function parsePartComponentData($partComponent)
+    {
+        $data = $partComponent->toArray();
+
+        if (!empty($data['part_component']) && is_string($data['part_component'])) {
+            try {
+                $jsonString = trim($data['part_component'], '"');
+                $decoded = json_decode($jsonString, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $allComponents = [];
+                    $primaryComponent = null;
+
+                    // Ekstrak semua komponen
+                    foreach ($decoded as $item) {
+                        if (isset($item['data']) && is_array($item['data'])) {
+                            // Gunakan komponen pertama sebagai primary
+                            if ($primaryComponent === null) {
+                                $primaryComponent = $item['data'];
+                            }
+                            $allComponents[] = $item['data'];
+                        }
+                    }
+                    $data = $allComponents;
+                }
+            } catch (\Exception $e) {
+                logger()->error('Failed to parse part_component: ' . $e->getMessage());
+            }
+        }
+        return $data;
+    }
+
+    public function loadPartComponentData()
+    {
+        $allPartComponents = PartComponent::all()
+            ->map(function ($component) {
+                return $this->parsePartComponentData($component);
+            })
+            ->collapse();
+
+        $this->partComponentsData = $allPartComponents;
+    }
+
+    public function loadDefinedNames()
+    {
+        $allPartComponents = PartComponent::all()->toArray();
+
+        $definedNames = $allPartComponents[0]["defined_names"];
+
+        $this->definedNames = $definedNames;
     }
 
     public function save(Request $request)

@@ -40,7 +40,7 @@ function prepareValidationSheetData() {
     // Loop setiap part (perhatikan struktur data Anda)
     partData.forEach((comp) => {
         const row = {};
-        const componentData = comp.data || {}; // Akses properti 'data'
+        const componentData = comp.data || {};
 
         // Loop kolom sesuai header
         dataValidationCol.forEach((col, index) => {
@@ -51,6 +51,7 @@ function prepareValidationSheetData() {
             // Akses nilai dari componentData
             row[index] = {
                 v: fieldKey ? componentData[fieldKey] || "" : "",
+                s: { ht: 2, vt: 2, fs: 11 },
             };
         });
 
@@ -151,10 +152,36 @@ function getAllData() {
         worksheet.getMaxColumns()
     );
 
+    // Ambil data sel dan formula
     const cellDatas = range.getCellDatas();
     const formulas = range.getFormulas();
 
-    const result = [];
+    // Ambil defined names dari workbook
+    const definedNamesServices = workbook.getDefinedNames();
+
+    // Proses defined names
+    const definedNames = [];
+
+    if (definedNamesServices && definedNamesServices.length > 0) {
+        definedNamesServices.forEach((service) => {
+            if (service._definedNameParam) {
+                definedNames.push({
+                    name: service._definedNameParam.name || "",
+                    formulaOrRefString:
+                        service._definedNameParam.formulaOrRefString || "",
+                    id: service._definedNameParam.id || "",
+                    sheetReference: service._definedNameParam.formulaOrRefString
+                        ? service._definedNameParam.formulaOrRefString
+                              .split("!")[0]
+                              .replace(/'/g, "")
+                        : "Current Sheet",
+                });
+            }
+        });
+    }
+
+    // Proses data sel
+    const cellData = [];
 
     cellDatas.forEach((row, rowIndex) => {
         const rowData = {};
@@ -170,29 +197,81 @@ function getAllData() {
                 rowData[colIndex] = "";
             }
         });
-        result.push(rowData);
+        cellData.push(rowData);
     });
 
-    return result;
+    return {
+        cellData: cellData,
+        definedNames: definedNames,
+    };
 }
+
+// function getAllData() {
+//     const workbook = univerAPI.getActiveWorkbook();
+//     const worksheet = workbook.getActiveSheet();
+//     const range = worksheet.getRange(
+//         0,
+//         0,
+//         worksheet.getMaxRows(),
+//         worksheet.getMaxColumns()
+//     );
+
+//     const cellDatas = range.getCellDatas();
+//     const formulas = range.getFormulas();
+
+//     const result = [];
+
+//     const definedName = workbook.getDefinedNames();
+//     console.log(definedName);
+
+//     cellDatas.forEach((row, rowIndex) => {
+//         const rowData = {};
+//         row.forEach((cell, colIndex) => {
+//             // Jika ada formula, simpan formula aslinya
+//             if (formulas[rowIndex][colIndex]) {
+//                 rowData[colIndex] = formulas[rowIndex][colIndex];
+//             }
+//             // Jika tidak ada formula, simpan nilai biasa
+//             else if (cell?.v !== undefined) {
+//                 rowData[colIndex] = cell.v || "";
+//             } else {
+//                 rowData[colIndex] = "";
+//             }
+//         });
+//         result.push(rowData);
+//     });
+
+//     return result;
+// }
 
 $(document).on("click", "#key-bindings-1", function () {
     const spreadsheetData = getAllData();
+    const cellData = spreadsheetData.cellData; // Ambil cellData dari hasil getAllData()
 
     const processedData = [];
 
     // Mulai dari baris 1 (setelah header)
-    for (let i = 1; i < spreadsheetData.length; i++) {
-        const row = spreadsheetData[i];
+    for (let i = 1; i < cellData.length; i++) {
+        const row = cellData[i];
 
         // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
+        if (
+            Object.values(row).every(
+                (val) =>
+                    val === "" || (typeof val === "object" && val.value === "")
+            )
+        )
+            continue;
 
         // Proses baris komponen
         const componentData = {};
         dataValidationCol.forEach((col, colIndex) => {
             if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] = row[colIndex];
+                // Handle both string values and object {value, formula}
+                componentData[col] =
+                    typeof row[colIndex] === "object"
+                        ? row[colIndex].value
+                        : row[colIndex];
             }
         });
 
@@ -205,6 +284,7 @@ $(document).on("click", "#key-bindings-1", function () {
 
     const payload = {
         part_component: processedData,
+        defined_names: spreadsheetData.definedNames, // Sertakan defined names jika diperlukan
     };
 
     console.log("Payload untuk simpan:", payload);
@@ -229,24 +309,36 @@ $(document).on("click", "#key-bindings-1", function () {
         },
     });
 });
+
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
+    const cellData = spreadsheetData.cellData;
     console.log("Spreadsheet Data:", spreadsheetData);
 
     const processedData = [];
 
-    for (let i = 1; i < spreadsheetData.length; i++) {
-        const row = spreadsheetData[i];
+    for (let i = 1; i < cellData.length; i++) {
+        const row = cellData[i];
 
         // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
+        if (
+            Object.values(row).every(
+                (val) =>
+                    val === "" || (typeof val === "object" && val.value === "")
+            )
+        )
+            continue;
 
         // Proses baris komponen
         const componentData = {};
         dataValidationCol.forEach((col, colIndex) => {
             if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] = row[colIndex];
+                // Handle both string values and object {value, formula}
+                componentData[col] =
+                    typeof row[colIndex] === "object"
+                        ? row[colIndex].value
+                        : row[colIndex];
             }
         });
 
@@ -261,6 +353,7 @@ $(document).on("click", "#key-bindings-2", function () {
         part_component: processedData,
         columns: dataValidationCol,
         recordId: recordId,
+        defined_names: spreadsheetData.definedNames, // Sertakan defined names jika diperlukan
     };
 
     console.log("Processed Data:", payload);

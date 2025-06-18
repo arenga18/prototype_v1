@@ -2,9 +2,6 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
-console.log("componentTypes : ", componentTypes);
-console.log("componentOption : ", componentOptions);
-
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -24,6 +21,44 @@ const { univerAPI } = createUniver({
     theme: defaultTheme,
     presets: [UniverSheetsCorePreset(), UniverSheetsDataValidationPreset()],
 });
+
+// Fungsi untuk memetakan data ke kolom
+function mapDataToColumns(comp) {
+    let componentRow = {};
+
+    // Map standard fields
+    componentRow[componentIndex] = comp.component || comp.name || "";
+
+    if (typeIndex >= 0) {
+        componentRow[typeIndex] = comp.code || "";
+    }
+
+    if (namaModulIndex >= 0) {
+        componentRow[namaModulIndex] = comp.modul || "";
+    }
+
+    // Map all fields from the component data to their respective columns
+    Object.keys(comp).forEach((key) => {
+        const colIndex = columns.indexOf(key);
+        if (colIndex >= 0 && comp[key] !== undefined && comp[key] !== null) {
+            componentRow[colIndex] = comp[key];
+        }
+    });
+
+    // Map fields according to fieldMapping
+    Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
+        const colIndex = columns.indexOf(targetColumn);
+        if (
+            colIndex >= 0 &&
+            comp[sourceField] !== undefined &&
+            comp[sourceField] !== null
+        ) {
+            componentRow[colIndex] = comp[sourceField];
+        }
+    });
+
+    return componentRow;
+}
 
 // Siapkan data untuk Univer
 function prepareUniverData() {
@@ -161,42 +196,77 @@ function prepareUniverData() {
     };
 }
 
-// Fungsi untuk memetakan data ke kolom
-function mapDataToColumns(comp) {
-    let componentRow = {};
+function prepareValidationSheetData() {
+    const formula = univerAPI.getFormula();
+    let data = {};
+    data[0] = {};
 
-    // Map standard fields
-    componentRow[componentIndex] = comp.component || comp.name || "";
-
-    if (typeIndex >= 0) {
-        componentRow[typeIndex] = comp.code || "";
-    }
-
-    if (namaModulIndex >= 0) {
-        componentRow[namaModulIndex] = comp.modul || "";
-    }
-
-    // Map all fields from the component data to their respective columns
-    Object.keys(comp).forEach((key) => {
-        const colIndex = columns.indexOf(key);
-        if (colIndex >= 0 && comp[key] !== undefined && comp[key] !== null) {
-            componentRow[colIndex] = comp[key];
-        }
+    // Baris 0 untuk header
+    dataValidationCol.forEach((col, index) => {
+        data[0][index] = {
+            v: col,
+            s: {
+                bl: 1,
+                ht: 2,
+                vt: 2,
+                fs: 11,
+            },
+        };
     });
 
-    // Map fields according to fieldMapping
-    Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
-        const colIndex = columns.indexOf(targetColumn);
-        if (
-            colIndex >= 0 &&
-            comp[sourceField] !== undefined &&
-            comp[sourceField] !== null
-        ) {
-            componentRow[colIndex] = comp[sourceField];
-        }
+    let rowIndex = 1;
+
+    // Fungsi untuk menyesuaikan formula
+    const adjustFormula = (formulaText) => {
+        return formulaText.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+            return `${col}${parseInt(rowNum)}`; // Basic adjustment, modify as needed
+        });
+    };
+
+    // Loop setiap part langsung (bukan per modul)
+    partComponentsData.forEach((comp) => {
+        const row = {};
+
+        // Loop kolom sesuai header
+        dataValidationCol.forEach((col, index) => {
+            const fieldKey = Object.keys(dataValMap).find(
+                (key) => dataValMap[key] === col
+            );
+
+            const value = fieldKey ? comp[fieldKey] || "" : "";
+
+            // Handle formula cells
+            if (typeof value === "string" && value.startsWith("=")) {
+                row[index] = {
+                    f: adjustFormula(value),
+                    v: "", // Nilai akan dihitung oleh engine formula
+                    s: {
+                        ht: 2,
+                        vt: 2,
+                    },
+                };
+            } else {
+                row[index] = {
+                    v: value,
+                    s: {
+                        ht: 2,
+                        vt: 2,
+                    },
+                };
+            }
+        });
+
+        data[rowIndex] = row;
+        rowIndex++;
     });
 
-    return componentRow;
+    // Eksekusi formula setelah data dimuat
+    setTimeout(() => formula.executeCalculation(), 100);
+
+    return {
+        data,
+        mergeCells: [],
+    };
 }
 
 // Fungsi untuk membuat definisi kolom
@@ -211,11 +281,13 @@ function createColumnDefinitions() {
 // Siapkan data untuk Univer
 const { data: cellData, mergeCells } = prepareUniverData();
 const columnDefs = createColumnDefinitions();
+const { data: validationData, mergeCells: validationMerge } =
+    prepareValidationSheetData();
 
 // Buat workbook
 const workbook = univerAPI.createWorkbook({
     name: "Components Sheet",
-    sheetCount: 1,
+    sheetCount: 2,
     sheets: {
         sheet1: {
             id: "sheet1",
@@ -244,13 +316,56 @@ const workbook = univerAPI.createWorkbook({
                 height: 20,
             },
         },
+        sheet2: {
+            id: "sheet2",
+            name: "Data Validation",
+            tabColor: "#2563EB",
+            zoomRatio: 0.8,
+            hidden: BooleanNumber.FALSE,
+            rowCount: Math.max(10, Object.keys(validationData).length),
+            columnCount: dataValidationCol.length,
+            defaultColumnWidth: 60,
+            defaultRowHeight: 25,
+            mergeData: validationMerge,
+            cellData: validationData,
+            rowData: [],
+            columnData: dataValidationCol.map((col) => ({ name: col })),
+            rowHeader: { width: 40 },
+            columnHeader: { height: 20 },
+        },
     },
 });
 
 // Dapatkan instance worksheet
 const worksheet = workbook.getActiveSheet();
-console.log("worksheet : ", worksheet);
-console.log("workbook : ", workbook);
+
+const validationSheet = workbook.getSheets()[1];
+if (validationSheet) {
+    validationSheet.setColumnWidth(2, 300);
+    const definedNamed = JSON.parse(definedNames);
+    console.log("names: ", definedNamed);
+    definedNamed.forEach((defName) => {
+        try {
+            validationSheet.insertDefinedName(
+                defName.name,
+                defName.formulaOrRefString,
+                `Defined name untuk ${defName.sheetReference}`
+            );
+        } catch (error) {
+            console.error(`Gagal membuat defined name ${defName.name}:`, error);
+        }
+    });
+
+    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
+    const maxRows = validationSheet.getMaxRows();
+    if (maxRows > 0) {
+        validationSheet.insertDefinedName(
+            "data_validation_range",
+            `'Data Validation'!$A$1:$Z$${maxRows}`,
+            "Range seluruh data validasi"
+        );
+    }
+}
 
 function handleComponentChange(rowIndex, componentName) {
     const workbook = univerAPI.getActiveWorkbook();
