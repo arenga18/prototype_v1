@@ -33,6 +33,7 @@ return new class extends Migration
             $table->json('profile_spesification');
             $table->json('size_distance_spesification');
             $table->json('modul_reference');
+            $table->json('modul_breakdown');
             $table->timestamps();
         });
     }

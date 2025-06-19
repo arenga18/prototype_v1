@@ -343,7 +343,6 @@ const validationSheet = workbook.getSheets()[1];
 if (validationSheet) {
     validationSheet.setColumnWidth(2, 300);
     const definedNamed = JSON.parse(definedNames);
-    console.log("names: ", definedNamed);
     definedNamed.forEach((defName) => {
         try {
             validationSheet.insertDefinedName(

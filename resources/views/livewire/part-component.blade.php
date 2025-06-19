@@ -17,6 +17,11 @@
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href={{ asset('css/style.css') }}>
 
+  <div class="mb-4">
+    <button id="fullscreen-btn" type="button" class="border py-2 px-3 rounded-1 font-bold text-sm">
+      Fullscreen
+    </button>
+  </div>
   <!-- Spreadsheet container -->
   <div id="app" style="height: 70vh;"></div>
 

@@ -1,14 +1,9 @@
-$(document).ready(function () {
-    const buttons = document.getElementsByTagName("button");
-    Array.from(buttons).forEach((button) => {
-        button.addEventListener("click", function (e) {
-            if (
-                button.id !== "key-bindings-2" &&
-                button.id !== "key-bindings-1"
-            ) {
-                e.preventDefault();
-            }
-        });
+const buttons = document.getElementsByTagName("button");
+Array.from(buttons).forEach((button) => {
+    button.addEventListener("click", function (e) {
+        if (button.id !== "key-bindings-2" && button.id !== "key-bindings-1") {
+            e.preventDefault();
+        }
     });
 });
 

@@ -161,7 +161,7 @@ class ModulResource extends Resource
                 TextColumn::make('layer_position')
                     ->label("Posisi Lapisan")
                     ->searchable(),
-                TextColumn::make('box_carcase_contents')
+                TextColumn::make('box_carcase_content')
                     ->label("Isi Box/Carcase")
                     ->searchable(),
                 TextColumn::make('closing_system')
