@@ -38,34 +38,7 @@ class ComponentResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('cat')->label('Kategori')->searchable(),
-                TextColumn::make('code')->label('Kode')->searchable(),
-                TextColumn::make('name')->label('Nama')->searchable(),
-                TextColumn::make('val')->label('Val')->searchable(),
-                TextColumn::make('KS')->label('KS')->searchable(),
-                TextColumn::make('number_of_sub')->searchable(),
-                TextColumn::make('material')->searchable(),
-                TextColumn::make('thickness')->searchable(),
-                TextColumn::make('minifix')->searchable(),
-                TextColumn::make('dowel')->searchable(),
-                TextColumn::make('elbow_type')->searchable(),
-                TextColumn::make('screw_type')->searchable(),
-                TextColumn::make('V')->searchable(),
-                TextColumn::make('V2')->searchable(),
-                TextColumn::make('H')->searchable(),
-                TextColumn::make('profile3')->searchable(),
-                TextColumn::make('profile2')->searchable(),
-                TextColumn::make('profile')->searchable(),
-                TextColumn::make('outside')->searchable(),
-                TextColumn::make('inside')->searchable(),
-                TextColumn::make('P1')->searchable(),
-                TextColumn::make('P2')->searchable(),
-                TextColumn::make('L1')->searchable(),
-                TextColumn::make('L2')->searchable(),
-                TextColumn::make('rail')->searchable(),
-                TextColumn::make('hinge')->searchable(),
-                TextColumn::make('anodize')->searchable(),
-                TextColumn::make('number_of_anodize')->searchable(),
+                TextColumn::make('All Data')->label("All Data")
             ])
             ->filters([
                 //

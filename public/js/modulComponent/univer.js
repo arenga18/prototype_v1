@@ -660,30 +660,40 @@ $("#modulReference").on("change", async function () {
 
 // Event handler untuk tombol simpan
 $(document).on("click", "#key-bindings-1", function () {
+    // 1. Ambil data spreadsheet dan nilai dari form
     const spreadsheetData = getAllData();
-    const selectedModul = $("#modulSelect").val();
-    const referenceModul = $("#modulReference").val();
+    let selectedModul = $("#modulSelect").val(); // Modul yang dipilih dari dropdown
+    const referenceModul = $("#modulReference").val(); // Modul referensi
 
-    console.log(spreadsheetData);
+    // 2. Jika selectedModul kosong, coba ambil dari data spreadsheet
     if (!selectedModul) {
-        // Get the module name from namaModulIndex (assuming first data row)
-        const firstDataRow = spreadsheetData[1]; // row 2 (0-based index 1)
-        const modulName = firstDataRow[namaModulIndex];
-        console.log("Module name from namaModulIndex: " + modulName);
+        // Cari baris pertama yang memiliki nilai di kolom namaModulIndex
+        for (let i = 1; i < spreadsheetData.length; i++) {
+            const row = spreadsheetData[i];
+            if (row[namaModulIndex] && row[namaModulIndex] !== "") {
+                selectedModul = row[namaModulIndex];
+                break;
+            }
+        }
+
+        // Jika masih kosong, beri pesan error
+        if (!selectedModul) {
+            alert("Tidak dapat menemukan modul dalam data!");
+            return;
+        }
     }
 
-    // Rekonstruksi data dengan format yang benar
+    // 3. Rekonstruksi data untuk dikirim ke server
     const processedData = [];
     let currentModul = selectedModul;
 
-    // Mulai dari baris 1 (setelah header)
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
 
         // Skip baris kosong
         if (Object.values(row).every((val) => val === "")) continue;
 
-        // Jika baris berisi nama modul
+        // Jika baris berisi nama modul, update currentModul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
             currentModul = row[namaModulIndex];
             continue;
@@ -705,11 +715,9 @@ $(document).on("click", "#key-bindings-1", function () {
         }
     }
 
-    // Use the first module name from namaModulIndex if selectedModul is empty
-    const finalModul = selectedModul || spreadsheetData[1][namaModulIndex];
-
+    // 4. Siapkan payload untuk dikirim ke server
     const payload = {
-        modul: finalModul,
+        modul: selectedModul, // Gunakan selectedModul yang sudah dipastikan ada nilainya
         reference_modul: referenceModul,
         components: processedData,
         columns: columns,
@@ -717,6 +725,7 @@ $(document).on("click", "#key-bindings-1", function () {
 
     console.log("Payload untuk simpan:", payload);
 
+    // 5. Kirim data ke server
     $.ajax({
         url: "/save-spreadsheet",
         method: "POST",
@@ -737,6 +746,7 @@ $(document).on("click", "#key-bindings-1", function () {
         },
     });
 });
+
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();

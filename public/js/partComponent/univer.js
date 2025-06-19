@@ -133,12 +133,28 @@ const workbook = univerAPI.createWorkbook({
 });
 
 const worksheet = workbook.getActiveSheet();
+const validationSheet = workbook.getSheets()[0];
+if (validationSheet) {
+    validationSheet.setColumnWidth(2, 300);
+    const definedNamed = JSON.parse(definedNames);
+    definedNamed.forEach((defName) => {
+        try {
+            validationSheet.insertDefinedName(
+                defName.name,
+                defName.formulaOrRefString,
+                `Defined name untuk ${defName.sheetReference}`
+            );
+        } catch (error) {
+            console.error(`Gagal membuat defined name ${defName.name}:`, error);
+        }
+    });
+}
 
 const nameIndex = dataValidationCol.indexOf("name");
 
 dataValidationCol.forEach((col, index) => {
     if (index === nameIndex) {
-        worksheet.setColumnWidth(index, 180);
+        worksheet.setColumnWidth(index, 250);
     }
 });
 

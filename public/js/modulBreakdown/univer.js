@@ -2,8 +2,6 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
-console.log(allModuls);
-
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -104,7 +102,6 @@ function prepareComponentSheetData() {
                 processedModuls.add(modulName);
             }
         });
-        console.log("uniqueGroup: ", uniqueGroups);
 
         uniqueGroups.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
@@ -126,7 +123,10 @@ function prepareComponentSheetData() {
                         s: modulRowStyle,
                     };
                 } else {
-                    data[currentRow][colIndex] = { v: "", s: modulRowStyle };
+                    data[currentRow][colIndex] = {
+                        v: "",
+                        s: modulRowStyle,
+                    };
                 }
             });
             currentRow++;
@@ -719,68 +719,134 @@ function addModulToSpreadsheet(modulName) {
     try {
         const breakdownSheet = workbook.getSheets()[0];
 
-        // Cari baris terakhir yang berisi data
+        // 1. Find the selected module data from allModuls
+        let selectedModulData = null;
+        let selectedComponents = [];
+
+        if (allModuls && allModuls.array) {
+            for (const modulGroup of allModuls.array) {
+                if (modulGroup.modul?.nama_modul === modulName) {
+                    selectedModulData = modulGroup.modul;
+                    selectedComponents = modulGroup.component || [];
+                    break;
+                }
+            }
+        }
+
+        if (!selectedModulData) {
+            console.error("Modul data not found in allModuls");
+            return false;
+        }
+
+        // 2. Find the true last row with data (scan all columns)
         let lastDataRow = 0;
         const maxRows = breakdownSheet.getMaxRows();
-
-        // Cari dari bawah ke atas untuk menemukan baris terakhir yang berisi data
         for (let i = maxRows - 1; i >= 0; i--) {
-            const cellData = breakdownSheet
-                .getRange(i, namaModulIndex, 1, 1)
-                .getCellDatas()[0][0];
-            if (cellData && cellData.v && String(cellData.v).trim() !== "") {
+            let hasData = false;
+            for (let col = 0; col < columns.length; col++) {
+                const cellData = breakdownSheet
+                    .getRange(i, col, 1, 1)
+                    .getCellDatas()[0][0];
+                if (
+                    cellData &&
+                    cellData.v !== undefined &&
+                    String(cellData.v).trim() !== ""
+                ) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) {
                 lastDataRow = i;
                 break;
             }
         }
 
-        // Hitung baris untuk modul baru (2 baris setelah data terakhir)
-        let newRow = lastDataRow > 0 ? lastDataRow + 2 : 1;
+        // 3. Calculate positions
+        const newModulRow = lastDataRow === 0 ? 1 : lastDataRow + 2;
+        const componentRows = selectedComponents.length;
+        const lastComponentRow = newModulRow + componentRows;
+        const totalRowsNeeded = 1 + componentRows + 1; // Module + components + spacing
 
-        // Jika baris melebihi maxRows, tambahkan baris baru
-        if (newRow >= maxRows) {
-            breakdownSheet.insertRows(maxRows, newRow - maxRows + 1);
+        // 4. Ensure we have enough rows
+        const currentLastRow = breakdownSheet.getMaxRows();
+        if (lastComponentRow + 1 > currentLastRow) {
+            const rowsToAdd = lastComponentRow + 1 - currentLastRow;
+            breakdownSheet.insertRows(currentLastRow, rowsToAdd);
         }
 
-        console.log("Menambahkan modul di baris:", newRow);
+        // 5. Add empty row after last component if it contains data
+        if (lastComponentRow + 1 <= breakdownSheet.getMaxRows()) {
+            const nextRowData = breakdownSheet
+                .getRange(lastComponentRow + 1, 0, 1, columns.length)
+                .getCellDatas()[0];
+            const hasData = nextRowData.some(
+                (cell) =>
+                    cell && cell.v !== undefined && String(cell.v).trim() !== ""
+            );
 
-        // Style untuk modul
+            if (hasData) {
+                breakdownSheet.insertRows(lastComponentRow + 1, 1);
+            }
+        }
+
+        // 6. Module row style
         const modulStyle = {
             bg: { rgb: "#faf59b" },
             bl: 1,
             bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } },
-            fs: 12,
+            fs: 11,
         };
 
-        // Set data modul menggunakan getRange dan setValue
-        const targetRange = breakdownSheet.getRange(
-            newRow,
-            namaModulIndex,
-            1,
-            1
-        );
-        targetRange.setValue(modulName);
+        // 7. Add module row
+        breakdownSheet.getRange(newModulRow, namaModulIndex).setValue([
+            [
+                {
+                    v: selectedModulData.nama_modul,
+                    s: modulStyle,
+                },
+            ],
+        ]);
 
-        try {
-            // Cara 1: Jika setStyle tersedia
-            targetRange.setStyle(modulStyle);
-        } catch (e) {
-            // Cara 2: Alternatif jika setStyle tidak tersedia
-            breakdownSheet
-                .getRange(newRow, namaModulIndex)
-                .setValue([[{ v: modulName, s: modulStyle }]]);
-        }
+        // 8. Add other module data
+        columns.forEach((col, colIndex) => {
+            breakdownSheet.getRange(newModulRow, colIndex).setValue([
+                [
+                    {
+                        // v: selectedModulData[col],
+                        s: modulStyle,
+                    },
+                ],
+            ]);
+        });
 
-        // Auto-resize kolom
+        // 9. Add components
+        selectedComponents.forEach((component, compIndex) => {
+            const componentRow = newModulRow + 1 + compIndex;
+            const mappedData = mapDataToColumns(component);
+
+            columns.forEach((col, colIndex) => {
+                if (mappedData[colIndex] !== undefined) {
+                    breakdownSheet
+                        .getRange(componentRow, colIndex)
+                        .setValue(mappedData[colIndex]);
+                }
+            });
+        });
+
+        // 10. Auto-resize columns
         breakdownSheet.setColumnWidth(namaModulIndex, 200);
+        breakdownSheet.setColumnWidth(componentIndex, 200);
 
-        // Scroll ke modul yang baru ditambahkan
-        breakdownSheet.scrollToCell(newRow, namaModulIndex);
+        // 11. Scroll to new module
+        breakdownSheet.scrollToCell(newModulRow, namaModulIndex);
 
-        console.log("Modul berhasil ditambahkan di baris:", newRow);
+        console.log(
+            `Added module "${modulName}" at row ${newModulRow} with components until row ${lastComponentRow}`
+        );
         return true;
     } catch (error) {
-        console.error("Gagal menambahkan modul:", error);
+        console.error("Failed to add module:", error);
         return false;
     }
 }

@@ -42,14 +42,17 @@
                 <div class="mb-4 w-full">
                   <label for="modulSelect" class="block mb-2 text-sm font-medium text-gray-700">Modul</label>
                   <select wire:model="modul" id="modulSelect" class="border border-gray-300 text-sm rounded p-2 w-full">
-                    @if (count($modulList) > 1)
+                    @if (count($allModuls['array']) > 1)
                       <option value="">--Pilih Modul--</option>
                     @endif
 
-                    @forelse($modulList as $m)
-                      <option value="{{ $m }}" {{ count($modulList) === 1 ? 'selected' : '' }}>
-                        {{ $m }}
-                      </option>
+                    @forelse($allModuls['array'] as $item)
+                      @if (isset($item['modul']['nama_modul']))
+                        <option value="{{ $item['modul']['nama_modul'] }}"
+                          {{ count($allModuls['array']) === 1 ? 'selected' : '' }}>
+                          {{ $item['modul']['nama_modul'] }}
+                        </option>
+                      @endif
                     @empty
                       <option value="">Tidak ada modul tersedia</option>
                     @endforelse
@@ -133,7 +136,7 @@
     const dataValidationCol = @json($dataValidationCol ?? []);
     const projectData = @json($allSpecs);
     const definedNames = @json($definedNames);
-    const allModuls = @@json($allModuls)
+    const allModuls = @json($allModuls);
   </script>
   <script src="{{ asset('js/modulBreakdown/univer.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

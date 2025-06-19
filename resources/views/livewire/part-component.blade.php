@@ -26,6 +26,7 @@
     const recordId = @json($recordId);
     const dataValMap = @json($dataValMap ?? []);
     const dataValidationCol = @json($dataValidationCol ?? []);
+    const definedNames = @json($definedNames);
   </script>
   <script src="{{ asset('js/partComponent/univer.js') }}"></script>
 </div>

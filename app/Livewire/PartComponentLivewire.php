@@ -12,6 +12,7 @@ class PartComponentLivewire extends Component
     public $partComponentsData = [];
     public $dataValidationCol;
     public $partData;
+    public $definedNames = [];
     public $dataValMap;
     public $recordId;
 
@@ -33,7 +34,18 @@ class PartComponentLivewire extends Component
                 $this->partData = [];
             }
         }
+        $this->loadDefinedNames();
     }
+
+    public function loadDefinedNames()
+    {
+        $allPartComponents = PartComponent::all()->toArray();
+
+        $definedNames = $allPartComponents[0]["defined_names"];
+
+        $this->definedNames = $definedNames;
+    }
+
 
     public function save(Request $request)
     {

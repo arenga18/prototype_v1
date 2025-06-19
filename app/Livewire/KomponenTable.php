@@ -231,6 +231,7 @@ class KomponenTable extends Component
 
         foreach ($modulComponents as $modulComponent) {
             $componentList = $this->parseComponentData($modulComponent->component);
+
             $processedComponents = $this->processComponents($componentList ?? []);
 
             $this->groupedComponents['array'][] = [
@@ -244,7 +245,17 @@ class KomponenTable extends Component
     protected function loadAllModuls()
     {
         $moduls = ModulComponent::all()->toArray();
-        dd($moduls);
+
+        foreach ($moduls as $modul) {
+            $componentList = $this->parseComponentData($modul['component']);
+            $processedComponents = $this->processComponents($componentList ?? []);
+
+            $this->allModuls['array'][] = [
+                'modul' => ['nama_modul' => $modul['modul']],
+                'component' => $processedComponents,
+                'isFilled' => false
+            ];
+        }
     }
 
     protected function ensureAllModulsPresent($decodedModuls)
