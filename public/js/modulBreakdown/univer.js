@@ -738,6 +738,16 @@ function addModulToSpreadsheet(modulName) {
             return false;
         }
 
+        // Define adjustFormula function
+        const adjustFormula = (formula, modulStartRow, isFilled) => {
+            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+                const newRow = isFilled
+                    ? parseInt(rowNum)
+                    : modulStartRow + parseInt(rowNum) - 1;
+                return `${col}${newRow}`;
+            });
+        };
+
         // 2. Find the true last row with data (scan all columns)
         let lastDataRow = 0;
         const maxRows = breakdownSheet.getMaxRows();
@@ -810,26 +820,46 @@ function addModulToSpreadsheet(modulName) {
 
         // 8. Add other module data
         columns.forEach((col, colIndex) => {
-            breakdownSheet.getRange(newModulRow, colIndex).setValue([
-                [
-                    {
-                        // v: selectedModulData[col],
-                        s: modulStyle,
-                    },
-                ],
-            ]);
+            if (selectedModulData[col] !== undefined) {
+                breakdownSheet.getRange(newModulRow, colIndex).setValue([
+                    [
+                        {
+                            v: selectedModulData[col],
+                            s: modulStyle,
+                        },
+                    ],
+                ]);
+            }
         });
 
-        // 9. Add components
+        // 9. Add components with formula adjustment
         selectedComponents.forEach((component, compIndex) => {
             const componentRow = newModulRow + 1 + compIndex;
             const mappedData = mapDataToColumns(component);
 
             columns.forEach((col, colIndex) => {
                 if (mappedData[colIndex] !== undefined) {
-                    breakdownSheet
-                        .getRange(componentRow, colIndex)
-                        .setValue(mappedData[colIndex]);
+                    const value = mappedData[colIndex];
+
+                    if (typeof value === "string" && value.startsWith("=")) {
+                        // Handle formula cells with adjustment
+                        const adjustedFormula = adjustFormula(
+                            value,
+                            newModulRow,
+                            false
+                        );
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue({
+                                f: adjustedFormula,
+                                v: "",
+                            });
+                    } else {
+                        // Handle regular values
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue(value);
+                    }
                 }
             });
         });
@@ -840,6 +870,9 @@ function addModulToSpreadsheet(modulName) {
 
         // 11. Scroll to new module
         breakdownSheet.scrollToCell(newModulRow, namaModulIndex);
+
+        // 12. Execute calculations after adding data
+        setTimeout(() => formula.executeCalculation(), 100);
 
         console.log(
             `Added module "${modulName}" at row ${newModulRow} with components until row ${lastComponentRow}`
