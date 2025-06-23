@@ -85,26 +85,20 @@
                 <div class="mb-4 w-full">
                   <label for="partSelect" class="block mb-2 text-sm font-medium text-gray-700">Part</label>
                   <select wire:model="modul" id="partSelect" class="border border-gray-300 text-sm rounded p-2 w-full">
-                    @if (count($componentOptions) > 1)
+                    @if (count($allParts['array'] ?? []) > 1)
                       <option value="">--Pilih Modul--</option>
                     @endif
 
-                    @forelse($componentOptions as $item)
-                      @php
-                        $value =
-                            $item['value'] ?? ($item->value ?? ($item['data']['val'] ?? ($item->data->val ?? null)));
-                        $label =
-                            $item['label'] ?? ($item->label ?? ($item['data']['name'] ?? ($item->data->name ?? null)));
-                      @endphp
+                    @foreach ($allParts['array'] ?? [] as $item)
+                      <option value="{{ $item['part']['part_name'] }}"
+                        {{ count($allParts['array'] ?? []) === 1 ? 'selected' : '' }}>
+                        {{ $item['part']['part_name'] }}
+                      </option>
+                    @endforeach
 
-                      @if (!is_array($value) && !is_array($label))
-                        <option value="{{ $value }}" {{ count($componentOptions) === 1 ? 'selected' : '' }}>
-                          {{ $label }}
-                        </option>
-                      @endif
-                    @empty
+                    @if (empty($allParts['array']))
                       <option value="">Tidak ada part tersedia</option>
-                    @endforelse
+                    @endif
                   </select>
                 </div>
               </div>
@@ -137,6 +131,7 @@
     const projectData = @json($allSpecs);
     const definedNames = @json($definedNames);
     const allModuls = @json($allModuls);
+    const allParts = @json($allParts);
   </script>
   <script src="{{ asset('js/modulBreakdown/univer.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

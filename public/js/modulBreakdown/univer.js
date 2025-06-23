@@ -820,16 +820,13 @@ function addModulToSpreadsheet(modulName) {
 
         // 8. Add other module data
         columns.forEach((col, colIndex) => {
-            if (selectedModulData[col] !== undefined) {
-                breakdownSheet.getRange(newModulRow, colIndex).setValue([
-                    [
-                        {
-                            v: selectedModulData[col],
-                            s: modulStyle,
-                        },
-                    ],
-                ]);
-            }
+            breakdownSheet.getRange(newModulRow, colIndex).setValue([
+                [
+                    {
+                        s: modulStyle,
+                    },
+                ],
+            ]);
         });
 
         // 9. Add components with formula adjustment
@@ -884,6 +881,151 @@ function addModulToSpreadsheet(modulName) {
     }
 }
 
+function addPartToSpreadsheet(partName) {
+    try {
+        const breakdownSheet = workbook.getSheets()[0];
+
+        // 1. Find the selected part data from allParts
+        let selectedPartData = null;
+        let selectedComponents = [];
+
+        if (allParts && allParts.array) {
+            for (const partGroup of allParts.array) {
+                if (partGroup.part?.part_name === partName) {
+                    selectedPartData = partGroup.part;
+                    selectedComponents = partGroup.component || [];
+                    break;
+                }
+            }
+        }
+
+        if (!selectedPartData) {
+            console.error("Part data not found in allParts");
+            return false;
+        }
+
+        // Define adjustFormula function
+        const adjustFormula = (formula, partStartRow, isFilled) => {
+            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+                const newRow = isFilled
+                    ? parseInt(rowNum)
+                    : partStartRow + parseInt(rowNum) - 1;
+                return `${col}${newRow}`;
+            });
+        };
+
+        // 2. Find the true last row with data (scan all columns)
+        let lastDataRow = 0;
+        const maxRows = breakdownSheet.getMaxRows();
+        for (let i = maxRows - 1; i >= 0; i--) {
+            let hasData = false;
+            for (let col = 0; col < columns.length; col++) {
+                const cellData = breakdownSheet
+                    .getRange(i, col, 1, 1)
+                    .getCellDatas()[0][0];
+                if (
+                    cellData &&
+                    cellData.v !== undefined &&
+                    String(cellData.v).trim() !== ""
+                ) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) {
+                lastDataRow = i;
+                break;
+            }
+        }
+
+        // 3. Calculate positions
+        const newPartRow = lastDataRow === 0 ? 1 : lastDataRow + 2;
+        const componentRows = selectedComponents.length;
+        const lastComponentRow = newPartRow + componentRows;
+        const totalRowsNeeded = 1 + componentRows + 1;
+
+        // 4. Ensure have enough rows
+        const currentLastRow = breakdownSheet.getMaxRows();
+        if (lastComponentRow + 1 > currentLastRow) {
+            const rowsToAdd = lastComponentRow - currentLastRow;
+            breakdownSheet.insertRows(currentLastRow, rowsToAdd);
+        }
+
+        // 5. Add empty row after last component if it contains data
+        if (lastComponentRow + 1 <= breakdownSheet.getMaxRows()) {
+            const nextRowData = breakdownSheet
+                .getRange(lastComponentRow + 1, 0, 1, columns.length)
+                .getCellDatas()[0];
+            const hasData = nextRowData.some(
+                (cell) =>
+                    cell && cell.v !== undefined && String(cell.v).trim() !== ""
+            );
+
+            if (hasData) {
+                breakdownSheet.insertRows(lastComponentRow + 1, 1);
+            }
+        }
+
+        // 6. Part row style
+        const partStyle = {
+            bg: { rgb: "#faf59b" }, // Yellow background
+            bl: 1,
+            bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } }, // Borders
+            fs: 11, // Font size
+        };
+
+        // 9. Add components with formula adjustment
+        selectedComponents.forEach((component, compIndex) => {
+            const componentRow = newPartRow + compIndex;
+            const mappedData = mapDataToColumns(component);
+
+            columns.forEach((col, colIndex) => {
+                if (mappedData[colIndex] !== undefined) {
+                    const value = mappedData[colIndex];
+
+                    if (typeof value === "string" && value.startsWith("=")) {
+                        // Handle formula cells with adjustment
+                        const adjustedFormula = adjustFormula(
+                            value,
+                            newPartRow,
+                            false
+                        );
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue({
+                                f: adjustedFormula,
+                                v: "",
+                            });
+                    } else {
+                        // Handle regular values
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue(value);
+                    }
+                }
+            });
+        });
+
+        // 10. Auto-resize columns
+        breakdownSheet.setColumnWidth(namaModulIndex, 200); // Adjust column widths as needed
+        breakdownSheet.setColumnWidth(componentIndex, 200);
+
+        // 11. Scroll to new part
+        breakdownSheet.scrollToCell(newPartRow, 0);
+
+        // 12. Execute calculations after adding data
+        setTimeout(() => formula.executeCalculation(), 100);
+
+        console.log(
+            `Added part "${partName}" at row ${newPartRow} with components until row ${lastComponentRow}`
+        );
+        return true;
+    } catch (error) {
+        console.error("Failed to add part:", error);
+        return false;
+    }
+}
+
 // 2. Event handler untuk tombol Tambah
 $(document).on(
     "click",
@@ -913,6 +1055,38 @@ $(document).on(
             alert("Modul berhasil ditambahkan!");
         } else {
             alert("Gagal menambahkan modul ke spreadsheet");
+        }
+    }
+);
+
+$(document).on(
+    "click",
+    "#partModal .btn-primary:not([data-bs-dismiss])",
+    function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const selectElement = $("#partSelect");
+        const selectedPart = selectElement.val();
+
+        if (!selectedPart) {
+            alert("Silakan pilih Part terlebih dahulu");
+            return;
+        }
+
+        console.log("Memproses modul:", selectedPart);
+
+        // Tambahkan ke spreadsheet
+        if (addPartToSpreadsheet(selectedPart)) {
+            // Tutup modal
+            $("#partModal").modal("hide");
+
+            // Reset select
+            selectElement.val(null).trigger("change");
+
+            alert("part berhasil ditambahkan!");
+        } else {
+            alert("Gagal menambahkan part ke spreadsheet");
         }
     }
 );

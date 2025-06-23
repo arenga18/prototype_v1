@@ -2,39 +2,44 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ModulBreakdownResource\Pages;
-use App\Filament\Resources\ModulBreakdownResource\RelationManagers;
-use App\Models\ModulBreakdown;
+use App\Filament\Resources\RemovablePartResource\Pages;
+use App\Filament\Resources\RemovablePartResource\RelationManagers;
+use App\Models\RemovablePart;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Livewire;
 
-class ModulBreakdownResource extends Resource
+class RemovablePartResource extends Resource
 {
-    protected static ?string $model = ModulBreakdown::class;
-
+    protected static ?string $model = RemovablePart::class;
     protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
 
     protected static ?string $navigationGroup = "Master data";
 
+    protected static ?string $navigationLabel = "Part Lepasan";
+
+    protected static ?string $pluralLabel = "Part Lepasan";
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                //
-            ]);
+                Livewire::make('removable-part-livewire')
+                    ->data(fn($get, $livewire) => [
+                        'recordId' => $livewire->getRecord()?->id,
+                    ])
+            ])->columns(1);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('part')
+                    ->searchable(),
             ])
             ->filters([
                 //
@@ -59,9 +64,9 @@ class ModulBreakdownResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListModulBreakdowns::route('/'),
-            'create' => Pages\CreateModulBreakdown::route('/create'),
-            'edit' => Pages\EditModulBreakdown::route('/{record}/edit'),
+            'index' => Pages\ListRemovableParts::route('/'),
+            'create' => Pages\CreateRemovablePart::route('/create'),
+            'edit' => Pages\EditRemovablePart::route('/{record}/edit'),
         ];
     }
 }

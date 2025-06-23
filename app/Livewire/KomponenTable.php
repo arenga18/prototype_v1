@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\ModulComponent;
 use App\Models\Project;
 use App\Models\PartComponent;
+use App\Models\RemovablePart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -17,6 +18,7 @@ class KomponenTable extends Component
     public $partComponentsData = [];
     public $columns;
     public $allModuls = [];
+    public $allParts = [];
     public $definedNames = [];
     public $fieldMapping;
     public $dataValidationCol;
@@ -110,6 +112,7 @@ class KomponenTable extends Component
         $this->loadGroupedComponents();
         $this->loadPartComponentData();
         $this->loadAllModuls();
+        $this->loadAllRemovableParts();
     }
 
     public function loadDropdownData()
@@ -253,6 +256,22 @@ class KomponenTable extends Component
             $this->allModuls['array'][] = [
                 'modul' => ['nama_modul' => $modul['modul']],
                 'component' => $processedComponents,
+                'isFilled' => false
+            ];
+        }
+    }
+
+    protected function loadAllRemovableParts()
+    {
+        $parts = RemovablePart::all()->toArray();
+
+        foreach ($parts as $part) {
+            $partList = $this->parseComponentData($part['component']);
+            $processedParts = $this->processComponents($partList ?? []);
+
+            $this->allParts['array'][] = [
+                'part' => ['part_name' => $part['part']],
+                'component' => $processedParts,
                 'isFilled' => false
             ];
         }

@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modul_breakdowns', function (Blueprint $table) {
+        Schema::create('removable_parts', function (Blueprint $table) {
             $table->id();
-            $table->json('modul_reference');
-            $table->json('components');
+            $table->string('part');
+            $table->json('component');
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modul_breakdowns');
+        Schema::dropIfExists('removable_parts');
     }
 };
