@@ -74,7 +74,7 @@
             @foreach ($columnLabels as $columnLabel)
               @if ($columnLabel['display'])
                 <th class="it-table-repeater-cell-label p-2 border border-gray-300"
-                  style="width: 50%; {{ $colStyles[$columnLabel['component']] ?? '' }}">
+                  {{ $colStyles[$columnLabel['component']] ?? '' }}">
                   <span class="text-sm">
                     {{ $columnLabel['name'] }}
                   </span>
@@ -103,8 +103,8 @@
               x-sortable-item="{{ $uuid }}">
 
               @foreach ($item->getComponents() as $component)
-                <td class="it-table-repeater-cell p-0 align-top border border-gray-300"
-                  style="width: 50%; {{ $colStyles[$component->getName()] ?? '' }}"
+                <td class="it-table-repeater-cell p-0 align-top border border-gray-300 text-sm"
+                  style="width: 30%; {{ $colStyles[$component->getName()] ?? '' }}"
                   @if ($component->isHidden() || $component instanceof \Filament\Forms\Components\Hidden) style="display:none" @endif>
                   {{ $component }}
                 </td>

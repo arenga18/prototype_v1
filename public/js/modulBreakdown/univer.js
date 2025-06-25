@@ -341,8 +341,11 @@ function prepareSpecSheetData() {
                         v: item.value !== null ? item.value : "",
                         s: item.value !== null ? dataStyle : nullValueStyle,
                     },
-                    4: { v: "", s: dataStyle },
-                    5: { v: "", s: dataStyle },
+                    4: { v: item.val !== null ? item.val : "", s: dataStyle },
+                    5: {
+                        v: item.note !== null ? item.note : "",
+                        s: dataStyle,
+                    },
                     6: { v: "", s: dataStyle },
                 };
                 rowIndex++;
@@ -452,13 +455,18 @@ columns.forEach((col, index) => {
     }
 });
 
-const specSheet = workbook.getSheets("sheet2")[1];
+const breakdownSheet = workbook.getSheets("sheet1")[0];
+if (breakdownSheet) {
+    breakdownSheet.setRowHeight(0, 80);
+}
 
+const specSheet = workbook.getSheets("sheet2")[1];
 if (specSheet) {
-    specSheet.setColumnWidth(0, 40); // Kolom A: 30px
+    specSheet.setColumnWidth(0, 40);
     specSheet.setColumnWidth(1, 200);
-    specSheet.setColumnWidth(2, 15); // Kolom C: 15px
+    specSheet.setColumnWidth(2, 15);
     specSheet.setColumnWidth(3, 250);
+    specSheet.setColumnWidth(4, 30);
 
     // Get the cell data by reading the range
     const maxRows = specSheet.getMaxRows();

@@ -95,3 +95,11 @@ body,
 .btn-add:hover {
     background: rgb(72, 72, 246);
 }
+
+.choices__list--single .choices__item {
+    font-size: 12px !important;
+}
+
+.fi-input {
+    font-size: 12px !important;
+}
