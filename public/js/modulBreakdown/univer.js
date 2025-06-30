@@ -58,7 +58,7 @@ function mapDataToColumns(comp) {
 
 const formula = univerAPI.getFormula();
 
-function prepareComponentSheetData() {
+function prepareBreakdownSheetData() {
     let data = {};
     const modulStartRows = {};
     let currentRow = 1;
@@ -365,7 +365,7 @@ function prepareSpecSheetData() {
 }
 
 const { data: componentData, mergeCells: componentMerge } =
-    prepareComponentSheetData();
+    prepareBreakdownSheetData();
 const { data: validationData, mergeCells: validationMerge } =
     prepareValidationSheetData();
 const {
@@ -548,50 +548,6 @@ if (validationSheet) {
         );
     }
 }
-
-// Fungsi untuk dropdown component
-function applyComponentDropdown() {
-    if (componentIndex >= 0 && componentOptions.length > 0) {
-        const componentDropdownRule = univerAPI
-            .newDataValidation()
-            .requireValueInList(componentOptions.map((option) => option.value))
-            .setOptions({
-                renderMode: univerAPI.Enum.DataValidationRenderMode.ARROW,
-                allowInvalid: true,
-                showDropDown: true,
-                showErrorMessage: false,
-            })
-            .build();
-
-        worksheet
-            .getRange(1, componentIndex, worksheet.getMaxRows(), 1)
-            .setDataValidation(componentDropdownRule);
-    }
-}
-
-// Fungsi untuk dropdown type
-function applyTypeDropdown() {
-    if (typeIndex >= 0 && componentTypes.length > 0) {
-        const typeDropdownRule = univerAPI
-            .newDataValidation()
-            .requireValueInList(componentTypes.map((type) => type.value))
-            .setOptions({
-                renderMode: univerAPI.Enum.DataValidationRenderMode.ARROW,
-                allowInvalid: true,
-                showDropDown: true,
-                showErrorMessage: false,
-            })
-            .build();
-
-        worksheet
-            .getRange(1, typeIndex, worksheet.getMaxRows(), 1)
-            .setDataValidation(typeDropdownRule);
-    }
-}
-
-// Terapkan dropdown
-applyComponentDropdown();
-applyTypeDropdown();
 
 // Fungsi untuk mendapatkan semua data
 function getAllData() {
@@ -1034,7 +990,6 @@ function addPartToSpreadsheet(partName) {
     }
 }
 
-// 2. Event handler untuk tombol Tambah
 $(document).on(
     "click",
     "#modulModal .btn-primary:not([data-bs-dismiss])",

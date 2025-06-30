@@ -16,6 +16,25 @@ $("#modulSelect").select2({
     width: "100%",
 });
 
+$("#modulModal").on("shown.bs.modal", function () {
+    $("#modulSelect").select2({
+        placeholder: "--Pilih Modul--",
+        allowClear: true,
+        width: "100%",
+        dropdownParent: $("#modulModal"),
+    });
+});
+
+// Inisialisasi Select2 untuk part
+$("#partModal").on("shown.bs.modal", function () {
+    $("#partSelect").select2({
+        placeholder: "--Pilih Modul--",
+        allowClear: true,
+        width: "100%",
+        dropdownParent: $("#partModal"),
+    });
+});
+
 const fullscreenBtn = document.getElementById("fullscreen-btn");
 const container = document.querySelector(
     'div[style="width: 100%; position: relative;"]'

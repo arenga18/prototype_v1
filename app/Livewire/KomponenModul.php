@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\PartComponent;
 use App\Models\ModulComponent;
+use App\Models\RemovablePart;
 use App\Models\Modul;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,8 @@ class KomponenModul extends Component
     public $modulData = [];
     public $modulReference = [];
     public $partComponentsData = [];
+    public $allModuls = [];
+    public $allParts = [];
     public $groupedComponents = [];
     public $definedNames = [];
     public $dataValidationCol;
@@ -49,6 +52,7 @@ class KomponenModul extends Component
                 $this->modulList = [];
             }
         } else {
+            $this->modul = $modul ?? [];
             $usedModuls = ModulComponent::pluck('modul')->toArray();
             $this->modulList = Modul::whereNotIn('code_cabinet', $usedModuls)
                 ->pluck('code_cabinet')
@@ -58,7 +62,10 @@ class KomponenModul extends Component
         $this->modulReference = ModulComponent::all()->pluck('modul')->toArray();
         $this->loadDropdownData();
         $this->loadPartComponentData();
+        $this->loadGroupedComponents();
         $this->loadDefinedNames();
+        $this->loadAllModuls();
+        $this->loadAllRemovableParts();
     }
 
     public function getModulData(Request $request)
@@ -77,6 +84,89 @@ class KomponenModul extends Component
             'success' => false,
             'components' => null
         ]);
+    }
+
+    protected function loadAllModuls()
+    {
+        $moduls = ModulComponent::all()->toArray();
+
+        foreach ($moduls as $modul) {
+            $componentList = $this->parseComponentData($modul['component']);
+            $processedComponents = $this->processComponents($componentList ?? []);
+
+            $this->allModuls['array'][] = [
+                'modul' => ['nama_modul' => $modul['modul']],
+                'component' => $processedComponents,
+                'isFilled' => false
+            ];
+        }
+    }
+
+    protected function loadAllRemovableParts()
+    {
+        $parts = RemovablePart::all()->toArray();
+
+        foreach ($parts as $part) {
+            $partList = $this->parseComponentData($part['component']);
+            $processedParts = $this->processComponents($partList ?? []);
+
+            $this->allParts['array'][] = [
+                'part' => ['part_name' => $part['part']],
+                'component' => $processedParts,
+                'isFilled' => false
+            ];
+        }
+    }
+
+    protected function processComponents($components)
+    {
+        if (!is_array($components)) {
+            return [];
+        }
+
+        return array_map(function ($comp) {
+            if (!isset($comp['component'])) {
+                return $comp;
+            }
+
+            $partComponent = $this->findPartComponentByName($comp['component']);
+            return $partComponent ? array_merge($comp, $partComponent) : $comp;
+        }, $components);
+    }
+
+    protected function findPartComponentByName($name)
+    {
+        return PartComponent::query()
+            ->get()
+            ->map(function ($component) {
+                return $this->parsePartComponentData($component);
+            })
+            ->first(function ($data) use ($name) {
+                return $this->componentMatchesName($data, $name);
+            });
+    }
+
+
+    protected function componentMatchesName($componentData, $name)
+    {
+        if (isset($componentData['name']) && $componentData['name'] === $name) {
+            return true;
+        }
+
+        if (!empty($componentData['part_component'])) {
+            try {
+                $jsonString = trim($componentData['part_component'], '"');
+                $decoded = json_decode($jsonString, true);
+
+                return is_array($decoded) &&
+                    !empty($decoded[0]['data']['name']) &&
+                    $decoded[0]['data']['name'] === $name;
+            } catch (\Exception $e) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public function updateGroupedComponent($payload)
@@ -206,15 +296,75 @@ class KomponenModul extends Component
 
     public function loadGroupedComponents()
     {
-        $this->groupedComponents = [];
+        $this->groupedComponents = ['array' => []];
 
         if (!empty($this->modul)) {
-            $modulData = ModulComponent::where('modul', $this->modul)->first();
-            if ($modulData) {
-                $componentData = $this->parseComponentData($modulData->component);
-                if ($componentData) {
-                    $this->groupedComponents[$this->modul] = $componentData;
-                }
+            $this->loadComponentsFromModulComponent($this->modul);
+            return;
+        }
+
+        $decodedModuls = $this->getDecodedModuls();
+
+        if ($this->recordId) {
+            $this->loadComponentsFromModulComponent($decodedModuls);
+        }
+
+        $this->loadMissingModuls($decodedModuls);
+        $this->ensureAllModulsPresent($decodedModuls);
+    }
+
+    protected function loadComponentsFromModulComponent($modulName)
+    {
+        $modulData = ModulComponent::where('modul', $modulName)->first();
+
+        if ($modulData) {
+            $componentList = $this->parseComponentData($modulData->component);
+            $processedComponents = $this->processComponents($componentList ?? []);
+
+            $this->groupedComponents['array'][] = [
+                'modul' => ['nama_modul' => $modulName],
+                'component' => $processedComponents,
+                'isFilled' => false
+            ];
+        }
+    }
+
+    // Maintain all the original reference methods unchanged
+    protected function getDecodedModuls()
+    {
+        return array_map(function ($item) {
+            return is_string($item) ? json_decode('"' . $item . '"') : $item;
+        }, $this->modul);
+    }
+
+    protected function loadMissingModuls($decodedModuls)
+    {
+        $existingModuls = array_column(array_column($this->groupedComponents['array'], 'modul'), 'nama_modul');
+        $missingModuls = array_diff($decodedModuls, $existingModuls);
+
+        if (empty($missingModuls)) {
+            return;
+        }
+
+        foreach ($missingModuls as $modulName) {
+            $this->loadComponentsFromModulComponent($modulName);
+        }
+    }
+
+    protected function ensureAllModulsPresent($decodedModuls)
+    {
+        foreach ($decodedModuls as $modul) {
+            $found = collect($this->groupedComponents['array'])
+                ->contains(function ($item) use ($modul) {
+                    return $item['modul']['nama_modul'] === $modul;
+                });
+
+            if (!$found) {
+                $this->groupedComponents['array'][] = [
+                    'modul' => ['nama_modul' => $modul],
+                    'component' => [],
+                    'isFilled' => false
+                ];
             }
         }
     }
@@ -318,33 +468,21 @@ class KomponenModul extends Component
     public function save(Request $request)
     {
         $validated = $request->validate([
-            'modul' => 'required|string',
+            'modul' => 'string',
             'reference_modul' => 'nullable|string',
             'components' => 'required|array',
-            'columns' => 'required|array'
         ]);
 
         try {
             $mainModul = $validated['modul'];
             $referenceModul = $validated['reference_modul'];
-            $componentsData = $validated['components'];
-            $columns = $validated['columns'];
+            $componentsData = json_encode($validated['components']);
 
-            $modulComponents = [];
-            foreach ($componentsData as $component) {
-                $modulName = $component['modul'];
-                if (!isset($modulComponents[$modulName])) {
-                    $modulComponents[$modulName] = [];
-                }
-                $modulComponents[$modulName][] = $component['data'];
-            }
 
-            foreach ($modulComponents as $modulName => $components) {
-                $modulComponent = ModulComponent::firstOrNew(['modul' => $modulName]);
-                $modulComponent->component = json_encode($components);
-                $modulComponent->reference_modul = ($modulName === $mainModul) ? $referenceModul : null;
-                $modulComponent->save();
-            }
+            $modulComponent = ModulComponent::firstOrNew(['modul' => $mainModul]);
+            $modulComponent->component = ($componentsData);
+            $modulComponent->reference_modul = $referenceModul;
+            $modulComponent->save();
 
             return response()->json([
                 'status' => 'success',
@@ -372,20 +510,12 @@ class KomponenModul extends Component
         try {
             $mainModul = $validated['modul'];
             $referenceModul = $validated['reference_modul'];
-            $componentsData = $validated['components'];
-            $columns = $validated['columns'];
+            $componentsData = json_encode($validated['components']);
             $recordId = $validated['recordId'];
 
             $modulComponent = ModulComponent::findOrFail($recordId);
-            $components = [];
 
-            foreach ($componentsData as $component) {
-                if ($component['modul'] === $mainModul) {
-                    $components[] = $component['data'];
-                }
-            }
-
-            $modulComponent->component = json_encode($components);
+            $modulComponent->component = $componentsData;
             $modulComponent->reference_modul = $referenceModul;
             $modulComponent->save();
 

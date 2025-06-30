@@ -122,10 +122,8 @@ class KomponenTable extends Component
         $options = [];
 
         foreach ($parts as $part) {
-            // Decode the JSON string from part_component
             $decoded = json_decode($part->part_component, true);
 
-            // Skip if JSON is invalid
             if (json_last_error() !== JSON_ERROR_NONE) {
                 continue;
             }
@@ -139,7 +137,6 @@ class KomponenTable extends Component
 
                 $componentData = $item['data'];
 
-                // Skip if no name is set
                 if (!isset($componentData['name'])) {
                     continue;
                 }
@@ -405,18 +402,7 @@ class KomponenTable extends Component
             })
             ->collapse();
 
-        // Filter part components that match the names from modul components
         $this->partComponentsData = $allPartComponents;
-        // $this->partComponentsData = $allPartComponents
-        //     ->filter(function ($partComponent) use ($componentNames) {
-        //         $name = $partComponent['name'] ?? null;
-        //         return $componentNames->contains(function ($componentName) use ($name) {
-        //             return $componentName === $name;
-        //         });
-        //     })
-        //     ->unique('name')
-        //     ->values()
-        //     ->toArray();
     }
 
     public function loadDefinedNames()
@@ -482,7 +468,6 @@ class KomponenTable extends Component
 
     public function getSpecData()
     {
-        // Langsung kembalikan variabel allSpecs
         return $this->allSpecs;
     }
 
@@ -500,6 +485,7 @@ class KomponenTable extends Component
         $this->allSpecs = [
             'product_spesification' => $this->parseSpecData($project->product_spesification),
             'material_thickness_spesification' => $this->parseSpecData($project->material_thickness_spesification),
+            'coating_standard' => $this->parseSpecData($project->coating_standard),
             'coating_spesification' => $this->parseSpecData($project->coating_spesification),
             'komp_anodize_spesification' => $this->parseSpecData($project->komp_anodize_spesification),
             'alu_frame_spesification' => $this->parseSpecData($project->alu_frame_spesification),

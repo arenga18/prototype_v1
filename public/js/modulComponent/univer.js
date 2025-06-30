@@ -22,6 +22,8 @@ const { univerAPI } = createUniver({
     presets: [UniverSheetsCorePreset(), UniverSheetsDataValidationPreset()],
 });
 
+const formula = univerAPI.getFormula();
+
 // Fungsi untuk memetakan data ke kolom
 function mapDataToColumns(comp) {
     let componentRow = {};
@@ -63,136 +65,176 @@ function mapDataToColumns(comp) {
 // Siapkan data untuk Univer
 function prepareUniverData() {
     let data = {};
+    const modulStartRows = {};
+    let currentRow = 1;
 
-    // Tambahkan header kolom di baris pertama
+    // Create header row
     data[0] = {};
     columns.forEach((col, index) => {
         data[0][index] = {
             v: col,
             s: {
                 bl: 1, // bold
-                ht: 2, // horizontal text alignment
-                vt: 2, // Vertical text alignment
-                fs: 11, // Font size
+                ht: 2, // horizontal alignment
+                vt: 2, // vertical alignment
+                fs: 11, // font size
             },
         };
     });
 
-    // Mulai data dari baris 1 (setelah header)
-    let currentRow = 1;
+    const adjustFormula = (formula, modulStartRow, isFilled) => {
+        return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+            const newRow = isFilled
+                ? parseInt(rowNum)
+                : modulStartRow + parseInt(rowNum) - 2;
+            return `${col}${newRow}`;
+        });
+    };
 
-    // Check if we have modul data to load
-    if (modul || modulData[modul]) {
-        let components = [];
-        try {
-            // Handle case when modulData[modul] is null/undefined
-            const modulComponents = modulData[modul] || "[]";
-            components = JSON.parse(modulComponents);
-        } catch (err) {
-            console.error("Error parsing modulData:", err);
-            components = []; // Pastikan components tetap array meskipun error
-        }
+    const modulStyle = {
+        bg: { rgb: "#faf59b" }, // yellow background
+        bl: 1, // bold
+        bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } }, // borders
+        fs: 11, // font size
+    };
 
-        // Set nama modul hanya di baris pertama data (baris 1)
-        data[currentRow] = {};
-        data[currentRow][namaModulIndex] = {
-            v: modul,
-        };
-        currentRow++;
+    if (groupedComponents?.array) {
+        const uniqueGroups = [];
+        const processedModuls = new Set();
 
-        // Pastikan components adalah array dan tidak null/undefined
-        if (!Array.isArray(components)) {
-            console.warn(
-                `Data components untuk modul ${modul} bukan array, mengkonversi ke array kosong`
-            );
-            components = [];
-        }
+        // First pass: Collect all unique module groups
+        groupedComponents.array.forEach((group) => {
+            const modulName = group.modul?.nama_modul || "";
+            if (!processedModuls.has(modulName)) {
+                uniqueGroups.push(group);
+                processedModuls.add(modulName);
+            }
+        });
 
-        // Hanya proses jika ada kolom component dan components tidak kosong
-        if (componentIndex >= 0) {
-            if (components && components.length > 0) {
-                components.forEach((compObj) => {
-                    // Pastikan compObj tidak null/undefined
-                    if (compObj && typeof compObj === "object") {
-                        data[currentRow] = {};
+        // Process each module group
+        uniqueGroups.forEach((group, modulIndex) => {
+            const modulData = group.modul || {};
+            const modulName = modulData.nama_modul || "";
 
-                        // Isi component dan field lainnya
-                        if (compObj.component) {
-                            data[currentRow][componentIndex] = {
-                                v: compObj.component,
-                            };
+            // Skip if no modul name
+            if (!modulName) return;
+
+            // Store starting row for formula adjustment
+            modulStartRows[modulName] = currentRow + 1;
+
+            // Create modul row with style (only if it hasn't been created yet)
+            if (!data[currentRow]?.[namaModulIndex]?.v) {
+                data[currentRow] = {};
+                columns.forEach((col, colIndex) => {
+                    if (modulData[col] !== undefined) {
+                        data[currentRow][colIndex] = {
+                            v: modulData[col],
+                            s: modulStyle,
+                        };
+                    } else if (colIndex === namaModulIndex) {
+                        data[currentRow][colIndex] = {
+                            v: modulName,
+                            s: modulStyle,
+                        };
+                    } else {
+                        data[currentRow][colIndex] = {
+                            v: "",
+                            s: modulStyle,
+                        };
+                    }
+                });
+                currentRow++;
+            }
+
+            // Process components array
+            if (Array.isArray(group.component)) {
+                group.component.forEach(
+                    (componentGroup, componentGroupIndex) => {
+                        // Handle nested module names in component groups
+                        const nestedModulName =
+                            componentGroup.modul?.nama_modul || modulName;
+
+                        // Add nested module header if different from parent
+                        if (
+                            nestedModulName !== modulName &&
+                            !processedModuls.has(nestedModulName)
+                        ) {
+                            data[currentRow] = {};
+                            columns.forEach((col, colIndex) => {
+                                if (colIndex === namaModulIndex) {
+                                    data[currentRow][colIndex] = {
+                                        v: nestedModulName,
+                                        s: modulStyle,
+                                    };
+                                } else {
+                                    data[currentRow][colIndex] = {
+                                        v: "",
+                                        s: modulStyle,
+                                    };
+                                }
+                            });
+                            currentRow++;
+                            processedModuls.add(nestedModulName);
                         }
 
-                        // Map other fields
-                        Object.keys(compObj).forEach((key) => {
-                            const colIndex = columns.indexOf(key);
-                            if (colIndex >= 0) {
-                                data[currentRow][colIndex] = {
-                                    v: compObj[key],
-                                };
-                            }
-                        });
+                        // Handle nested components structure
+                        const components = componentGroup.components || [];
 
-                        currentRow++;
-                    } else {
-                        console.warn("Data component tidak valid:", compObj);
+                        if (Array.isArray(components)) {
+                            components.forEach((comp) => {
+                                data[currentRow] = {};
+
+                                // Map component data to columns
+                                const rowData = mapDataToColumns(comp);
+
+                                Object.keys(rowData).forEach((col) => {
+                                    const colValue = rowData[col];
+                                    data[currentRow][col] =
+                                        typeof colValue === "string" &&
+                                        colValue.startsWith("=")
+                                            ? {
+                                                  f: adjustFormula(
+                                                      colValue,
+                                                      modulStartRows[
+                                                          nestedModulName
+                                                      ] ||
+                                                          modulStartRows[
+                                                              modulName
+                                                          ],
+                                                      group.isFilled || false
+                                                  ),
+                                                  v: "",
+                                              }
+                                            : { v: colValue };
+                                });
+
+                                currentRow++;
+                            });
+                        }
+
+                        // Add space between component groups if not last
+                        if (componentGroupIndex < group.component.length - 1) {
+                            data[currentRow] = {};
+                            currentRow++;
+                        }
                     }
-                });
-            } else {
-                console.log(`Modul ${modul} tidak memiliki components`);
-                // Tambahkan baris kosong untuk menjaga struktur
+                );
+            }
+
+            // Add space between module groups if not last
+            if (modulIndex < uniqueGroups.length - 1) {
                 data[currentRow] = {};
                 currentRow++;
             }
-        } else {
-            console.error("Kolom component tidak ditemukan.");
-            // Tambahkan baris kosong untuk menjaga struktur
-            data[currentRow] = {};
-            currentRow++;
-        }
-    } else {
-        console.warn("Tidak ada data component untuk modul:", modul);
-        // Tambahkan baris kosong untuk menjaga struktur
-        data[currentRow] = {};
-        currentRow++;
+        });
     }
 
-    // Add grouped components data if exists
-    Object.entries(groupedComponents).forEach(
-        ([modulName, components], modulIndex) => {
-            // Set nama modul hanya di baris pertama grup
-            data[currentRow] = {};
-            data[currentRow][namaModulIndex] = {
-                v: modulName || "",
-            };
-            currentRow++;
-
-            if (Array.isArray(components)) {
-                components.forEach((comp) => {
-                    if (comp && typeof comp === "object") {
-                        const rowData = mapDataToColumns(comp);
-                        data[currentRow] = {};
-                        Object.keys(rowData).forEach((col) => {
-                            data[currentRow][col] = {
-                                v: rowData[col],
-                            };
-                        });
-                        currentRow++;
-                    }
-                });
-            }
-
-            // Tambahkan baris kosong antara modul
-            if (modulIndex < Object.keys(groupedComponents).length - 1) {
-                data[currentRow] = {};
-                currentRow++;
-            }
-        }
-    );
+    // Execute calculations after a short delay
+    setTimeout(() => formula.executeCalculation(), 100);
 
     return {
         data,
-        mergeCells: [], // Return empty array for mergeCells
+        mergeCells: [],
     };
 }
 
@@ -336,8 +378,11 @@ const workbook = univerAPI.createWorkbook({
     },
 });
 
-// Dapatkan instance worksheet
 const worksheet = workbook.getActiveSheet();
+const componentSheet = workbook.getSheets("sheet1")[0];
+if (componentSheet) {
+    componentSheet.setRowHeight(0, 80);
+}
 
 const validationSheet = workbook.getSheets()[1];
 if (validationSheet) {
@@ -354,42 +399,46 @@ if (validationSheet) {
             console.error(`Gagal membuat defined name ${defName.name}:`, error);
         }
     });
-
-    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
-    const maxRows = validationSheet.getMaxRows();
-    if (maxRows > 0) {
-        validationSheet.insertDefinedName(
-            "data_validation_range",
-            `'Data Validation'!$A$1:$Z$${maxRows}`,
-            "Range seluruh data validasi"
-        );
-    }
 }
 
-function handleComponentChange(rowIndex, componentName) {
-    const workbook = univerAPI.getActiveWorkbook();
-    const sheet = workbook.getActiveSheet();
+function applyFilteredDataValidations() {
+    const definedNamed = JSON.parse(definedNames);
 
-    // Find the matching component data
-    const componentData = componentOptions.find(
-        (opt) => opt.value === componentName
-    )?.data;
+    // Filter hanya definedNames dengan nama 'prt' atau 'menu'
+    const filteredDefNames = definedNamed.filter(
+        (defName) => defName.name === "prt" || defName.name === "menu"
+    );
 
-    if (!componentData) return;
+    // Mapping data
+    const defNameToColumn = {
+        menu: 1, // Kolom index 1 untuk menu
+        prt: 6, // Kolom index 6 untuk prt
+    };
 
-    // Map the component data to columns
-    const rowData = mapDataToColumns(componentData);
+    filteredDefNames.forEach((defName) => {
+        const targetRange = worksheet.getRange(defName.formulaOrRefString);
+        const columnIndex = defNameToColumn[defName.name];
 
-    // Update the row with the component data
-    Object.keys(rowData).forEach((colIndex) => {
-        const value = rowData[colIndex];
-        if (value !== undefined && value !== null && value !== "") {
-            sheet.getRange(rowIndex, parseInt(colIndex)).setValue(value);
+        if (!columnIndex) return;
+
+        try {
+            // Ambil nilai dari range referensi
+            const values = targetRange.getValues().flat().filter(Boolean);
+
+            // Terapkan dropdown ke kolom yang sesuai
+            applyDropdownToColumn(
+                columnIndex,
+                values.map((value) => ({ value })),
+                true
+            );
+
+            console.log(
+                `Data validation applied for ${defName.name} to column ${columnIndex}`
+            );
+        } catch (error) {
+            console.error(`Error applying ${defName.name} validation:`, error);
         }
     });
-
-    // Reapply dropdowns to maintain validation
-    applyAllDropdowns();
 }
 
 function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
@@ -404,6 +453,8 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
                 allowInvalid: false,
                 showDropDown: true,
                 showErrorMessage: true,
+                errorMessage: `Nilai harus ada dalam daftar yang ditentukan`,
+                errorTitle: "Nilai Tidak Valid",
             })
             .build();
 
@@ -415,31 +466,20 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
         );
 
         if (clearInvalid) {
-            const values = range.getValue() || [];
-            const safeValues = Array.isArray(values) ? values : [[values]];
+            const currentValues = range.getValues();
 
-            safeValues.forEach((row, i) => {
-                const cellValue = Array.isArray(row) ? row[0] : row;
+            currentValues.forEach((row, i) => {
+                const cellValue = row[0];
                 if (
                     cellValue &&
                     !options.some((opt) => (opt.value || opt) === cellValue)
                 ) {
-                    worksheet.getRange(i + 1, columnIndex).clearValue();
+                    worksheet.getRange(i + 1, columnIndex);
                 }
             });
         }
 
         range.setDataValidation(dropdownRule);
-
-        // Add change listener for component column
-        if (columnIndex === COLUMN_DROPDOWNS.component.index) {
-            range.onChange(({ row, col, value }) => {
-                if (row > 0) {
-                    // Skip header row
-                    handleComponentChange(row + 1, value); // +1 because onChange uses 0-based index
-                }
-            });
-        }
     } catch (error) {
         console.error(
             `Error applying dropdown to column ${columnIndex}:`,
@@ -448,56 +488,8 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
     }
 }
 
-const COLUMN_DROPDOWNS = {
-    type: {
-        index: 1,
-        options: componentTypes,
-    },
-    component: {
-        index: 6,
-        options: componentOptions,
-    },
-    luar: {
-        index: 18,
-        options: componentOptions,
-    },
-    dalam: {
-        index: 20,
-        options: componentOptions,
-    },
-    rel: {
-        index: 36,
-        options: componentOptions,
-    },
-    engsel: {
-        index: 37,
-        options: componentOptions,
-    },
-    v: {
-        index: 38,
-        options: componentOptions,
-    },
-    v2: {
-        index: 39,
-        options: componentOptions,
-    },
-    h: {
-        index: 40,
-        options: componentOptions,
-    },
-    nama_barang: {
-        index: 41,
-        options: componentOptions,
-    },
-};
-
-function applyAllDropdowns() {
-    Object.values(COLUMN_DROPDOWNS).forEach(({ index, options }) => {
-        applyDropdownToColumn(index, options);
-    });
-}
-
-applyAllDropdowns();
+// fungsi untuk validasi data
+applyFilteredDataValidations();
 
 columns.forEach((col, index) => {
     if (index === namaModulIndex || index === componentIndex) {
@@ -521,7 +513,6 @@ function getAllData() {
     );
 
     const cellDatas = range.getCellDatas();
-    console.log(cellDatas);
     const formulas = range.getFormulas();
 
     const result = [];
@@ -575,7 +566,7 @@ $("#modulSelect").on("change", function () {
     if (sheet.getMaxRows() < 2) {
         sheet.insertRows(1, 1);
     }
-    applyAllDropdowns();
+    applyFilteredDataValidations();
 });
 
 $("#modulReference").on("change", async function () {
@@ -583,77 +574,111 @@ $("#modulReference").on("change", async function () {
     if (!modulValue) return;
 
     try {
+        // 1. Ambil data dari server
         const response = await $.ajax({
             url: "/get-modul-data",
             method: "GET",
-            data: {
-                modul: modulValue,
-            },
+            data: { modul: modulValue },
         });
 
-        if (!response.success) {
-            console.warn("Tidak ada data untuk modul:", modulValue);
+        if (!response.success || !response.components) {
+            console.log("Tidak ada data untuk modul:", modulValue);
             return;
         }
 
-        let components = [];
+        // 2. Parse data komponen
+        let allModuls;
         try {
-            components = JSON.parse(response.components);
-            if (!Array.isArray(components)) {
-                throw new Error("Data komponen bukan array");
+            allModuls =
+                typeof response.components === "string"
+                    ? JSON.parse(response.components)
+                    : response.components;
+
+            if (!Array.isArray(allModuls)) {
+                throw new Error("Format data modul tidak valid");
             }
         } catch (err) {
-            console.error("Gagal parse JSON:", err);
+            console.error("Gagal memproses data modul:", err);
             return;
         }
 
+        // 3. Cari modul yang sesuai
+        const selectedModul = allModuls.find(
+            (modul) => modul.modul && modul.modul.nama_modul === modulValue
+        );
+
+        if (!selectedModul || !Array.isArray(selectedModul.components)) {
+            console.log("Modul tidak ditemukan atau tidak memiliki komponen");
+            return;
+        }
+
+        const componentsData = selectedModul.components;
+        console.log("Komponen yang akan ditampilkan:", componentsData);
+
+        // 4. Siapkan worksheet
         const workbook = univerAPI.getActiveWorkbook();
         const sheet = workbook.getActiveSheet();
-        const componentIndex = columns.indexOf("component");
+        const lastColumn = sheet.getMaxColumns();
 
-        if (componentIndex < 0) {
-            console.error("Kolom component tidak ditemukan.");
-            return;
+        // 5. Hitung baris yang dibutuhkan (dimulai dari row 2)
+        const neededRows = componentsData.length;
+        const startDataRow = 2; // Data dimulai dari row 2
+        const totalNeededRows = startDataRow + neededRows;
+
+        // 6. Bersihkan data lama dari row 2 ke bawah
+        const lastRow = sheet.getMaxRows();
+        if (lastRow >= startDataRow) {
+            sheet
+                .getRange(
+                    startDataRow,
+                    1,
+                    lastRow - startDataRow + 1,
+                    lastColumn
+                )
+                .clear();
         }
 
-        // Kosongkan sheet (kecuali header)
-        sheet
-            .getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns())
-            .clear();
+        // 7. Sesuaikan jumlah baris
+        const currentRows = sheet.getMaxRows();
 
-        // Gunakan for...of untuk sequential execution
-        for (const [i, compObj] of components.entries()) {
-            const rowIndex = i + 2;
+        if (currentRows < totalNeededRows) {
+            // Tambah baris jika kurang
+            const rowsToAdd = totalNeededRows - currentRows;
+            sheet.insertRows(currentRows, rowsToAdd);
+        } else if (currentRows > totalNeededRows) {
+            // Hapus baris ekstra jika terlalu banyak
+            const rowsToDelete = currentRows - totalNeededRows;
+            sheet.deleteRows(totalNeededRows + 1, rowsToDelete);
+        }
 
-            // Tambahkan baris jika diperlukan
-            if (rowIndex >= sheet.getMaxRows()) {
-                sheet.insertRows(rowIndex, 1);
-            }
+        // 8. Isi data ke sheet mulai dari row 2
+        const updateOperations = [];
 
-            // Proses semua kolom secara synchronous
-            for (const key of Object.keys(compObj)) {
+        componentsData.forEach((component, index) => {
+            const row = startDataRow + index; // Mulai dari row 2
+
+            // Isi semua kolom yang sesuai
+            for (const [key, value] of Object.entries(component)) {
                 const colIndex = columns.indexOf(key);
-                if (colIndex >= 0) {
-                    const value = compObj[key];
-                    if (value != null) {
-                        await sheet
-                            .getRange(rowIndex, colIndex)
-                            .setValue(value);
-                    }
+                if (colIndex >= 0 && value !== undefined && value !== null) {
+                    updateOperations.push(
+                        sheet.getRange(row, colIndex).setValue(value)
+                    );
                 }
             }
+        });
 
-            // Isi component column
-            const componentValue = compObj.component || compObj.name || "";
-            await sheet
-                .getRange(rowIndex, componentIndex)
-                .setValue(componentValue);
-        }
+        // 9. Eksekusi semua operasi update
+        await Promise.all(updateOperations);
 
-        // Terapkan dropdown setelah semua data terisi
-        await applyAllDropdowns();
+        // 10. Terapkan validasi data
+        await applyFilteredDataValidations();
+
+        console.log(
+            `Data untuk modul ${modulValue} berhasil dimuat (${componentsData.length} komponen)`
+        );
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Error dalam memproses perubahan modul:", error);
     }
 });
 
@@ -661,12 +686,10 @@ $("#modulReference").on("change", async function () {
 $(document).on("click", "#key-bindings-1", function () {
     // 1. Ambil data spreadsheet dan nilai dari form
     const spreadsheetData = getAllData();
-    let selectedModul = $("#modulSelect").val(); // Modul yang dipilih dari dropdown
-    const referenceModul = $("#modulReference").val(); // Modul referensi
+    let selectedModul = $("#modulSelect").val();
+    const referenceModul = $("#modulReference").val();
 
-    // 2. Jika selectedModul kosong, coba ambil dari data spreadsheet
     if (!selectedModul) {
-        // Cari baris pertama yang memiliki nilai di kolom namaModulIndex
         for (let i = 1; i < spreadsheetData.length; i++) {
             const row = spreadsheetData[i];
             if (row[namaModulIndex] && row[namaModulIndex] !== "") {
@@ -683,8 +706,10 @@ $(document).on("click", "#key-bindings-1", function () {
     }
 
     // 3. Rekonstruksi data untuk dikirim ke server
-    const processedData = [];
-    let currentModul = selectedModul;
+    const modulBreakdown = [];
+    let currentModul = null;
+    let currentModulObject = {};
+    let currentComponents = [];
 
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
@@ -692,9 +717,27 @@ $(document).on("click", "#key-bindings-1", function () {
         // Skip baris kosong
         if (Object.values(row).every((val) => val === "")) continue;
 
-        // Jika baris berisi nama modul, update currentModul
+        // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
+            // Simpan modul sebelumnya jika ada
+            if (currentModul) {
+                modulBreakdown.push({
+                    modul: currentModulObject,
+                    components: currentComponents,
+                });
+            }
+
+            // Mulai modul baru
             currentModul = row[namaModulIndex];
+            currentModulObject = { nama_modul: currentModul };
+            currentComponents = [];
+
+            // Isi data modul dari baris ini
+            columns.forEach((col, colIndex) => {
+                if (row[colIndex] !== undefined && row[colIndex] !== "") {
+                    currentModulObject[col] = row[colIndex];
+                }
+            });
             continue;
         }
 
@@ -707,19 +750,23 @@ $(document).on("click", "#key-bindings-1", function () {
         });
 
         if (Object.keys(componentData).length > 0) {
-            processedData.push({
-                modul: currentModul,
-                data: componentData,
-            });
+            currentComponents.push(componentData);
         }
+    }
+
+    // Simpan modul terakhir
+    if (currentModul) {
+        modulBreakdown.push({
+            modul: currentModulObject,
+            components: currentComponents,
+        });
     }
 
     // 4. Siapkan payload untuk dikirim ke server
     const payload = {
-        modul: selectedModul, // Gunakan selectedModul yang sudah dipastikan ada nilainya
+        modul: selectedModul,
         reference_modul: referenceModul,
-        components: processedData,
-        columns: columns,
+        components: modulBreakdown,
     };
 
     console.log("Payload untuk simpan:", payload);
@@ -757,9 +804,11 @@ $(document).on("click", "#key-bindings-2", function () {
         return;
     }
 
-    // Rekonstruksi data dengan format yang benar
-    const processedData = [];
-    let currentModul = selectedModul;
+    // Format data untuk modul_breakdown sesuai struktur referensi
+    const modulBreakdown = [];
+    let currentModul = null;
+    let currentModulObject = {};
+    let currentComponents = [];
 
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
@@ -769,7 +818,25 @@ $(document).on("click", "#key-bindings-2", function () {
 
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
+            // Simpan modul sebelumnya jika ada
+            if (currentModul) {
+                modulBreakdown.push({
+                    modul: currentModulObject,
+                    components: currentComponents,
+                });
+            }
+
+            // Mulai modul baru
             currentModul = row[namaModulIndex];
+            currentModulObject = { nama_modul: currentModul };
+            currentComponents = [];
+
+            // Isi data modul dari baris ini
+            columns.forEach((col, colIndex) => {
+                if (row[colIndex] !== undefined && row[colIndex] !== "") {
+                    currentModulObject[col] = row[colIndex];
+                }
+            });
             continue;
         }
 
@@ -782,22 +849,28 @@ $(document).on("click", "#key-bindings-2", function () {
         });
 
         if (Object.keys(componentData).length > 0) {
-            processedData.push({
-                modul: currentModul,
-                data: componentData,
-            });
+            currentComponents.push(componentData);
         }
     }
 
+    // Simpan modul terakhir
+    if (currentModul) {
+        modulBreakdown.push({
+            modul: currentModulObject,
+            components: currentComponents,
+        });
+    }
+
+    // Buat payload dengan struktur yang dipertahankan
     const payload = {
         modul: selectedModul,
         reference_modul: referenceModul,
-        components: processedData,
+        components: modulBreakdown,
         columns: columns,
         recordId: recordId,
     };
 
-    console.log("Processed Data:", payload);
+    console.log("Payload untuk update:", payload);
 
     $.ajax({
         url: "/update-spreadsheet",
@@ -809,7 +882,8 @@ $(document).on("click", "#key-bindings-2", function () {
         data: JSON.stringify(payload),
         success: function (response) {
             if (response.status === "success") {
-                Livewire.emit("refresh");
+                alert("Data berhasil diupdate!");
+                Livewire.emit("refresh"); // Tambahkan refresh Livewire jika perlu
             } else {
                 alert("Error: " + response.message);
             }
@@ -823,3 +897,379 @@ $(document).on("click", "#key-bindings-2", function () {
         },
     });
 });
+
+function addModulToSpreadsheet(modulName) {
+    try {
+        const breakdownSheet = workbook.getSheets()[0];
+
+        // 1. Find the selected module data from allModuls
+        let selectedModulData = null;
+        let selectedComponents = [];
+
+        if (allModuls && allModuls.array) {
+            for (const modulGroup of allModuls.array) {
+                if (modulGroup.modul?.nama_modul === modulName) {
+                    selectedModulData = modulGroup.modul;
+                    // Perbaikan di sini: komponen sebenarnya ada di component[0].components
+                    if (
+                        modulGroup.component &&
+                        modulGroup.component.length > 0
+                    ) {
+                        selectedComponents =
+                            modulGroup.component[0].components || [];
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!selectedModulData) {
+            console.error("Modul data not found in allModuls");
+            return false;
+        }
+
+        // Define adjustFormula function
+        const adjustFormula = (formula, modulStartRow, isFilled) => {
+            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+                const newRow = isFilled
+                    ? parseInt(rowNum)
+                    : modulStartRow + parseInt(rowNum) - 1;
+                return `${col}${newRow}`;
+            });
+        };
+
+        // 2. Find the true last row with data (scan all columns)
+        let lastDataRow = 0;
+        const maxRows = breakdownSheet.getMaxRows();
+        for (let i = maxRows - 1; i >= 0; i--) {
+            let hasData = false;
+            for (let col = 0; col < columns.length; col++) {
+                const cellData = breakdownSheet
+                    .getRange(i, col, 1, 1)
+                    .getCellDatas()[0][0];
+                if (
+                    cellData &&
+                    cellData.v !== undefined &&
+                    String(cellData.v).trim() !== ""
+                ) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) {
+                lastDataRow = i;
+                break;
+            }
+        }
+
+        // 3. Calculate positions
+        const newModulRow = lastDataRow === 0 ? 1 : lastDataRow + 2;
+        const componentRows = selectedComponents.length;
+        const lastComponentRow = newModulRow + componentRows;
+        const totalRowsNeeded = 1 + componentRows + 1; // Module + components + spacing
+
+        // 4. Ensure we have enough rows
+        const currentLastRow = breakdownSheet.getMaxRows();
+        if (lastComponentRow + 1 > currentLastRow) {
+            const rowsToAdd = lastComponentRow + 1 - currentLastRow;
+            breakdownSheet.insertRows(currentLastRow, rowsToAdd);
+        }
+
+        // 5. Add empty row after last component if it contains data
+        if (lastComponentRow + 1 <= breakdownSheet.getMaxRows()) {
+            const nextRowData = breakdownSheet
+                .getRange(lastComponentRow + 1, 0, 1, columns.length)
+                .getCellDatas()[0];
+            const hasData = nextRowData.some(
+                (cell) =>
+                    cell && cell.v !== undefined && String(cell.v).trim() !== ""
+            );
+
+            if (hasData) {
+                breakdownSheet.insertRows(lastComponentRow + 1, 1);
+            }
+        }
+
+        // 6. Module row style
+        const modulStyle = {
+            bg: { rgb: "#faf59b" },
+            bl: 1,
+            bd: { t: { s: 1 }, b: { s: 1 }, l: { s: 1 }, r: { s: 1 } },
+            fs: 11,
+        };
+
+        // 7. Add module row
+        breakdownSheet.getRange(newModulRow, namaModulIndex).setValue([
+            [
+                {
+                    v: selectedModulData.nama_modul,
+                    s: modulStyle,
+                },
+            ],
+        ]);
+
+        // 8. Add other module data
+        columns.forEach((col, colIndex) => {
+            breakdownSheet.getRange(newModulRow, colIndex).setValue([
+                [
+                    {
+                        s: modulStyle,
+                    },
+                ],
+            ]);
+        });
+
+        // 9. Add components with formula adjustment
+        selectedComponents.forEach((component, compIndex) => {
+            const componentRow = newModulRow + 1 + compIndex;
+            const mappedData = mapDataToColumns(component);
+
+            columns.forEach((col, colIndex) => {
+                if (mappedData[colIndex] !== undefined) {
+                    const value = mappedData[colIndex];
+
+                    if (typeof value === "string" && value.startsWith("=")) {
+                        // Handle formula cells with adjustment
+                        const adjustedFormula = adjustFormula(
+                            value,
+                            newModulRow,
+                            false
+                        );
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue({
+                                f: adjustedFormula,
+                                v: "",
+                            });
+                    } else {
+                        // Handle regular values
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue(value);
+                    }
+                }
+            });
+        });
+
+        // 10. Auto-resize columns
+        breakdownSheet.setColumnWidth(namaModulIndex, 200);
+        breakdownSheet.setColumnWidth(componentIndex, 200);
+
+        // 11. Scroll to new module
+        breakdownSheet.scrollToCell(newModulRow, namaModulIndex);
+
+        // 12. Execute calculations after adding data
+        setTimeout(() => formula.executeCalculation(), 100);
+
+        console.log(
+            `Added module "${modulName}" at row ${newModulRow} with components until row ${lastComponentRow}`
+        );
+        return true;
+    } catch (error) {
+        console.error("Failed to add module:", error);
+        return false;
+    }
+}
+
+function addPartToSpreadsheet(partName) {
+    try {
+        const breakdownSheet = workbook.getSheets()[0];
+
+        // 1. Find the selected part data from allParts
+        let selectedPartData = null;
+        let selectedComponents = [];
+
+        if (allParts && allParts.array) {
+            for (const partGroup of allParts.array) {
+                if (partGroup.part?.part_name === partName) {
+                    selectedPartData = partGroup.part;
+                    selectedComponents = partGroup.component || [];
+                    break;
+                }
+            }
+        }
+
+        if (!selectedPartData) {
+            console.error("Part data not found in allParts");
+            return false;
+        }
+
+        // Define adjustFormula function
+        const adjustFormula = (formula, partStartRow, isFilled) => {
+            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+                const newRow = isFilled
+                    ? parseInt(rowNum)
+                    : partStartRow + parseInt(rowNum) - 1;
+                return `${col}${newRow}`;
+            });
+        };
+
+        // 2. Find the true last row with data (scan all columns)
+        let lastDataRow = 0;
+        const maxRows = breakdownSheet.getMaxRows();
+        for (let i = maxRows - 1; i >= 0; i--) {
+            let hasData = false;
+            for (let col = 0; col < columns.length; col++) {
+                const cellData = breakdownSheet
+                    .getRange(i, col, 1, 1)
+                    .getCellDatas()[0][0];
+                if (
+                    cellData &&
+                    cellData.v !== undefined &&
+                    String(cellData.v).trim() !== ""
+                ) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) {
+                lastDataRow = i;
+                break;
+            }
+        }
+
+        // 3. Calculate positions
+        const newPartRow = lastDataRow === 0 ? 1 : lastDataRow + 2;
+        const componentRows = selectedComponents.length;
+        const lastComponentRow = newPartRow + componentRows;
+
+        // 4. Ensure have enough rows
+        const currentLastRow = breakdownSheet.getMaxRows();
+        if (lastComponentRow + 1 > currentLastRow) {
+            const rowsToAdd = lastComponentRow - currentLastRow;
+            breakdownSheet.insertRows(currentLastRow, rowsToAdd);
+        }
+
+        // 5. Add empty row after last component if it contains data
+        if (lastComponentRow + 1 <= breakdownSheet.getMaxRows()) {
+            const nextRowData = breakdownSheet
+                .getRange(lastComponentRow + 1, 0, 1, columns.length)
+                .getCellDatas()[0];
+            const hasData = nextRowData.some(
+                (cell) =>
+                    cell && cell.v !== undefined && String(cell.v).trim() !== ""
+            );
+
+            if (hasData) {
+                breakdownSheet.insertRows(lastComponentRow + 1, 1);
+            }
+        }
+
+        // 9. Add components with formula adjustment
+        selectedComponents.forEach((component, compIndex) => {
+            const componentRow = newPartRow + compIndex;
+            const mappedData = mapDataToColumns(component);
+
+            columns.forEach((col, colIndex) => {
+                if (mappedData[colIndex] !== undefined) {
+                    const value = mappedData[colIndex];
+
+                    if (typeof value === "string" && value.startsWith("=")) {
+                        // Handle formula cells with adjustment
+                        const adjustedFormula = adjustFormula(
+                            value,
+                            newPartRow,
+                            false
+                        );
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue({
+                                f: adjustedFormula,
+                                v: "",
+                            });
+                    } else {
+                        // Handle regular values
+                        breakdownSheet
+                            .getRange(componentRow, colIndex)
+                            .setValue(value);
+                    }
+                }
+            });
+        });
+
+        // 10. Auto-resize columns
+        breakdownSheet.setColumnWidth(namaModulIndex, 200);
+        breakdownSheet.setColumnWidth(componentIndex, 200);
+
+        // 11. Scroll to new part
+        breakdownSheet.scrollToCell(newPartRow, 0);
+
+        // 12. Execute calculations after adding data
+        setTimeout(() => formula.executeCalculation(), 100);
+
+        console.log(
+            `Added part "${partName}" at row ${newPartRow} with components until row ${lastComponentRow}`
+        );
+        return true;
+    } catch (error) {
+        console.error("Failed to add part:", error);
+        return false;
+    }
+}
+
+$(document).on(
+    "click",
+    "#modul-modal button[type='button'].bg-blue-700",
+    function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const selectElement = $("#sub-modulSelect");
+        console.log("Memproses modul:", selectElement);
+        const selectedModul = selectElement.val();
+
+        if (!selectedModul) {
+            alert("Silakan pilih modul terlebih dahulu");
+            return;
+        }
+
+        console.log("Memproses modul:", selectedModul);
+
+        // Tambahkan ke spreadsheet
+        if (addModulToSpreadsheet(selectedModul)) {
+            const modal = FlowbiteInstances.getInstance("Modal", "modul-modal");
+            modal.hide();
+
+            // Reset select
+            selectElement.val(null).trigger("change");
+            alert("Modul berhasil ditambahkan!");
+        } else {
+            alert("Gagal menambahkan modul ke spreadsheet");
+        }
+    }
+);
+
+$(document).on(
+    "click",
+    "#part-modal button[type='button'].bg-blue-700",
+    function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const selectElement = $("#partSelect");
+
+        console.log("Memproses part:", selectElement);
+        const selectedPart = selectElement.val();
+
+        if (!selectedPart) {
+            alert("Silakan pilih Part terlebih dahulu");
+            return;
+        }
+
+        console.log("Memproses part:", selectedPart);
+
+        // Tambahkan ke spreadsheet
+        if (addPartToSpreadsheet(selectedPart)) {
+            // Tutup modal menggunakan Flowbite
+            const modal = FlowbiteInstances.getInstance("Modal", "part-modal");
+            modal.hide();
+
+            // Reset select
+            selectElement.val(null).trigger("change");
+
+            alert("Part berhasil ditambahkan!");
+        } else {
+            alert("Gagal menambahkan part ke spreadsheet");
+        }
+    }
+);

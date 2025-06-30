@@ -51,14 +51,3 @@ fullscreenBtn.addEventListener("click", function () {
         window.dispatchEvent(new Event("resize"));
     }, 100);
 });
-
-// Handle ESC key untuk keluar dari fullscreen
-document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && container.classList.contains("fullscreen-mode")) {
-        container.classList.remove("fullscreen-mode");
-        fullscreenBtn.innerHTML = `
-            Fullscreen
-          `;
-        window.dispatchEvent(new Event("resize"));
-    }
-});
