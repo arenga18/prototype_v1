@@ -29,6 +29,8 @@
       const componentOptions = @json($componentOptions ?? []);
       const part = @json($part ?? []);
       const partData = @json($partData ?? []);
+      const modul = @json($modul ?? []);
+      const modulData = @json($modulData ?? []);
       const recordId = @json($recordId);
       const fieldMapping = @json($fieldMapping ?? []);
       const dataValMap = @json($dataValMap ?? []);

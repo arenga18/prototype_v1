@@ -311,30 +311,44 @@ if (validationSheet) {
     }
 }
 
-function handleComponentChange(rowIndex, componentName) {
-    const workbook = univerAPI.getActiveWorkbook();
-    const sheet = workbook.getActiveSheet();
+function applyFilteredDataValidations() {
+    const definedNamed = JSON.parse(definedNames);
 
-    // Find the matching component data
-    const componentData = componentOptions.find(
-        (opt) => opt.value === componentName
-    )?.data;
+    // Filter hanya definedNames dengan nama 'prt' atau 'menu'
+    const filteredDefNames = definedNamed.filter(
+        (defName) => defName.name === "prt" || defName.name === "menu"
+    );
 
-    if (!componentData) return;
+    // Mapping data
+    const defNameToColumn = {
+        menu: 1, // Kolom index 1 untuk menu
+        prt: 6, // Kolom index 6 untuk prt
+    };
 
-    // Map the component data to columns
-    const rowData = mapDataToColumns(componentData);
+    filteredDefNames.forEach((defName) => {
+        const targetRange = worksheet.getRange(defName.formulaOrRefString);
+        const columnIndex = defNameToColumn[defName.name];
 
-    // Update the row with the component data
-    Object.keys(rowData).forEach((colIndex) => {
-        const value = rowData[colIndex];
-        if (value !== undefined && value !== null && value !== "") {
-            sheet.getRange(rowIndex, parseInt(colIndex)).setValue(value);
+        if (!columnIndex) return;
+
+        try {
+            // Ambil nilai dari range referensi
+            const values = targetRange.getValues().flat().filter(Boolean);
+
+            // Terapkan dropdown ke kolom yang sesuai
+            applyDropdownToColumn(
+                columnIndex,
+                values.map((value) => ({ value })),
+                true
+            );
+
+            console.log(
+                `Data validation applied for ${defName.name} to column ${columnIndex}`
+            );
+        } catch (error) {
+            console.error(`Error applying ${defName.name} validation:`, error);
         }
     });
-
-    // Reapply dropdowns to maintain validation
-    applyAllDropdowns();
 }
 
 function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
@@ -349,6 +363,8 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
                 allowInvalid: false,
                 showDropDown: true,
                 showErrorMessage: true,
+                errorMessage: `Nilai harus ada dalam daftar yang ditentukan`,
+                errorTitle: "Nilai Tidak Valid",
             })
             .build();
 
@@ -360,31 +376,20 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
         );
 
         if (clearInvalid) {
-            const values = range.getValue() || [];
-            const safeValues = Array.isArray(values) ? values : [[values]];
+            const currentValues = range.getValues();
 
-            safeValues.forEach((row, i) => {
-                const cellValue = Array.isArray(row) ? row[0] : row;
+            currentValues.forEach((row, i) => {
+                const cellValue = row[0];
                 if (
                     cellValue &&
                     !options.some((opt) => (opt.value || opt) === cellValue)
                 ) {
-                    worksheet.getRange(i + 1, columnIndex).clearValue();
+                    worksheet.getRange(i + 1, columnIndex);
                 }
             });
         }
 
         range.setDataValidation(dropdownRule);
-
-        // Add change listener for component column
-        if (columnIndex === COLUMN_DROPDOWNS.component.index) {
-            range.onChange(({ row, col, value }) => {
-                if (row > 0) {
-                    // Skip header row
-                    handleComponentChange(row + 1, value); // +1 because onChange uses 0-based index
-                }
-            });
-        }
     } catch (error) {
         console.error(
             `Error applying dropdown to column ${columnIndex}:`,
@@ -393,56 +398,8 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
     }
 }
 
-const COLUMN_DROPDOWNS = {
-    type: {
-        index: 1,
-        options: componentTypes,
-    },
-    component: {
-        index: 6,
-        options: componentOptions,
-    },
-    luar: {
-        index: 18,
-        options: componentOptions,
-    },
-    dalam: {
-        index: 20,
-        options: componentOptions,
-    },
-    rel: {
-        index: 36,
-        options: componentOptions,
-    },
-    engsel: {
-        index: 37,
-        options: componentOptions,
-    },
-    v: {
-        index: 38,
-        options: componentOptions,
-    },
-    v2: {
-        index: 39,
-        options: componentOptions,
-    },
-    h: {
-        index: 40,
-        options: componentOptions,
-    },
-    nama_barang: {
-        index: 41,
-        options: componentOptions,
-    },
-};
-
-function applyAllDropdowns() {
-    Object.values(COLUMN_DROPDOWNS).forEach(({ index, options }) => {
-        applyDropdownToColumn(index, options);
-    });
-}
-
-applyAllDropdowns();
+// fungsi untuk validasi data
+applyFilteredDataValidations();
 
 columns.forEach((col, index) => {
     if (index === namaModulIndex || index === componentIndex) {
