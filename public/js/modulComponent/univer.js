@@ -24,7 +24,6 @@ const { univerAPI } = createUniver({
 
 const formula = univerAPI.getFormula();
 
-// Fungsi untuk memetakan data ke kolom
 function mapDataToColumns(comp) {
     let componentRow = {};
 
@@ -714,8 +713,8 @@ $(document).on("click", "#key-bindings-1", function () {
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
 
-        // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
+        // // Skip baris kosong
+        // if (Object.values(row).every((val) => val === "")) continue;
 
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
@@ -744,7 +743,9 @@ $(document).on("click", "#key-bindings-1", function () {
         // Proses baris komponen
         const componentData = {};
         columns.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
+            if (Object.values(row).every((val) => val === "")) {
+                componentData[col] = "";
+            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] = row[colIndex];
             }
         });
@@ -799,6 +800,8 @@ $(document).on("click", "#key-bindings-2", function () {
     const selectedModul = $("#modulSelect").val();
     const referenceModul = $("#modulReference").val();
 
+    console.log("data : ", spreadsheetData);
+
     if (!selectedModul) {
         alert("Pilih modul terlebih dahulu!");
         return;
@@ -812,9 +815,6 @@ $(document).on("click", "#key-bindings-2", function () {
 
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
-
-        // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
 
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
@@ -843,7 +843,9 @@ $(document).on("click", "#key-bindings-2", function () {
         // Proses baris komponen
         const componentData = {};
         columns.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
+            if (Object.values(row).every((val) => val === "")) {
+                componentData[col] = "";
+            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] = row[colIndex];
             }
         });
