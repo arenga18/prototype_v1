@@ -4,6 +4,10 @@ const { LocaleType, merge, BooleanNumber } = UniverCore;
 const { defaultTheme } = UniverDesign;
 const { UniverSheetsCorePreset } = UniverPresetSheetsCore;
 const { UniverSheetsDataValidationPreset } = UniverPresetSheetsDataValidation;
+const { UniverSheetsFindReplacePreset } = UniverPresetSheetsFindReplace;
+const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
+const { UniverSheetsConditionalFormattingPreset } =
+    UniverPresetSheetsConditionalFormatting;
 
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
@@ -11,11 +15,20 @@ const { univerAPI } = createUniver({
         [LocaleType.EN_US]: merge(
             {},
             UniverPresetSheetsCoreEnUS,
-            UniverPresetSheetsDataValidationEnUS
+            UniverPresetSheetsDataValidationEnUS,
+            UniverPresetSheetsFindReplaceEnUS,
+            UniverPresetSheetsFilterEnUS,
+            UniverPresetSheetsConditionalFormattingEnUS
         ),
     },
     theme: defaultTheme,
-    presets: [UniverSheetsCorePreset(), UniverSheetsDataValidationPreset()],
+    presets: [
+        UniverSheetsCorePreset(),
+        UniverSheetsDataValidationPreset(),
+        UniverSheetsFindReplacePreset(),
+        UniverSheetsFilterPreset(),
+        UniverSheetsConditionalFormattingPreset(),
+    ],
 });
 
 function prepareValidationSheetData() {
@@ -51,7 +64,7 @@ function prepareValidationSheetData() {
             // Akses nilai dari componentData
             row[index] = {
                 v: fieldKey ? componentData[fieldKey] || "" : "",
-                s: { ht: 2, vt: 2, fs: 11 },
+                s: { ht: 1, vt: 1, fs: 11 },
             };
         });
 
@@ -222,44 +235,6 @@ function getAllData() {
     };
 }
 
-// function getAllData() {
-//     const workbook = univerAPI.getActiveWorkbook();
-//     const worksheet = workbook.getActiveSheet();
-//     const range = worksheet.getRange(
-//         0,
-//         0,
-//         worksheet.getMaxRows(),
-//         worksheet.getMaxColumns()
-//     );
-
-//     const cellDatas = range.getCellDatas();
-//     const formulas = range.getFormulas();
-
-//     const result = [];
-
-//     const definedName = workbook.getDefinedNames();
-//     console.log(definedName);
-
-//     cellDatas.forEach((row, rowIndex) => {
-//         const rowData = {};
-//         row.forEach((cell, colIndex) => {
-//             // Jika ada formula, simpan formula aslinya
-//             if (formulas[rowIndex][colIndex]) {
-//                 rowData[colIndex] = formulas[rowIndex][colIndex];
-//             }
-//             // Jika tidak ada formula, simpan nilai biasa
-//             else if (cell?.v !== undefined) {
-//                 rowData[colIndex] = cell.v || "";
-//             } else {
-//                 rowData[colIndex] = "";
-//             }
-//         });
-//         result.push(rowData);
-//     });
-
-//     return result;
-// }
-
 $(document).on("click", "#key-bindings-1", function () {
     const spreadsheetData = getAllData();
     const cellData = spreadsheetData.cellData; // Ambil cellData dari hasil getAllData()
@@ -270,20 +245,12 @@ $(document).on("click", "#key-bindings-1", function () {
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
 
-        // Skip baris kosong
-        if (
-            Object.values(row).every(
-                (val) =>
-                    val === "" || (typeof val === "object" && val.value === "")
-            )
-        )
-            continue;
-
         // Proses baris komponen
         const componentData = {};
         dataValidationCol.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                // Handle both string values and object {value, formula}
+            if (Object.values(row).every((val) => val === "")) {
+                componentData[col] = "";
+            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] =
                     typeof row[colIndex] === "object"
                         ? row[colIndex].value
@@ -337,20 +304,12 @@ $(document).on("click", "#key-bindings-2", function () {
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
 
-        // Skip baris kosong
-        if (
-            Object.values(row).every(
-                (val) =>
-                    val === "" || (typeof val === "object" && val.value === "")
-            )
-        )
-            continue;
-
         // Proses baris komponen
         const componentData = {};
         dataValidationCol.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                // Handle both string values and object {value, formula}
+            if (Object.values(row).every((val) => val === "")) {
+                componentData[col] = "";
+            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] =
                     typeof row[colIndex] === "object"
                         ? row[colIndex].value

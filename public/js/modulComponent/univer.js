@@ -8,6 +8,10 @@ const { LocaleType, merge, BooleanNumber } = UniverCore;
 const { defaultTheme } = UniverDesign;
 const { UniverSheetsCorePreset } = UniverPresetSheetsCore;
 const { UniverSheetsDataValidationPreset } = UniverPresetSheetsDataValidation;
+const { UniverSheetsFindReplacePreset } = UniverPresetSheetsFindReplace;
+const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
+const { UniverSheetsConditionalFormattingPreset } =
+    UniverPresetSheetsConditionalFormatting;
 
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
@@ -15,13 +19,21 @@ const { univerAPI } = createUniver({
         [LocaleType.EN_US]: merge(
             {},
             UniverPresetSheetsCoreEnUS,
-            UniverPresetSheetsDataValidationEnUS
+            UniverPresetSheetsDataValidationEnUS,
+            UniverPresetSheetsFindReplaceEnUS,
+            UniverPresetSheetsFilterEnUS,
+            UniverPresetSheetsConditionalFormattingEnUS
         ),
     },
     theme: defaultTheme,
-    presets: [UniverSheetsCorePreset(), UniverSheetsDataValidationPreset()],
+    presets: [
+        UniverSheetsCorePreset(),
+        UniverSheetsDataValidationPreset(),
+        UniverSheetsFindReplacePreset(),
+        UniverSheetsFilterPreset(),
+        UniverSheetsConditionalFormattingPreset(),
+    ],
 });
-
 const formula = univerAPI.getFormula();
 
 function mapDataToColumns(comp) {

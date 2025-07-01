@@ -8,6 +8,10 @@ const { LocaleType, merge, BooleanNumber } = UniverCore;
 const { defaultTheme } = UniverDesign;
 const { UniverSheetsCorePreset } = UniverPresetSheetsCore;
 const { UniverSheetsDataValidationPreset } = UniverPresetSheetsDataValidation;
+const { UniverSheetsFindReplacePreset } = UniverPresetSheetsFindReplace;
+const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
+const { UniverSheetsConditionalFormattingPreset } =
+    UniverPresetSheetsConditionalFormatting;
 
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
@@ -15,11 +19,20 @@ const { univerAPI } = createUniver({
         [LocaleType.EN_US]: merge(
             {},
             UniverPresetSheetsCoreEnUS,
-            UniverPresetSheetsDataValidationEnUS
+            UniverPresetSheetsDataValidationEnUS,
+            UniverPresetSheetsFindReplaceEnUS,
+            UniverPresetSheetsFilterEnUS,
+            UniverPresetSheetsConditionalFormattingEnUS
         ),
     },
     theme: defaultTheme,
-    presets: [UniverSheetsCorePreset(), UniverSheetsDataValidationPreset()],
+    presets: [
+        UniverSheetsCorePreset(),
+        UniverSheetsDataValidationPreset(),
+        UniverSheetsFindReplacePreset(),
+        UniverSheetsFilterPreset(),
+        UniverSheetsConditionalFormattingPreset(),
+    ],
 });
 
 // Fungsi untuk memetakan data ke kolom
@@ -650,8 +663,6 @@ if (specSheet) {
             });
         }
     }
-
-    console.log(groupedComponents);
     // Create defined names for each Kabinet's value (Column D - index 3)
     kabinetRows.forEach(({ row, number }) => {
         const definedName = `bahan${number}`;
@@ -665,16 +676,6 @@ if (specSheet) {
             `Nilai bahan untuk Kabinet ${number}`
         );
     });
-
-    // Optional: Create defined name for entire product_spesification
-    const lastRow = maxRows;
-    if (lastRow) {
-        specSheet.insertDefinedName(
-            "product_spesification",
-            `Spek!$B$1:$D$${lastRow}`,
-            "Range seluruh spesifikasi produk"
-        );
-    }
 }
 
 const validationSheet = workbook.getSheets()[2];

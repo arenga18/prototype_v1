@@ -1,6 +1,10 @@
 <div style="width: 100%; position: relative;">
   <link rel="stylesheet" href="https://unpkg.com/@univerjs/preset-sheets-core/lib/index.css" />
   <link rel="stylesheet" href="https://unpkg.com/@univerjs/preset-sheets-data-validation/lib/index.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-find-replace.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-conditional-formatting.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-sort.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-filter.css" />
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
   <link rel="stylesheet" href={{ asset('css/style.css') }}>
@@ -34,10 +38,10 @@
       </select>
     </div>
 
-    <div class="mb-4 add-modul w-1/3">
+    <div class="mb-4 add-modul w-1/2">
       <!-- Modal toggle -->
       <button data-modal-target="modul-modal" data-modal-toggle="modul-modal"
-        class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded text-xs px-3 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded text-xs p-3 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
         type="button">
         Tambah Modul
       </button>
@@ -99,10 +103,10 @@
       </div>
     </div>
 
-    <div class="mb-4 add-part w-1/3">
+    <div class="mb-4 add-part w-1/2">
       <!-- Modal toggle -->
       <button data-modal-target="part-modal" data-modal-toggle="part-modal"
-        class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded text-xs px-3 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded text-xs p-3 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
         type="button">
         Tambah Part
       </button>
@@ -185,12 +189,20 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/rxjs/dist/bundles/rxjs.umd.min.js"></script>
   <script src="https://unpkg.com/echarts@5.6.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@univerjs/data-validation@latest/dist/univer-data-validation.umd.js"></script>
   <script src="https://unpkg.com/@univerjs/presets/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-core/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-core/lib/umd/locales/en-US.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-data-validation/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-data-validation/lib/umd/locales/en-US.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@univerjs/data-validation@latest/dist/univer-data-validation.umd.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-find-replace/lib/umd/index.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-find-replace/lib/umd/locales/en-US.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-conditional-formatting/lib/umd/index.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-conditional-formatting/lib/umd/locales/en-US.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-sort/lib/umd/index.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-sort/lib/umd/locales/en-US.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/index.js"></script>
+  <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/locales/en-US.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
