@@ -875,7 +875,7 @@ $(document).on("click", "#key-bindings-2", function () {
         });
     }
 
-    // Buat payload dengan struktur yang dipertahankan
+    // Buat payload
     const payload = {
         modul: selectedModul,
         reference_modul: referenceModul,

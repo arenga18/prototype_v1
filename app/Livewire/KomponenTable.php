@@ -197,24 +197,28 @@ class KomponenTable extends Component
             return;
         }
 
+        // dd($decodedModuls);
         foreach ($modulBreakdown as $item) {
             if (!isset($item['modul']['nama_modul'])) {
                 continue;
             }
 
-            $modulName = $item['modul']['nama_modul'];
-            if (!in_array($modulName, $decodedModuls)) {
-                continue;
-            }
+            // $modulName = $item['modul']['nama_modul'];
+            // if (!in_array($modulName, $decodedModuls)) {
+            //     continue;
+            // }
 
-            $components = $item['components'] ?? [];
+            $components = $item;
             $processedComponents = $this->processComponents($components);
+
 
             $this->groupedComponents['array'][] = [
                 'modul' => $item['modul'],
-                'component' => $processedComponents,
+                'component' => [$processedComponents],
                 'isFilled' => true,
             ];
+
+            // dd($this->groupedComponents);
         }
     }
 

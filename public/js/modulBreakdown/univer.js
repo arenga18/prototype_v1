@@ -2,6 +2,8 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
+console.log("groupComponents : ", groupedComponents);
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -382,9 +384,7 @@ function prepareSpecSheetData() {
     };
 
     // Loop melalui semua kategori spesifikasi
-    console.log(projectData);
     Object.entries(projectData).forEach(([category, items]) => {
-        // Tambahkan judul kategori (mulai dari kolom B)
         data[rowIndex] = {
             1: {
                 v: formatCategoryName(category),
@@ -521,15 +521,6 @@ const workbook = univerAPI.createWorkbook({
 
 const worksheet = workbook.getActiveSheet();
 
-// Atur lebar kolom
-// columns.forEach((col, index) => {
-//     if (index === namaModulIndex || index === componentIndex) {
-//         worksheet.setColumnWidth(index, 200);
-//     } else {
-//         worksheet.setColumnWidth(index, 40);
-//     }
-// });
-
 function applyFilteredDataValidations() {
     const definedNamed = JSON.parse(definedNames);
 
@@ -627,6 +618,18 @@ if (breakdownSheet) {
     breakdownSheet.setColumnWidth(6, 200);
     breakdownSheet.setColumnWidth(7, 150);
     breakdownSheet.setRowHeight(0, 80);
+
+    // Conditional formatting
+    const range = breakdownSheet.getRange("R3:Z1000");
+    const rule = breakdownSheet
+        .newConditionalFormattingRule()
+        .whenNumberEqualTo(11)
+        .setRanges([range.getRange()])
+        .setItalic(true)
+        .setBackground("red")
+        .setFontColor("green")
+        .build();
+    breakdownSheet.addConditionalFormattingRule(rule);
 }
 
 const specSheet = workbook.getSheets("sheet2")[1];
@@ -682,7 +685,6 @@ const validationSheet = workbook.getSheets()[2];
 if (validationSheet) {
     validationSheet.setColumnWidth(2, 300);
     const definedNamed = JSON.parse(definedNames);
-    console.log("names: ", definedNamed);
     definedNamed.forEach((defName) => {
         try {
             validationSheet.insertDefinedName(
@@ -773,7 +775,7 @@ $(document).on("click", "#key-bindings-2", function () {
             currentModulObject = { nama_modul: currentModul };
             currentComponents = [];
 
-            // Isi data modul dari baris ini
+            // Isi data modul
             columns.forEach((col, colIndex) => {
                 if (row[colIndex] !== undefined && row[colIndex] !== "") {
                     currentModulObject[col] = row[colIndex];
@@ -794,6 +796,8 @@ $(document).on("click", "#key-bindings-2", function () {
             currentComponents.push(componentData);
         }
     }
+
+    console.log("current : ", currentComponents);
 
     // Simpan modul terakhir
     if (currentModul) {
