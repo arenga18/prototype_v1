@@ -24,8 +24,6 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 
 
-
-
 class ProjectResource extends Resource
 {
 

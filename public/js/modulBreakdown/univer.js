@@ -840,21 +840,19 @@ $(document).on("click", "#key-bindings-2", function () {
     });
 });
 
-function addModulToSpreadsheet(modulName) {
+function addModulToSpreadsheet(modulName, placementModulName = null) {
     try {
         const breakdownSheet = workbook.getSheets()[0];
 
         // 1. Find the selected module data from allModuls
         let selectedModulData = null;
         let selectedComponents = [];
-        let subModuls = []; // Untuk menyimpan data sub-modul
+        let subModuls = [];
 
         if (allModuls && allModuls.array) {
             for (const modulGroup of allModuls.array) {
                 if (modulGroup.modul?.nama_modul === modulName) {
                     selectedModulData = modulGroup.modul;
-
-                    // Mengumpulkan semua komponen dari semua component dalam modulGroup
                     if (
                         modulGroup.component &&
                         modulGroup.component.length > 0
@@ -895,32 +893,118 @@ function addModulToSpreadsheet(modulName) {
             });
         };
 
-        // 2. Find the true last row with data (scan all columns)
-        let lastDataRow = 0;
-        const maxRows = breakdownSheet.getMaxRows();
-        for (let i = maxRows - 1; i >= 0; i--) {
-            let hasData = false;
-            for (let col = 0; col < columns.length; col++) {
-                const cellData = breakdownSheet
-                    .getRange(i, col, 1, 1)
-                    .getCellDatas()[0][0];
-                if (
-                    cellData &&
-                    cellData.v !== undefined &&
-                    String(cellData.v).trim() !== ""
-                ) {
-                    hasData = true;
+        // 2. Find the target row based on placement selection
+        let targetRow = 0;
+
+        if (placementModulName) {
+            // 1. Find the reference module in groupedComponents
+            let referenceModul = null;
+            for (const modulGroup of groupedComponents.array) {
+                if (modulGroup.modul?.nama_modul === placementModulName) {
+                    referenceModul = modulGroup;
                     break;
                 }
             }
-            if (hasData) {
-                lastDataRow = i;
-                break;
+
+            if (!referenceModul) {
+                console.log(
+                    `Module "${placementModulName}" not found in groupedComponent, adding to the end`
+                );
+                targetRow = breakdownSheet.getMaxRows();
+            } else {
+                // 2. Find the reference module's position in the spreadsheet
+                const maxRows = breakdownSheet.getMaxRows();
+                let referenceStartRow = 0;
+                let referenceEndRow = 0;
+
+                for (let i = 0; i < maxRows; i++) {
+                    const cellData = breakdownSheet
+                        .getRange(i, namaModulIndex, 1, 1)
+                        .getCellDatas()[0][0];
+
+                    if (cellData?.v === referenceModul.modul.nama_modul) {
+                        referenceStartRow = i;
+
+                        // Calculate total rows used by reference module
+                        let totalComponentRows = 0;
+                        referenceModul.component.forEach((subModul) => {
+                            totalComponentRows += subModul.components.length;
+                            if (
+                                subModul.nama_modul !==
+                                referenceModul.modul.nama_modul
+                            ) {
+                                totalComponentRows += 1; // For sub-module header
+                            }
+                        });
+
+                        referenceEndRow =
+                            referenceStartRow + totalComponentRows;
+
+                        // 3. Calculate rows needed for new module (using subModuls which we calculated earlier)
+                        let newModulRows = 1;
+                        if (subModuls && subModuls.length > 0) {
+                            subModuls.forEach((subModul) => {
+                                newModulRows += subModul.components.length;
+                                if (
+                                    subModul.nama_modul !==
+                                    selectedModulData.nama_modul
+                                ) {
+                                    newModulRows += 1; // For sub-module header
+                                }
+                            });
+                        }
+
+                        // 4. Insert required rows (1 spacing row + rows for new module)
+                        breakdownSheet.insertRows(
+                            referenceEndRow + 1,
+                            newModulRows + 1
+                        );
+                        targetRow = referenceEndRow + 1; // Start after spacing row
+
+                        console.log(
+                            `Found module "${placementModulName}" from row ${referenceStartRow} to ${referenceEndRow}`
+                        );
+                        console.log(
+                            `Inserting new module "${modulName}" at row ${targetRow} with ${newModulRows} rows and 1 spacing row`
+                        );
+                        break;
+                    }
+                }
+
+                if (referenceStartRow === 0) {
+                    console.log(
+                        `Module "${placementModulName}" found in groupedComponent but not in sheet, adding to the end`
+                    );
+                    targetRow = breakdownSheet.getMaxRows();
+                }
             }
+        } else {
+            // Default case when no placementModulName is specified
+            const maxRows = breakdownSheet.getMaxRows();
+            for (let i = maxRows - 1; i >= 0; i--) {
+                let hasData = false;
+                for (let col = 0; col < columns.length; col++) {
+                    const cellData = breakdownSheet
+                        .getRange(i, col, 1, 1)
+                        .getCellDatas()[0][0];
+                    if (
+                        cellData?.v !== undefined &&
+                        String(cellData.v).trim() !== ""
+                    ) {
+                        hasData = true;
+                        break;
+                    }
+                }
+                if (hasData) {
+                    targetRow = i + 2; // Add after last row with data plus one empty row
+                    break;
+                }
+            }
+            if (targetRow === 0) targetRow = 1;
         }
 
         // 3. Calculate positions
-        const newModulRow = lastDataRow === 0 ? 1 : lastDataRow + 2;
+        const newModulRow = targetRow;
         let lastComponentRow = newModulRow;
 
         // Hitung total rows yang dibutuhkan
@@ -1243,23 +1327,32 @@ $(document).on(
         e.stopPropagation();
 
         const selectElement = $("#modulSelect");
+        const placementSelect = $("#modul-placement");
+
         console.log("Memproses modul:", selectElement);
         const selectedModul = selectElement.val();
+        const placementModul = placementSelect.val();
 
         if (!selectedModul) {
             alert("Silakan pilih modul terlebih dahulu");
             return;
         }
 
-        console.log("Memproses modul:", selectedModul);
+        console.log(
+            "Memproses modul:",
+            selectedModul,
+            "placement:",
+            placementModul
+        );
 
         // Tambahkan ke spreadsheet
-        if (addModulToSpreadsheet(selectedModul)) {
+        if (addModulToSpreadsheet(selectedModul, placementModul)) {
             const modal = FlowbiteInstances.getInstance("Modal", "modul-modal");
             modal.hide();
 
             // Reset select
             selectElement.val(null).trigger("change");
+            placementSelect.val(null).trigger("change");
             alert("Modul berhasil ditambahkan!");
         } else {
             alert("Gagal menambahkan modul ke spreadsheet");
