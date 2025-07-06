@@ -23,6 +23,6 @@ Route::post('/update-part', [PartComponentLivewire::class, 'update']);
 Route::post('/save-removable-part', [RemovablePartLivewire::class, 'save']);
 Route::post('/update-removable-part', [RemovablePartLivewire::class, 'update']);
 
-Route::get('/get-modul-data', [KomponenModul::class, 'getModulData']);
 Route::get('/model-data/{model}', [ModelDataController::class, 'getModelData']);
 Route::get('/modul-by-cabinet', [ModelDataController::class, 'getModulByCabinet']);
+Route::put('/update-modul', [ModelDataController::class, 'updateModul']);

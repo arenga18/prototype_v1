@@ -37,7 +37,7 @@ class ModelDataController extends Controller
         }
 
         try {
-            $data = $this->modelClasses[$modelKey]::select('id', 'name')->get();
+            $data = $this->modelClasses[$modelKey]::select('id', 'name', 'code')->get();
 
             return response()->json([
                 'status' => 'success',
@@ -54,6 +54,7 @@ class ModelDataController extends Controller
     public function getModulByCabinet(Request $request)
     {
         $codeCabinet = $request->query('code_cabinet');
+        $nip = $request->query('nip');
 
         if (!$codeCabinet) {
             return response()->json([
@@ -62,11 +63,56 @@ class ModelDataController extends Controller
             ], 400);
         }
 
-        $moduls = Modul::where('code_cabinet', $codeCabinet)->get();
+        $moduls = Modul::where('code_cabinet', $codeCabinet)
+            ->where('nip', $nip)
+            ->get();
 
         return response()->json([
             'status' => 'success',
             'data' => $moduls
         ]);
+    }
+
+    public function updateModul(Request $request)
+    {
+        $validated = $request->validate([
+            'code_cabinet' => 'required|string',
+            'description_unit' => 'nullable|string',
+            'box_carcase_shape' => 'nullable|string',
+            'finishing' => 'nullable|string',
+            'layer_position' => 'nullable|string',
+            'box_carcase_content' => 'nullable|string',
+            'closing_system' => 'nullable|string',
+            'number_of_closures' => 'nullable|string',
+            'type_of_closure' => 'nullable|string',
+            'handle' => 'nullable|string',
+            'acc' => 'nullable|string',
+            'lamp' => 'nullable|string',
+            'plinth' => 'nullable|string',
+            'nip' => 'required|string'
+        ]);
+
+        try {
+            // Convert string numbers to integers
+            foreach ($validated as $key => $value) {
+                if ($value !== null && is_numeric($value) && $key !== 'code_cabinet' && $key !== 'nip') {
+                    $validated[$key] = (int)$value;
+                }
+            }
+
+            $updated = Modul::where('nip', $validated['nip'])
+                ->where('code_cabinet', $request->validate(['modul' => 'required|string']))
+                ->update($validated);
+
+            return response()->json([
+                'success' => $updated > 0,,
+                'message' => $updated > 0 ? 'Data berhasil diperbarui' : 'Tidak ada data yang diubah'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

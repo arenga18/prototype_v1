@@ -1,13 +1,119 @@
 $(document).ready(function () {
     // Base URL
     const baseUrl = window.location.origin;
+    let currentNip = nip; // Store the current NIP
 
-    // Fungsi untuk load data
+    // Function to update cabinet code based on selected options
+    function updateCabinetCode() {
+        // Get all codes from the selected options
+        const unitCode =
+            $("#description_unit option:selected").data("code") || "";
+        const boxCode =
+            $("#box_carcase_shape option:selected").data("code") || "";
+        const finCode = $("#finishing option:selected").data("code") || "";
+        const layerPosCode =
+            $("#layer_position option:selected").data("code") || "";
+        const boxContentCode =
+            $("#box_carcase_content option:selected").data("code") || "";
+        const closeSysCode =
+            $("#closing_system option:selected").data("code") || "";
+        const numClosuresCode =
+            $("#number_of_closures option:selected").data("code") || "";
+        const typeCloseCode =
+            $("#type_of_closure option:selected").data("code") || "";
+        const handleCode = $("#handle option:selected").data("code") || "";
+        const accCode = $("#acc option:selected").data("code") || "";
+        const lampCode = $("#lamp option:selected").data("code") || "";
+        const plinthCode = $("#plinth option:selected").data("code") || "";
+
+        // Construct the cabinet code
+        let cabinetCode = [
+            unitCode,
+            "-",
+            boxCode,
+            finCode,
+            layerPosCode,
+            boxContentCode,
+            "-",
+            closeSysCode,
+            numClosuresCode,
+            typeCloseCode,
+            handleCode,
+            "-",
+            accCode,
+            lampCode,
+            plinthCode,
+        ].join("");
+
+        // Update the display
+        $("#cabinetCodeDisplay").val(cabinetCode);
+        return cabinetCode;
+    }
+
+    // Function to handle form submission
+    function updateModulData() {
+        // Get all form values
+        const formData = {
+            modul: $("#codeCabinetSelect").val(),
+            code_cabinet: $("#cabinetCodeDisplay").val(),
+            description_unit: $("#description_unit").val(),
+            box_carcase_shape: $("#box_carcase_shape").val(),
+            finishing: $("#finishing").val(),
+            layer_position: $("#layer_position").val(),
+            box_carcase_content: $("#box_carcase_content").val(),
+            closing_system: $("#closing_system").val(),
+            number_of_closures: $("#number_of_closures").val(),
+            type_of_closure: $("#type_of_closure").val(),
+            handle: $("#handle").val(),
+            acc: $("#acc").val(),
+            lamp: $("#lamp").val(),
+            plinth: $("#plinth").val(),
+            nip: currentNip,
+        };
+
+        console.log("Form Data:", formData); // Debugging log
+
+        // Validate NIP exists
+        if (!currentNip) {
+            alert("NIP tidak ditemukan!");
+            return;
+        }
+
+        // Send update request
+        $.ajax({
+            url: `${baseUrl}/update-modul`,
+            method: "PUT",
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            contentType: "application/json", // Set content type
+            data: JSON.stringify(formData), // Convert to JSON string
+            success: function (response) {
+                if (response.success) {
+                    alert("Data modul berhasil diperbarui!");
+                } else {
+                    alert(
+                        "Gagal memperbarui data: " +
+                            (response.message || "Terjadi kesalahan")
+                    );
+                }
+            },
+            error: function (xhr, status, error) {
+                // Add more detailed error logging
+                console.log("Error details:", xhr.responseJSON);
+                alert(
+                    "Terjadi kesalahan saat memperbarui data: " +
+                        (xhr.responseJSON?.message || error)
+                );
+            },
+        });
+    }
+
+    // Load select data function
     function loadSelectData(selectElement) {
         const model = $(selectElement).data("model");
         const fieldId = $(selectElement).attr("id");
 
-        // Tampilkan loading
         $(selectElement).html('<option value="">Memuat data...</option>');
 
         $.ajax({
@@ -15,23 +121,32 @@ $(document).ready(function () {
             type: "GET",
             dataType: "json",
             success: function (response) {
-                console.log(`Response for ${model}:`, response); // Debug
+                if (response?.data) {
+                    const $select = $(selectElement);
+                    $select
+                        .empty()
+                        .append('<option value="">-- Pilih --</option>');
 
-                if (response && response.data) {
-                    populateSelect(selectElement, response.data);
-                } else {
-                    showError(fieldId, "Data tidak valid dari server");
+                    if (response.data.length === 0) {
+                        $select.append(
+                            '<option value="" disabled>Data kosong</option>'
+                        );
+                        return;
+                    }
+
+                    $.each(response.data, function (index, item) {
+                        $select.append(
+                            $("<option>", {
+                                value: item.name,
+                                text: item.name || `Item ${item.id}`,
+                                "data-code": item.code || "",
+                            })
+                        );
+                    });
                 }
             },
             error: function (xhr, status, error) {
-                console.log(
-                    `Error loading ${model}:`,
-                    xhr.responseJSON || error
-                );
-                showError(
-                    fieldId,
-                    `Gagal memuat data: ${xhr.responseJSON?.message || error}`
-                );
+                console.error(`Error loading ${model}:`, error);
                 $(selectElement).html(
                     '<option value="">Gagal memuat data</option>'
                 );
@@ -39,81 +154,48 @@ $(document).ready(function () {
         });
     }
 
-    // Fungsi untuk mengisi select
-    function populateSelect(selectElement, data) {
-        const $select = $(selectElement);
-        $select.empty().append('<option value="">-- Pilih --</option>');
+    // Set select value function
+    function setSelectValue(selector, value) {
+        if (!value) return;
+        const $select = $(selector);
+        const valueStr = value.toString().trim();
+        const $option = $select.find(`option[value="${valueStr}"]`).length
+            ? $select.find(`option[value="${valueStr}"]`)
+            : $select.find(`option:contains("${valueStr}")`).first();
 
-        if (data.length === 0) {
-            $select.append('<option value="" disabled>Data kosong</option>');
-            return;
+        if ($option.length) {
+            $select.val($option.val()).trigger("change");
         }
-
-        $.each(data, function (index, item) {
-            $select.append(
-                $("<option>", {
-                    value: item.id,
-                    text: item.name || `Item ${item.id}`,
-                })
-            );
-        });
     }
 
-    // Fungsi tampilkan error
-    function showError(fieldId, message) {
-        $(`#${fieldId}_error`).text(message).show();
-    }
+    // Initialize all select elements
+    $(".model-select")
+        .each(function () {
+            loadSelectData(this);
+        })
+        .on("change", updateCabinetCode);
 
-    // Load data untuk semua select
-    $(".model-select").each(function () {
-        loadSelectData(this);
-    });
-
-    // Handle form submit
-    $("#dynamicForm").submit(function (e) {
-        e.preventDefault();
-        alert("Form submitted!");
-    });
-
+    // Handle cabinet select change
     $("#codeCabinetSelect").on("change", function () {
         const selectedCode = $(this).val();
-
         if (!selectedCode) {
             $("#cabinetCodeDisplay").val("");
             return;
         }
 
-        $("#cabinetCodeDisplay").val(selectedCode);
+        // Get NIP from somewhere (adjust according to your implementation)
+        currentNip = nip;
 
-        // Ambil data modul berdasarkan kode kabinet
         $.ajax({
             url: `${baseUrl}/modul-by-cabinet`,
             type: "GET",
-            data: {
-                code_cabinet: selectedCode,
-            },
+            data: { code_cabinet: selectedCode, nip: currentNip },
             success: function (response) {
-                if (response.status === "success") {
+                if (response?.status === "success" && response.data?.length) {
                     const data = response.data[0];
-
-                    // Pastikan semua select sudah ter-load
-                    const selectsLoaded = $(".model-select")
-                        .toArray()
-                        .every((select) => {
-                            return $(select).find("option").length > 1; // Lebih dari 1 karena option pertama adalah "Loading..."
-                        });
-
-                    if (!selectsLoaded) {
-                        console.warn(
-                            "Beberapa select options belum selesai loading"
-                        );
-                        return;
-                    }
-
-                    // Set nilai masing-masing form field
                     $("#cabinetCodeDisplay").val(data.code_cabinet || "");
 
-                    // Untuk select options, gunakan .val() dengan value yang sesuai
+                    // Set all select values
                     setSelectValue("#description_unit", data.description_unit);
                     setSelectValue(
                         "#box_carcase_shape",
@@ -136,38 +218,17 @@ $(document).ready(function () {
                     setSelectValue("#lamp", data.lamp);
                     setSelectValue("#plinth", data.plinth);
 
-                    console.log("Form fields updated from modul data:", data);
-                } else {
-                    console.warn("Modul tidak ditemukan");
+                    updateCabinetCode();
                 }
-            },
-            error: function (xhr, status, error) {
-                console.error("Error fetching modul by cabinet:", error);
             },
         });
     });
 
-    function setSelectValue(selector, value) {
-        if (!value) return;
-
-        const $select = $(selector);
-        value = value.toString().trim(); // Normalisasi value
-
-        // Cari option yang value atau text-nya match
-        const $matchedOption = $select
-            .find(`option[value="${value}"], option:contains("${value}")`)
-            .first();
-
-        if ($matchedOption.length) {
-            const matchedValue = $matchedOption.val();
-            $select.val(matchedValue).trigger("change");
-        } else {
-            console.warn(`Value '${value}' tidak ditemukan di ${selector}`, {
-                availableOptions: $select
-                    .find("option")
-                    .map((i, o) => $(o).val())
-                    .get(),
-            });
-        }
-    }
+    // Handle update button click
+    $("[data-modal-hide='kodifikasi-modal']")
+        .prev()
+        .on("click", function (e) {
+            e.preventDefault();
+            updateModulData();
+        });
 });

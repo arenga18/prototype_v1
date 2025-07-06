@@ -200,8 +200,8 @@
 
               <!-- Modal body -->
               <div class="p-4 md:p-5 space-y-4">
-                <div class="mb-4 w-full">
-                  <div>
+                <div class="mb-4 w-full ">
+                  <div class="m-4">
                     <label for="codeCabinetSelect" class="block mb-2 text-sm font-medium text-gray-700">Modul</label>
                     <select id="codeCabinetSelect" class="border border-gray-300 text-sm rounded p-2 w-full">
                       @if (count($allModuls['array']) > 1)
@@ -219,6 +219,7 @@
                         <option value="">Tidak ada modul tersedia</option>
                       @endforelse
                     </select>
+                    <hr>
                   </div>
                 </div>
 
@@ -394,6 +395,7 @@
     const modul = @json($modul ?? []);
     const modulData = @json($modulData ?? []);
     const recordId = @json($recordId);
+    const nip = @json($nip ?? '');
     const fieldMapping = @json($fieldMapping ?? []);
     const dataValMap = @json($dataValMap ?? []);
     const dataValidationCol = @json($dataValidationCol ?? []);

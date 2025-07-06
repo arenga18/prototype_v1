@@ -26,6 +26,8 @@ class KomponenTable extends Component
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
+    public $nip;
+
     public $allSpecs = [
         'product_spesification' => [],
         'material_thickness_spesification' => [],
@@ -46,6 +48,7 @@ class KomponenTable extends Component
         $this->dataValMap = config("breakdown_fields.data_val_map");
         $this->recordId = $recordId;
         $this->moduls = $moduls ?? [];
+        $this->nip = Project::findOrFail($recordId)->nip ?? '';
         $this->modulList = ModulComponent::all()->pluck('modul')->toArray();
         $this->loadInitialData();
         $this->loadSpecData();
