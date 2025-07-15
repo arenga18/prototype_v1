@@ -519,6 +519,7 @@ const workbook = univerAPI.createWorkbook({
     },
 });
 
+console.log("Workbook created:", workbook);
 const worksheet = workbook.getActiveSheet();
 
 function applyFilteredDataValidations() {
@@ -612,6 +613,7 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
 applyFilteredDataValidations();
 
 const breakdownSheet = workbook.getSheets("sheet1")[0];
+console.log("breakdownSheet", breakdownSheet);
 if (breakdownSheet) {
     // worksheet.setColumnWidth(1, 200);
     breakdownSheet.setColumnWidth(5, 200);
@@ -745,7 +747,7 @@ function getAllData() {
 }
 
 // Event handler untuk tombol update
-$(document).on("click", "#key-bindings-2", function () {
+$(document).on("click", "#key-bindings-3", function () {
     const spreadsheetData = getAllData();
 
     // Format data untuk modul_breakdown sesuai struktur baru

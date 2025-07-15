@@ -6,7 +6,6 @@ use App\Livewire\KomponenModul;
 use App\Livewire\PartComponentLivewire;
 use App\Livewire\RemovablePartLivewire;
 use App\Http\Controllers\ModelDataController;
-use App\Http\Controllers\CabinetController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,3 +25,5 @@ Route::post('/update-removable-part', [RemovablePartLivewire::class, 'update']);
 Route::get('/model-data/{model}', [ModelDataController::class, 'getModelData']);
 Route::get('/modul-by-cabinet', [ModelDataController::class, 'getModulByCabinet']);
 Route::put('/update-modul', [ModelDataController::class, 'updateModul']);
+
+Route::get('/get-modul-data', [KomponenTable::class, 'loadUpdatedGroupedComponents']);

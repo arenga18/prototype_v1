@@ -29,6 +29,7 @@ class Modul extends Model
         'acc',
         'lamp',
         'plinth',
+        'modul_reference',
     ];
 
     protected $casts = [

@@ -23,8 +23,8 @@ class CreateProject extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
-            ->label('Save') // Ganti label di sini
-            ->submit('create') // Pastikan ini tetap
+            ->label('Save')
+            ->submit('create')
             ->keyBindings(['mod+s']);
     }
 

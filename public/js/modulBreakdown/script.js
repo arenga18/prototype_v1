@@ -1,5 +1,5 @@
 $(document).on("click", "button", function (e) {
-    if (this.id !== "key-bindings-2" && this.id !== "key-bindings-1") {
+    if (this.id !== "key-bindings-3" && this.id !== "key-bindings-2") {
         e.preventDefault();
     }
 });

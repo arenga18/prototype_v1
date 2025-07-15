@@ -11,13 +11,11 @@ use Filament\Forms\Components\CheckboxList;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 
 use App\Models\Material;
 use App\Models\Modul;
-use Filament\Forms\Get;
 use App\Filament\Resources\ProjectResource\Forms\SelectComponents;
 
 class ProjectFormSchema
@@ -516,7 +514,6 @@ class ProjectFormSchema
 
 
                                 $existing = array_unique(array_merge($existing, [$record->id]));
-                                dd($existing, $record->id);
                                 $set('modul_reference', $existing);
                             })
                     ]),
@@ -525,12 +522,10 @@ class ProjectFormSchema
                 Wizard\Step::make('Breakdown Modul')
                     ->schema([
                         Livewire::make('komponen-table')
-                            ->data(function ($get, $livewire) {
-                                return [
-                                    'moduls' => $get('modul_reference') ?? [],
-                                    'recordId' => $livewire->getRecord()?->id,
-                                ];
-                            }),
+                            ->data(fn($get, $livewire) => [
+                                'moduls' => $get('modul_reference') ?? [],
+                                'recordId' => $livewire->getRecord()?->id,
+                            ])
                     ]),
             ])
                 ->startOnStep(

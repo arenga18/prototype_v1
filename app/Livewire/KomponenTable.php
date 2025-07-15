@@ -3,12 +3,12 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use App\Models\Modul;
 use App\Models\ModulComponent;
 use App\Models\Project;
 use App\Models\PartComponent;
 use App\Models\RemovablePart;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class KomponenTable extends Component
 {
@@ -18,6 +18,7 @@ class KomponenTable extends Component
     public $partComponentsData = [];
     public $columns;
     public $allModuls = [];
+    public $modulsByNip = [];
     public $allParts = [];
     public $definedNames = [];
     public $fieldMapping;
@@ -40,6 +41,11 @@ class KomponenTable extends Component
     ];
     protected $listeners = ['typeChanged'];
 
+    public function render()
+    {
+        return view('livewire.komponen-table');
+    }
+
     public function mount($moduls, $recordId = null)
     {
         $this->columns = config('breakdown_fields.breakdown_col');
@@ -48,9 +54,9 @@ class KomponenTable extends Component
         $this->dataValMap = config("breakdown_fields.data_val_map");
         $this->recordId = $recordId;
         $this->moduls = $moduls ?? [];
-        $this->nip = Project::findOrFail($recordId)->nip ?? '';
         $this->modulList = ModulComponent::all()->pluck('modul')->toArray();
         $this->loadInitialData();
+        $this->loadModulsByNip($recordId);
         $this->loadSpecData();
         $this->loadDefinedNames();
         $this->loadDropdownData();
@@ -170,12 +176,43 @@ class KomponenTable extends Component
         $this->groupedComponents = ['array' => []];
         $decodedModuls = $this->getDecodedModuls();
 
+
         if ($this->recordId) {
             $this->loadComponentsFromProject($decodedModuls);
         }
 
         $this->loadMissingModuls($decodedModuls);
         $this->ensureAllModulsPresent($decodedModuls);
+    }
+
+    // In KomponenTable.php
+    public function loadUpdatedGroupedComponents(Request $request)
+    {
+        $this->groupedComponents = ['array' => []];
+        $modul_reference = $request->input('modul_reference');
+
+        // Validate if modul_reference exists
+        if (!$modul_reference) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul reference is required'
+            ], 400);
+        }
+
+        $decodedModuls = $modul_reference;
+
+        if ($this->recordId) {
+            $this->loadComponentsFromProject($decodedModuls);
+        }
+
+        $this->loadMissingModuls($decodedModuls);
+        $this->ensureAllModulsPresent($decodedModuls);
+
+        return response()->json([
+            'success' => true,
+            'groupedComponents' => $this->groupedComponents,
+            'decodedModuls' => $decodedModuls
+        ]);
     }
 
     protected function getDecodedModuls()
@@ -261,6 +298,62 @@ class KomponenTable extends Component
                 'modul' => ['nama_modul' => $modul['modul']],
                 'component' => $processedComponents,
                 'isFilled' => false
+            ];
+        }
+    }
+
+    protected function loadModulsByNip($recordId = null)
+    {
+        try {
+            // Ambil NIP dari project jika recordId tersedia
+            $this->nip = $recordId ? Project::findOrFail($recordId)->nip : "";
+
+            // Jika NIP kosong, set data kosong dan return
+            if (empty($this->nip)) {
+                $this->modulsByNip = [
+                    'array' => [],
+                    'message' => 'NIP tidak tersedia'
+                ];
+                return;
+            }
+
+            // Query modul berdasarkan NIP
+            $moduls = Modul::where('nip', $this->nip)->get();
+
+            // Jika tidak ada modul ditemukan
+            if ($moduls->isEmpty()) {
+                $this->modulsByNip = [
+                    'array' => [],
+                    'message' => 'Tidak ada modul ditemukan untuk NIP ini'
+                ];
+                return;
+            }
+
+            // Proses data modul yang ditemukan
+            $this->modulsByNip = [
+                'array' => $moduls->map(function ($modul) {
+                    return [
+                        'modul' => [
+                            'nama_modul' => $modul->code_cabinet,
+                            'product_name' => $modul->product_name ?? null,
+                            'project_name' => $modul->project_name ?? null
+                            // tambahkan field lain jika diperlukan
+                        ]
+                    ];
+                })->toArray(),
+                'message' => ''
+            ];
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Handle jika project tidak ditemukan
+            $this->modulsByNip = [
+                'array' => [],
+                'message' => 'Project tidak ditemukan'
+            ];
+        } catch (\Exception $e) {
+            // Handle error lainnya
+            $this->modulsByNip = [
+                'array' => [],
+                'message' => 'Terjadi kesalahan saat memuat data'
             ];
         }
     }
@@ -511,10 +604,5 @@ class KomponenTable extends Component
             return json_last_error() === JSON_ERROR_NONE ? $decoded : [];
         }
         return is_array($data) ? $data : [];
-    }
-
-    public function render()
-    {
-        return view('livewire.komponen-table');
     }
 }
