@@ -8,6 +8,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 use App\Filament\Resources\ProjectResource\Forms\ProjectFormSchema;
 
 class ProjectResource extends Resource
@@ -34,7 +35,14 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('date')->label('Tanggal'),
+                TextColumn::make('recap_number')->label('No Rekap'),
+                TextColumn::make('no_contract')->label('No Kontrak'),
+                TextColumn::make('nip')->label('NIP'),
+                TextColumn::make('product_name')->label('Nama Produk'),
+                TextColumn::make('project_name')->label('Nama Projek'),
+                TextColumn::make('estimator')->label('Estimator'),
+                TextColumn::make('recap_coordinator')->label('Koordinator Rekap'),
             ])
             ->filters([
                 //

@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ReportController extends Controller
+{
+    public function storeReportData(Request $request)
+    {
+        $validated = $request->validate([
+            'data' => 'required|array',
+            'report_type' => 'required|string|in:full-recap,KS,nonKS,K+Eris,flatpack'
+        ]);
+
+        // Store data in session
+        session(['report_data' => $validated['data']]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data stored successfully',
+            'redirect_url' => route('reports.show', ['reportType' => $validated['report_type']])
+        ]);
+    }
+
+    public function showReport(Request $request, $reportType = null)
+    {
+        // Get data from session
+        $reportData = session()->get('report_data', []);
+
+        // View mapping
+        $viewMap = [
+            'full-recap' => 'livewire.reports.full-recap',
+            'KS' => 'livewire.reports.KS',
+            'nonKS' => 'livewire.reports.nonKS',
+            'K+Eris' => 'livewire.reports.K+Eris',
+            'flatpack' => 'livewire.reports.flatpack',
+        ];
+
+        $view = $viewMap[$reportType] ?? 'livewire.reports.full-recap';
+
+        return view($view, [
+            'modulBreakdown' => $reportData,
+            'reportType' => $reportType
+        ]);
+    }
+}

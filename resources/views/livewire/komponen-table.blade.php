@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-conditional-formatting.css" />
   <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-sort.css" />
   <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets/lib/styles/preset-sheets-filter.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@univerjs-pro/sheets-print/lib/index.css">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
   <link rel="stylesheet" href={{ asset('css/style.css') }}>
@@ -381,6 +382,84 @@
           </div>
         </div>
       </div>
+
+      <div class="reports w-1/3">
+        <button data-modal-target="reports-modal" data-modal-toggle="reports-modal"
+          class="w-full text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded text-xs px-3 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
+          type="button">
+          Report Breakdown
+        </button>
+        <div id="reports-modal" tabindex="-1" aria-hidden="true"
+          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+          <div class="relative p-4 w-full max-w-2xl max-h-full">
+            <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+              <div
+                class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900">
+                  Report Breakdown
+                </h3>
+                <button type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  data-modal-hide="reports-modal">
+                  <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                  </svg>
+                  <span class="sr-only">Close modal</span>
+                </button>
+              </div>
+
+              <div class="p-4">
+                <div id="modal-form-content">
+                  <div class="mb-4 w-full">
+                    <div class="form-container">
+                      <form id="dynamicForm">
+                        <div class="form-group m-4">
+                          <label class="block mb-2 text-sm font-medium text-gray-700" for="description_unit">Pilih
+                            jenis reports</label>
+                          <select id="report_type" name="report_type"
+                            class="model-select border border-gray-300 text-sm rounded p-2 w-full">
+                            <option value="full-recap">Rekap full</option>
+                            <option value="KS">KS</option>
+                            <option value="nonKS">Non KS</option>
+                            <option value="K+Eris">K+Eris</option>
+                            <option value="flatpack">√flatpack ID</option>
+                            <option value="√+">√+</option>
+                            <option value="Kaca">Kaca</option>
+                            <option value="Kerja-kaca">Kerja + Kaca</option>
+                            <option value="rework-kaca">Rework Kaca</option>
+                            <option value="frame-alu">Frame Alu.Yn</option>
+                            <option value="SJ">SJ</option>
+                            <option value="frame-alu-ad">Frame Alu.Ad</option>
+                            <option value="BPB-setting">BPB Setting</option>
+                            <option value="BPB-setting-frame">BPB Setting frame dll</option>
+                            <option value="kerja+">Kerja+</option>
+                            <option value="rework">Rework</option>
+                            <option value="handle">Handle</option>
+                            <option value="handle+">Handle+</option>
+                            <option value="cutting-ks">Cutting KS</option>
+                            <option value="cutting-nonks">Cutting NonKS</option>
+                            <option value="raw-material">Raw Material</option>
+                            <option value="BPB-raw-material-man">BPB Raw Material man.</option>
+                            <option value="fitting-lap">Fitting lap.</option>
+                          </select>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-3">
+                <button id="print-report" type="button"
+                  class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Cetak</button>
+                <button data-modal-hide="kodifikasi-modal" type="button"
+                  class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -405,6 +484,10 @@
   <script src="https://unpkg.com/@univerjs/preset-sheets-sort/lib/umd/locales/en-US.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/locales/en-US.js"></script>
+
+  {{-- <script src="https://unpkg.com/@univerjs-pro/sheets-print/lib/es/index.js"></script>
+  <script src="https://unpkg.com/@univerjs-pro/sheets-print/lib/umd/locale/en-US.js"></script> --}}
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
@@ -427,4 +510,5 @@
   </script>
   <script src="{{ asset('js/modulBreakdown/univer.js') }}"></script>
   <script src="{{ asset('js/modulBreakdown/updateModul.js') }}"></script>
+  <script src="{{ asset('js/modulBreakdown/reports.js') }}"></script>
 </div>

@@ -2,8 +2,6 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
-console.log("groupComponents : ", groupedComponents);
-
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -132,7 +130,6 @@ function prepareBreakdownSheetData() {
             // Store starting row for formula adjustment
             modulStartRows[modulName] = currentRow + 1;
 
-            // Create modul row with style (only if it hasn't been created yet)
             if (!data[currentRow]?.[namaModulIndex]?.v) {
                 data[currentRow] = {};
                 columns.forEach((col, colIndex) => {
