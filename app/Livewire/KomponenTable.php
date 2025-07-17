@@ -583,6 +583,15 @@ class KomponenTable extends Component
         }
 
         $this->allSpecs = [
+            'date' => $project->date,
+            'recap_number' => $project->recap_number,
+            'no_contract' => $project->no_contract,
+            'nip' => $project->nip,
+            'product_name' => $project->product_name,
+            'project_name' => $project->project_name,
+            'estimator' => $project->estimator,
+            'recap_coordinator' => $project->recap_coordinator,
+            'project_status' => $project->project_status,
             'product_spesification' => $this->parseSpecData($project->product_spesification),
             'material_thickness_spesification' => $this->parseSpecData($project->material_thickness_spesification),
             'coating_standard' => $this->parseSpecData($project->coating_standard),

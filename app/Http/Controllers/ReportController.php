@@ -10,11 +10,13 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'data' => 'required|array',
-            'report_type' => 'required|string|in:full-recap,KS,nonKS,K+Eris,flatpack'
+            'report_type' => 'required|string|in:full-recap,KS,nonKS,K+Eris,flatpack',
+            'projectInformation' => 'required'
         ]);
 
         // Store data in session
-        session(['report_data' => $validated['data']]);
+        session(['breakdown_data' => $validated['data']]);
+        session(['spek_data' => $validated['projectInformation']]);
 
         return response()->json([
             'success' => true,
@@ -26,7 +28,8 @@ class ReportController extends Controller
     public function showReport(Request $request, $reportType = null)
     {
         // Get data from session
-        $reportData = session()->get('report_data', []);
+        $reportData = session()->get('breakdown_data', []);
+        $spekData = session()->get('spek_data', []);
 
         // View mapping
         $viewMap = [
@@ -41,6 +44,7 @@ class ReportController extends Controller
 
         return view($view, [
             'modulBreakdown' => $reportData,
+            'spekData' => $spekData,
             'reportType' => $reportType
         ]);
     }

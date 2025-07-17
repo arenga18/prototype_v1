@@ -1,9 +1,8 @@
 $(document).on("click", "button", function (e) {
-    if (this.id !== "key-bindings-3" && this.id !== "key-bindings-2") {
+    if (this.id !== "key-bindings-2" && this.id !== "key-bindings-1") {
         e.preventDefault();
     }
 });
-
 $("#modulModal").on("shown.bs.modal", function () {
     $("#modulSelect").select2({
         placeholder: "--Pilih Modul--",

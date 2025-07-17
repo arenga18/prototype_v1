@@ -2,6 +2,18 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
+const projectInformation = {
+    date: projectData.date,
+    recap_number: projectData.recap_number,
+    no_contract: projectData.no_contract,
+    nip: projectData.nip,
+    product_name: projectData.product_name,
+    project_name: projectData.project_name,
+    estimator: projectData.estimator,
+    recap_coordinator: projectData.recap_coordinator,
+    project_status: projectData.project_status,
+};
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -317,6 +329,7 @@ function prepareValidationSheetData() {
         mergeCells: [],
     };
 }
+console.log("SPEK DATA : ", projectData);
 
 function prepareSpecSheetData() {
     let data = {};
@@ -380,8 +393,71 @@ function prepareSpecSheetData() {
             .trim();
     };
 
-    // Loop melalui semua kategori spesifikasi
-    Object.entries(projectData).forEach(([category, items]) => {
+    const nonArrayFields = [
+        "date",
+        "recap_number",
+        "no_contract",
+        "nip",
+        "product_name",
+        "project_name",
+        "estimator",
+        "recap_coordinator",
+    ];
+
+    // Add non-array fields section title
+    data[rowIndex] = {
+        1: {
+            v: "Project Information",
+            s: categoryStyle,
+        },
+    };
+    rowIndex++;
+
+    // Add non-array fields
+    nonArrayFields.forEach((field) => {
+        if (projectData[field] !== null && projectData[field] !== undefined) {
+            data[rowIndex] = {
+                1: { v: formatCategoryName(field), s: dataStyle },
+                2: {
+                    v: ":",
+                    s: {
+                        bd: {
+                            t: { s: 1 },
+                            b: { s: 1 },
+                            l: { s: 1 },
+                            r: { s: 1 },
+                        },
+                        fs: 11,
+                        bl: 1,
+                        ht: 2,
+                    },
+                },
+                3: {
+                    v: projectData[field] !== null ? projectData[field] : "",
+                    s: dataStyle,
+                },
+                4: { v: "", s: dataStyle },
+                5: { v: "", s: dataStyle },
+                6: { v: "", s: dataStyle },
+            };
+            rowIndex++;
+        }
+    });
+
+    // Add empty row after non-array fields
+    data[rowIndex] = {};
+    rowIndex++;
+
+    // Then process array-type specification fields
+    const arrayFields = Object.keys(projectData).filter(
+        (key) =>
+            Array.isArray(projectData[key]) && !nonArrayFields.includes(key)
+    );
+
+    // Loop melalui semua kategori spesifikasi (array type)
+    arrayFields.forEach((category) => {
+        const items = projectData[category];
+
         data[rowIndex] = {
             1: {
                 v: formatCategoryName(category),
@@ -746,8 +822,6 @@ function getAllData() {
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-3", function () {
     const spreadsheetData = getAllData();
-
-    // Format data untuk modul_breakdown sesuai struktur baru
     const modulBreakdown = [];
     let currentModul = null;
     let currentModulObject = {};

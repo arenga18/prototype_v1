@@ -36,7 +36,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const modulBreakdown = processModulBreakdown(spreadsheetData);
 
         // Kirim data ke server sebelum membuka laporan
-        sendDataToReport(modulBreakdown, reportTypeSelect.value);
+        sendDataToReport(
+            modulBreakdown,
+            reportTypeSelect.value,
+            projectInformation
+        );
     });
 
     function processModulBreakdown(spreadsheetData) {
@@ -93,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return modulBreakdown;
     }
 
-    async function sendDataToReport(data, reportType) {
+    async function sendDataToReport(data, reportType, projectInformation) {
         try {
             const storeDataUrl = "/reports/store-data";
             const csrfToken = document.querySelector(
@@ -121,6 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({
                     data: data,
                     report_type: reportType,
+                    projectInformation: projectInformation,
                 }),
             });
 
