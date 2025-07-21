@@ -46,7 +46,7 @@ class KomponenModul extends Component
             $modulComponent = ModulComponent::find($recordId);
             if ($modulComponent) {
                 $this->modul = $modulComponent->modul;
-                $this->modulList = [$modulComponent->modul]; // Still keep as array for the dropdown
+                $this->modulList = [$modulComponent->modul];
                 $this->modulData = [$modulComponent->modul => $modulComponent->component];
             } else {
                 $this->modulList = [];

@@ -248,8 +248,7 @@ function prepareBreakdownSheetData() {
         });
     }
 
-    // Execute calculations after a short delay
-    setTimeout(() => formula.executeCalculation(), 100);
+    formula.executeCalculation();
 
     return {
         data,
@@ -820,7 +819,7 @@ function getAllData() {
 }
 
 // Event handler untuk tombol update
-$(document).on("click", "#key-bindings-3", function () {
+$(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
     const modulBreakdown = [];
     let currentModul = null;
@@ -870,8 +869,6 @@ $(document).on("click", "#key-bindings-3", function () {
         }
     }
 
-    console.log("current : ", currentComponents);
-
     // Simpan modul terakhir
     if (currentModul) {
         modulBreakdown.push({
@@ -898,7 +895,8 @@ $(document).on("click", "#key-bindings-3", function () {
         data: JSON.stringify(payload),
         success: function (response) {
             if (response.status === "success") {
-                alert("Data berhasil diupdate!");
+                // alert("Data berhasil diupdate!");
+                console.log("Data berhasil diupdate!");
             } else {
                 alert("Error: " + response.message);
             }

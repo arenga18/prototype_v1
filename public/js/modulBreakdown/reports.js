@@ -104,8 +104,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 'meta[name="csrf-token"]'
             ).content;
 
-            console.log("data : ", data);
-
             // Validate data before sending
             if (!data || !Array.isArray(data)) {
                 throw new Error("Invalid data format");
@@ -150,8 +148,11 @@ document.addEventListener("DOMContentLoaded", function () {
             window.open(`/reports/${reportType}`, "_blank");
 
             // Close modal
-            const modal = document.getElementById("reports-modal");
-            if (modal) modal.classList.add("hidden");
+            const modal = FlowbiteInstances.getInstance(
+                "Modal",
+                "reports-modal"
+            );
+            modal.hide();
         } catch (error) {
             console.error("Error sending data:", error);
             alert(`Gagal mengirim data ke laporan: ${error.message}`);

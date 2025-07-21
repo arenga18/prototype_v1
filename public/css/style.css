@@ -103,3 +103,7 @@ body,
 .fi-input {
     font-size: 12px !important;
 }
+
+.z-40 {
+    z-index: 20 !important;
+}

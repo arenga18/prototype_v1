@@ -3,25 +3,22 @@ $(document).on(
     "button[data-modal-target='kodifikasi-modal']",
     function (e) {
         const baseUrl = window.location.origin;
-        let currentNip = nip; // Store the current NIP
+        let currentNip = nip;
 
         // Get the modal elements
         const $loadingSpinner = $("#modal-loading-spinner");
         const $formContent = $("#modal-form-content");
 
-        // Function to show loading spinner and hide form content
         function showLoading() {
             $loadingSpinner.removeClass("hidden");
             $formContent.addClass("hidden");
         }
 
-        // Function to hide loading spinner and show form content
         function hideLoading() {
             $loadingSpinner.addClass("hidden");
             $formContent.removeClass("hidden");
         }
 
-        // Show loading spinner immediately when the modal button is clicked
         showLoading();
 
         // Array to hold all promises for API calls
@@ -121,6 +118,7 @@ $(document).on(
                             type: "GET",
                             data: {
                                 modul_reference: response.modul_references,
+                                recordId: recordId,
                             },
                             success: function (groupedResponse) {
                                 if (groupedResponse.success) {
@@ -139,8 +137,8 @@ $(document).on(
                                     console.log("sheetData : ", sheetData);
 
                                     console.log(
-                                        "breadownSheet : ",
-                                        breakdownSheet
+                                        "groupedComponents : ",
+                                        groupedComponents
                                     );
 
                                     if (breakdownSheet && sheetData) {
@@ -193,6 +191,8 @@ $(document).on(
         // Load select data function, now returns a Promise
         function loadSelectData(selectElement) {
             const model = $(selectElement).data("model");
+
+            console.log("MODEL : ", model);
             const fieldId = $(selectElement).attr("id");
 
             $(selectElement).html('<option value="">Memuat data...</option>');
@@ -215,7 +215,7 @@ $(document).on(
                                 $select.append(
                                     '<option value="" disabled>Data kosong</option>'
                                 );
-                                resolve(); // Resolve even if no data
+                                resolve();
                                 return;
                             }
 
@@ -265,11 +265,11 @@ $(document).on(
 
         // Handle cabinet select change
         $("#codeCabinetSelect").on("change", function () {
-            showLoading(); // Show loading when modul selection changes
+            showLoading();
             const selectedCode = $(this).val();
             if (!selectedCode) {
                 $("#cabinetCodeDisplay").val("");
-                hideLoading(); // Hide loading if no code selected
+                hideLoading();
                 return;
             }
 
@@ -331,8 +331,7 @@ $(document).on(
         Promise.all(apiCalls)
             .then(() => {
                 console.log("All select data loaded.");
-                hideLoading(); // Hide loading spinner and show form content
-                // If there's a pre-selected module, trigger change to load its specific data
+                hideLoading();
                 if ($("#codeCabinetSelect").val()) {
                     $("#codeCabinetSelect").trigger("change");
                 }

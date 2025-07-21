@@ -26,10 +26,10 @@
 
         <!-- Main modal -->
         <div id="modul-modal" tabindex="-1" aria-hidden="true"
-          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-          <div class="relative p-4 w-full max-w-2xl max-h-full">
+          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full shadow">
+          <div class="relative p-4 w-full max-w-2xl max-h-full shadow">
             <!-- Modal content -->
-            <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
               <!-- Modal header -->
               <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
@@ -92,7 +92,7 @@
                 </div>
               </div>
               <!-- Modal footer -->
-              <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
+              <div class="flex items-center p-4 md:p-5 gap-4 border-t border-gray-200 rounded-b dark:border-gray-600">
                 <button data-modal-hide="modul-modal" type="button"
                   class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Tambah</button>
                 <button data-modal-hide="modul-modal" type="button"
@@ -113,10 +113,10 @@
 
         <!-- Main modal -->
         <div id="part-modal" tabindex="-1" aria-hidden="true"
-          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-          <div class="relative p-4 w-full max-w-2xl max-h-full">
+          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full shadow">
+          <div class="relative p-4 w-full max-w-2xl max-h-full shadow">
             <!-- Modal content -->
-            <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
               <!-- Modal header -->
               <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
@@ -175,9 +175,9 @@
           Update Kodifikasi Modul
         </button>
         <div id="kodifikasi-modal" tabindex="-1" aria-hidden="true"
-          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-          <div class="relative p-4 w-full max-w-2xl max-h-full">
-            <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+          class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full shadow">
+          <div class="relative p-4 w-full max-w-2xl max-h-full shadow">
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
               <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
                 <h3 class="text-xl font-semibold text-gray-900">
@@ -196,7 +196,6 @@
               </div>
 
               <div class="p-4">
-                <!-- Tambahkan ini di dalam div modal content (setelah modal header) -->
                 <div id="modal-loading-spinner"
                   class="inset-0 bg-white bg-opacity-30 flex items-center justify-center z-10">
                   <div class="text-center p-4 bg-white bg-opacity-80 rounded-lg shadow-md">
@@ -372,7 +371,7 @@
                   </div>
                 </div>
               </div>
-              <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
+              <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-4">
                 <button data-modal-hide="kodifikasi-modal" type="button"
                   class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Perbarui</button>
                 <button data-modal-hide="kodifikasi-modal" type="button"
@@ -419,7 +418,7 @@
                           <label class="block mb-2 text-sm font-medium text-gray-700" for="description_unit">Pilih
                             jenis reports</label>
                           <select id="report_type" name="report_type"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full">
+                            class="border border-gray-300 text-sm rounded p-2 w-full">
                             <option value="full-recap">Rekap full</option>
                             <option value="KS">KS</option>
                             <option value="nonKS">Non KS</option>
@@ -484,10 +483,6 @@
   <script src="https://unpkg.com/@univerjs/preset-sheets-sort/lib/umd/locales/en-US.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-filter/lib/umd/locales/en-US.js"></script>
-
-  {{-- <script src="https://unpkg.com/@univerjs-pro/sheets-print/lib/es/index.js"></script>
-  <script src="https://unpkg.com/@univerjs-pro/sheets-print/lib/umd/locale/en-US.js"></script> --}}
-
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>

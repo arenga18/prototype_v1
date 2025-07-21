@@ -8,6 +8,7 @@ use App\Models\ModulComponent;
 use App\Models\Project;
 use App\Models\PartComponent;
 use App\Models\RemovablePart;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class KomponenTable extends Component
@@ -190,6 +191,7 @@ class KomponenTable extends Component
     {
         $this->groupedComponents = ['array' => []];
         $modul_reference = $request->input('modul_reference');
+        $recordId = $request->input('recordId');
 
         // Validate if modul_reference exists
         if (!$modul_reference) {
@@ -198,8 +200,9 @@ class KomponenTable extends Component
                 'message' => 'Modul reference is required'
             ], 400);
         }
-
+        $this->recordId = $recordId;
         $decodedModuls = $modul_reference;
+        Log::info('Isi recordID:', [$this->recordId]);
 
         if ($this->recordId) {
             $this->loadComponentsFromProject($decodedModuls);
@@ -229,6 +232,8 @@ class KomponenTable extends Component
             return;
         }
 
+        Log::info('Isi decodedModuls:', [$decodedModuls]);
+
         $modulBreakdown = is_array($project->modul_breakdown)
             ? $project->modul_breakdown
             : json_decode($project->modul_breakdown, true);
@@ -237,28 +242,19 @@ class KomponenTable extends Component
             return;
         }
 
-        // dd($decodedModuls);
         foreach ($modulBreakdown as $item) {
             if (!isset($item['modul']['nama_modul'])) {
                 continue;
             }
 
-            // $modulName = $item['modul']['nama_modul'];
-            // if (!in_array($modulName, $decodedModuls)) {
-            //     continue;
-            // }
-
             $components = $item;
             $processedComponents = $this->processComponents($components);
-
 
             $this->groupedComponents['array'][] = [
                 'modul' => $item['modul'],
                 'component' => [$processedComponents],
                 'isFilled' => true,
             ];
-
-            // dd($this->groupedComponents);
         }
     }
 
@@ -544,7 +540,6 @@ class KomponenTable extends Component
     {
         $validated = $request->validate([
             'modul_breakdown' => 'required|array',
-            'columns' => 'required|array',
             'recordId' => 'required|integer'
         ]);
 
@@ -555,7 +550,7 @@ class KomponenTable extends Component
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Data berhasil diupdate',
+                'message' => 'Data berhasil diupdatezzz',
                 'data' => $project
             ]);
         } catch (\Exception $e) {

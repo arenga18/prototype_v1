@@ -63,8 +63,9 @@ class ProjectFormSchema
                                     ->label("Estimator")
                                     ->options(
                                         [
-                                            'reza' => "Reza",
-                                            'ade' => "Ade",
+                                            'fahrudin' => "Fahrudin",
+                                            'guruh' => "Guruh",
+                                            'suminto' => "Suminto",
                                         ]
                                     )
                                     ->searchable()
@@ -75,8 +76,10 @@ class ProjectFormSchema
                                     ->label("Kordinator Rekap")
                                     ->options(
                                         [
-                                            'reza' => "Reza",
-                                            'ade' => "Ade",
+                                            'reza' => "Reza Pahlevi",
+                                            'ade' => "Ade Irawan",
+                                            'randy' => "Randy MF",
+                                            'nael' => "Nael Arya",
                                         ]
                                     )
                                     ->searchable()
@@ -511,7 +514,6 @@ class ProjectFormSchema
                                 if (!is_array($existing)) {
                                     $existing = [];
                                 }
-
 
                                 $existing = array_unique(array_merge($existing, [$record->id]));
                                 $set('modul_reference', $existing);
