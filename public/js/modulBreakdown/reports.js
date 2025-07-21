@@ -1,6 +1,6 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const printButton = document.getElementById("print-report");
-    const reportTypeSelect = document.getElementById("report_type");
+$(document).ready(function () {
+    const printButton = $("#print-report");
+    const reportTypeSelect = $("#report_type");
 
     function getAllData() {
         const workbook = univerAPI.getActiveWorkbook();
@@ -13,12 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         const cellDatas = range.getCellDatas();
-
         const result = [];
 
-        cellDatas.forEach((row, rowIndex) => {
+        $.each(cellDatas, function (rowIndex, row) {
             const rowData = {};
-            row.forEach((cell, colIndex) => {
+            $.each(row, function (colIndex, cell) {
                 if (cell?.v !== undefined) {
                     rowData[colIndex] = cell.v || "";
                 } else {
@@ -31,14 +30,16 @@ document.addEventListener("DOMContentLoaded", function () {
         return result;
     }
 
-    printButton.addEventListener("click", function () {
+    printButton.on("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         const spreadsheetData = getAllData();
         const modulBreakdown = processModulBreakdown(spreadsheetData);
 
-        // Kirim data ke server sebelum membuka laporan
+        // Send data to server before opening report
         sendDataToReport(
             modulBreakdown,
-            reportTypeSelect.value,
+            reportTypeSelect.val(),
             projectInformation
         );
     });
@@ -49,10 +50,10 @@ document.addEventListener("DOMContentLoaded", function () {
         let currentModulObject = {};
         let currentComponents = [];
 
-        for (let i = 1; i < spreadsheetData.length; i++) {
-            const row = spreadsheetData[i];
+        $.each(spreadsheetData, function (i, row) {
+            if (i === 0) return true; // skip header row
 
-            if (Object.values(row).every((val) => val === "")) continue;
+            if (Object.values(row).every((val) => val === "")) return true;
 
             if (row[namaModulIndex] && row[namaModulIndex] !== "") {
                 if (currentModul) {
@@ -66,16 +67,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 currentModulObject = { nama_modul: currentModul };
                 currentComponents = [];
 
-                columns.forEach((col, colIndex) => {
+                $.each(columns, function (colIndex, col) {
                     if (row[colIndex] !== undefined && row[colIndex] !== "") {
                         currentModulObject[col] = row[colIndex];
                     }
                 });
-                continue;
+                return true;
             }
 
             const componentData = {};
-            columns.forEach((col, colIndex) => {
+            $.each(columns, function (colIndex, col) {
                 if (row[colIndex] !== undefined && row[colIndex] !== "") {
                     componentData[col] = row[colIndex];
                 }
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (Object.keys(componentData).length > 0) {
                 currentComponents.push(componentData);
             }
-        }
+        });
 
         if (currentModul) {
             modulBreakdown.push({
@@ -100,9 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function sendDataToReport(data, reportType, projectInformation) {
         try {
             const storeDataUrl = "/reports/store-data";
-            const csrfToken = document.querySelector(
-                'meta[name="csrf-token"]'
-            ).content;
+            const csrfToken = $('meta[name="csrf-token"]').attr("content");
 
             // Validate data before sending
             if (!data || !Array.isArray(data)) {
@@ -113,49 +112,46 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw new Error("Report type is required");
             }
 
-            const response = await fetch(storeDataUrl, {
-                method: "POST",
+            const response = await $.ajax({
+                url: storeDataUrl,
+                type: "POST",
+                contentType: "application/json",
                 headers: {
-                    "Content-Type": "application/json",
                     "X-CSRF-TOKEN": csrfToken,
                     Accept: "application/json",
                 },
-                body: JSON.stringify({
+                data: JSON.stringify({
                     data: data,
                     report_type: reportType,
                     projectInformation: projectInformation,
                 }),
+                dataType: "json",
             });
-
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                // Handle validation errors
-                if (response.status === 422 && responseData.errors) {
-                    const errors = Object.values(responseData.errors).join(
-                        "\n"
-                    );
-                    throw new Error(`Validation error: ${errors}`);
-                }
-                throw new Error(
-                    responseData.message ||
-                        `HTTP error! status: ${response.status}`
-                );
-            }
 
             alert("sukses");
             // Open report in new tab
             window.open(`/reports/${reportType}`, "_blank");
 
-            // Close modal
+            // Close modal using Flowbite
             const modal = FlowbiteInstances.getInstance(
                 "Modal",
-                "reports-modal"
+                "report-breakdown-modal" // Make sure this matches your modal ID
             );
             modal.hide();
         } catch (error) {
             console.error("Error sending data:", error);
-            alert(`Gagal mengirim data ke laporan: ${error.message}`);
+
+            let errorMessage = "Gagal mengirim data ke laporan";
+            if (error.responseJSON && error.responseJSON.errors) {
+                errorMessage +=
+                    ": " + Object.values(error.responseJSON.errors).join("\n");
+            } else if (error.responseJSON && error.responseJSON.message) {
+                errorMessage += ": " + error.responseJSON.message;
+            } else {
+                errorMessage += ": " + error.message;
+            }
+
+            alert(errorMessage);
         }
     }
 });

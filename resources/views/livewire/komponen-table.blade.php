@@ -194,7 +194,6 @@
                   <span class="sr-only">Close modal</span>
                 </button>
               </div>
-
               <div class="p-4">
                 <div id="modal-loading-spinner"
                   class="inset-0 bg-white bg-opacity-30 flex items-center justify-center z-10">
@@ -217,16 +216,16 @@
                 </div>
 
                 <div id="modal-form-content">
-                  <div class="mb-4 w-full ">
+                  <div class="mb-4 w-full">
                     <div class="m-4">
                       <label for="codeCabinetSelect"
                         class="block mb-2 text-sm font-medium text-gray-700">Modul</label>
                       <select id="codeCabinetSelect" class="border border-gray-300 text-sm rounded p-2 w-full">
-                        @if (count($modulsByNip['array']) > 1)
+                        @if (count($modulsByNip['array'] ?? []) > 1)
                           <option value="">--Pilih Modul--</option>
                         @endif
 
-                        @forelse($modulsByNip['array'] as $item)
+                        @forelse($modulsByNip['array'] ?? [] as $item)
                           @if (isset($item['modul']['nama_modul']))
                             <option value="{{ $item['modul']['nama_modul'] }}"
                               {{ count($modulsByNip['array']) === 1 ? 'selected' : '' }}>
@@ -243,130 +242,125 @@
 
                   <div class="mb-4 w-full">
                     <div class="form-container">
-                      <form id="dynamicForm">
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="cabinetCodeDisplay">kode
-                            kabinet</label>
-                          <input type="text" id="cabinetCodeDisplay"
-                            class="border border-gray-300 text-sm rounded p-2 w-full" readonly>
-                        </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="description_unit">Deskripsi
-                            Unit</label>
-                          <select id="description_unit" name="description_unit"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="DescriptionUnit">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="cabinetCodeDisplay">kode
+                          kabinet</label>
+                        <input type="text" id="cabinetCodeDisplay"
+                          class="border border-gray-300 text-sm rounded p-2 w-full" readonly>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="box_carcase_shape">Bentuk
-                            Box/Carcase</label>
-                          <select id="box_carcase_shape" name="box_carcase_shape"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="BoxCarcaseShape">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="description_unit">Deskripsi
+                          Unit</label>
+                        <select id="description_unit" name="description_unit"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="DescriptionUnit">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700"
-                            for="finishing">Finishing</label>
-                          <select id="finishing" name="finishing"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="Finishing">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="box_carcase_shape">Bentuk
+                          Box/Carcase</label>
+                        <select id="box_carcase_shape" name="box_carcase_shape"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="BoxCarcaseShape">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="layer_position">Posisi
-                            Lapisan</label>
-                          <select id="layer_position" name="layer_position"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="LayerPosition">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="finishing">Finishing</label>
+                        <select id="finishing" name="finishing"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="Finishing">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="box_carcase_content">Isi
-                            Box/Carcase</label>
-                          <select id="box_carcase_content" name="box_carcase_content"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="BoxCarcaseContent">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="layer_position">Posisi
+                          Lapisan</label>
+                        <select id="layer_position" name="layer_position"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="LayerPosition">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="closing_system">Sistem
-                            Tutup</label>
-                          <select id="closing_system" name="closing_system"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="ClosingSystem">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="box_carcase_content">Isi
+                          Box/Carcase</label>
+                        <select id="box_carcase_content" name="box_carcase_content"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="BoxCarcaseContent">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="number_of_closures">Jumlah
-                            Tutup</label>
-                          <select id="number_of_closures" name="number_of_closures"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="NumberOfClosure">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="closing_system">Sistem
+                          Tutup</label>
+                        <select id="closing_system" name="closing_system"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="ClosingSystem">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="type_of_closure">Jenis
-                            Tutup</label>
-                          <select id="type_of_closure" name="type_of_closure"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="TypeOfClosure">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="number_of_closures">Jumlah
+                          Tutup</label>
+                        <select id="number_of_closures" name="number_of_closures"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="NumberOfClosure">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="handle">Handle</label>
-                          <select id="handle" name="handle"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="Handle">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="type_of_closure">Jenis
+                          Tutup</label>
+                        <select id="type_of_closure" name="type_of_closure"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="TypeOfClosure">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700"
-                            for="acc">Accessories</label>
-                          <select id="acc" name="acc"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="Accessories">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="handle">Handle</label>
+                        <select id="handle" name="handle"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full" data-model="Handle">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="lamp">Lampu</label>
-                          <select id="lamp" name="lamp"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full" data-model="Lamp">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="acc">Accessories</label>
+                        <select id="acc" name="acc"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full"
+                          data-model="Accessories">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
 
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="plinth">Plinth</label>
-                          <select id="plinth" name="plinth"
-                            class="model-select border border-gray-300 text-sm rounded p-2 w-full"
-                            data-model="Plinth">
-                            <option value="">Loading...</option>
-                          </select>
-                        </div>
-                      </form>
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="lamp">Lampu</label>
+                        <select id="lamp" name="lamp"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full" data-model="Lamp">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="plinth">Plinth</label>
+                        <select id="plinth" name="plinth"
+                          class="model-select border border-gray-300 text-sm rounded p-2 w-full" data-model="Plinth">
+                          <option value="">Loading...</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -413,38 +407,37 @@
                 <div id="modal-form-content">
                   <div class="mb-4 w-full">
                     <div class="form-container">
-                      <form id="dynamicForm">
-                        <div class="form-group m-4">
-                          <label class="block mb-2 text-sm font-medium text-gray-700" for="description_unit">Pilih
-                            jenis reports</label>
-                          <select id="report_type" name="report_type"
-                            class="border border-gray-300 text-sm rounded p-2 w-full">
-                            <option value="full-recap">Rekap full</option>
-                            <option value="KS">KS</option>
-                            <option value="nonKS">Non KS</option>
-                            <option value="K+Eris">K+Eris</option>
-                            <option value="flatpack">√flatpack ID</option>
-                            <option value="√+">√+</option>
-                            <option value="Kaca">Kaca</option>
-                            <option value="Kerja-kaca">Kerja + Kaca</option>
-                            <option value="rework-kaca">Rework Kaca</option>
-                            <option value="frame-alu">Frame Alu.Yn</option>
-                            <option value="SJ">SJ</option>
-                            <option value="frame-alu-ad">Frame Alu.Ad</option>
-                            <option value="BPB-setting">BPB Setting</option>
-                            <option value="BPB-setting-frame">BPB Setting frame dll</option>
-                            <option value="kerja+">Kerja+</option>
-                            <option value="rework">Rework</option>
-                            <option value="handle">Handle</option>
-                            <option value="handle+">Handle+</option>
-                            <option value="cutting-ks">Cutting KS</option>
-                            <option value="cutting-nonks">Cutting NonKS</option>
-                            <option value="raw-material">Raw Material</option>
-                            <option value="BPB-raw-material-man">BPB Raw Material man.</option>
-                            <option value="fitting-lap">Fitting lap.</option>
-                          </select>
-                        </div>
-                      </form>
+
+                      <div class="form-group m-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-700" for="report_type">Pilih
+                          jenis reports</label>
+                        <select id="report_type" name="report_type"
+                          class="border border-gray-300 text-sm rounded p-2 w-full">
+                          <option value="full-recap">Rekap full</option>
+                          <option value="KS">KS</option>
+                          <option value="nonKS">Non KS</option>
+                          <option value="K+Eris">K+Eris</option>
+                          <option value="flatpack">√flatpack ID</option>
+                          <option value="√+">√+</option>
+                          <option value="Kaca">Kaca</option>
+                          <option value="Kerja-kaca">Kerja + Kaca</option>
+                          <option value="rework-kaca">Rework Kaca</option>
+                          <option value="frame-alu">Frame Alu.Yn</option>
+                          <option value="SJ">SJ</option>
+                          <option value="frame-alu-ad">Frame Alu.Ad</option>
+                          <option value="BPB-setting">BPB Setting</option>
+                          <option value="BPB-setting-frame">BPB Setting frame dll</option>
+                          <option value="kerja+">Kerja+</option>
+                          <option value="rework">Rework</option>
+                          <option value="handle">Handle</option>
+                          <option value="handle+">Handle+</option>
+                          <option value="cutting-ks">Cutting KS</option>
+                          <option value="cutting-nonks">Cutting NonKS</option>
+                          <option value="raw-material">Raw Material</option>
+                          <option value="BPB-raw-material-man">BPB Raw Material man.</option>
+                          <option value="fitting-lap">Fitting lap.</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>

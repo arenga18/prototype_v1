@@ -14,6 +14,7 @@ Route::get('/', function () {
 
 Route::post('/save-spreadsheet', [KomponenModul::class, 'save']);
 Route::post('/update-spreadsheet', [KomponenModul::class, 'update']);
+Route::get('/get-modul-data', [KomponenModul::class, 'getModulData']);
 
 Route::post('/update-project', [KomponenTable::class, 'update']);
 
@@ -27,7 +28,7 @@ Route::get('/model-data/{model}', [ModelDataController::class, 'getModelData']);
 Route::get('/modul-by-cabinet', [ModelDataController::class, 'getModulByCabinet']);
 Route::put('/update-modul', [ModelDataController::class, 'updateModul']);
 
-Route::get('/get-modul-data', [KomponenTable::class, 'loadUpdatedGroupedComponents']);
+Route::get('/get-modul', [KomponenTable::class, 'loadUpdatedGroupedComponents']);
 
 // Routes untuk laporan
 Route::prefix('reports')->controller(ReportController::class)->group(function () {

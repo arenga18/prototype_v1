@@ -2,6 +2,8 @@ $(document).on(
     "click",
     "button[data-modal-target='kodifikasi-modal']",
     function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         const baseUrl = window.location.origin;
         let currentNip = nip;
 
@@ -114,7 +116,7 @@ $(document).on(
                             response.modul_references
                         );
                         $.ajax({
-                            url: `${baseUrl}/get-modul-data`,
+                            url: `${baseUrl}/get-modul`,
                             type: "GET",
                             data: {
                                 modul_reference: response.modul_references,

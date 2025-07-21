@@ -328,7 +328,6 @@ function prepareValidationSheetData() {
         mergeCells: [],
     };
 }
-console.log("SPEK DATA : ", projectData);
 
 function prepareSpecSheetData() {
     let data = {};
@@ -895,7 +894,6 @@ $(document).on("click", "#key-bindings-2", function () {
         data: JSON.stringify(payload),
         success: function (response) {
             if (response.status === "success") {
-                // alert("Data berhasil diupdate!");
                 console.log("Data berhasil diupdate!");
             } else {
                 alert("Error: " + response.message);

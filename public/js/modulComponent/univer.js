@@ -812,8 +812,6 @@ $(document).on("click", "#key-bindings-2", function () {
     const selectedModul = $("#modulSelect").val();
     const referenceModul = $("#modulReference").val();
 
-    console.log("data : ", spreadsheetData);
-
     if (!selectedModul) {
         alert("Pilih modul terlebih dahulu!");
         return;
