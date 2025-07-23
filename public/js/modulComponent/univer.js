@@ -110,20 +110,8 @@ function prepareUniverData() {
     };
 
     if (groupedComponents?.array) {
-        const uniqueGroups = [];
-        const processedModuls = new Set();
-
-        // First pass: Collect all unique module groups
-        groupedComponents.array.forEach((group) => {
-            const modulName = group.modul?.nama_modul || "";
-            if (!processedModuls.has(modulName)) {
-                uniqueGroups.push(group);
-                processedModuls.add(modulName);
-            }
-        });
-
-        // Process each module group
-        uniqueGroups.forEach((group, modulIndex) => {
+        // Process each module group directly without uniqueGroups
+        groupedComponents.array.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
             const modulName = modulData.nama_modul || "";
 
@@ -133,29 +121,27 @@ function prepareUniverData() {
             // Store starting row for formula adjustment
             modulStartRows[modulName] = currentRow + 1;
 
-            // Create modul row with style (only if it hasn't been created yet)
-            if (!data[currentRow]?.[namaModulIndex]?.v) {
-                data[currentRow] = {};
-                columns.forEach((col, colIndex) => {
-                    if (modulData[col] !== undefined) {
-                        data[currentRow][colIndex] = {
-                            v: modulData[col],
-                            s: modulStyle,
-                        };
-                    } else if (colIndex === namaModulIndex) {
-                        data[currentRow][colIndex] = {
-                            v: modulName,
-                            s: modulStyle,
-                        };
-                    } else {
-                        data[currentRow][colIndex] = {
-                            v: "",
-                            s: modulStyle,
-                        };
-                    }
-                });
-                currentRow++;
-            }
+            // Create modul row with style
+            data[currentRow] = {};
+            columns.forEach((col, colIndex) => {
+                if (modulData[col] !== undefined) {
+                    data[currentRow][colIndex] = {
+                        v: modulData[col],
+                        s: modulStyle,
+                    };
+                } else if (colIndex === namaModulIndex) {
+                    data[currentRow][colIndex] = {
+                        v: modulName,
+                        s: modulStyle,
+                    };
+                } else {
+                    data[currentRow][colIndex] = {
+                        v: "",
+                        s: modulStyle,
+                    };
+                }
+            });
+            currentRow++;
 
             // Process components array
             if (Array.isArray(group.component)) {
@@ -166,10 +152,7 @@ function prepareUniverData() {
                             componentGroup.modul?.nama_modul || modulName;
 
                         // Add nested module header if different from parent
-                        if (
-                            nestedModulName !== modulName &&
-                            !processedModuls.has(nestedModulName)
-                        ) {
+                        if (nestedModulName !== modulName) {
                             data[currentRow] = {};
                             columns.forEach((col, colIndex) => {
                                 if (colIndex === namaModulIndex) {
@@ -185,7 +168,6 @@ function prepareUniverData() {
                                 }
                             });
                             currentRow++;
-                            processedModuls.add(nestedModulName);
                         }
 
                         // Handle nested components structure
@@ -222,8 +204,6 @@ function prepareUniverData() {
                                 currentRow++;
                             });
                         }
-
-                        // Add space between component groups if not last
                         if (componentGroupIndex < group.component.length - 1) {
                             data[currentRow] = {};
                             currentRow++;
@@ -233,7 +213,7 @@ function prepareUniverData() {
             }
 
             // Add space between module groups if not last
-            if (modulIndex < uniqueGroups.length - 1) {
+            if (modulIndex < groupedComponents.array.length - 1) {
                 data[currentRow] = {};
                 currentRow++;
             }
@@ -726,7 +706,7 @@ $(document).on("click", "#key-bindings-1", function () {
         const row = spreadsheetData[i];
 
         // // Skip baris kosong
-        // if (Object.values(row).every((val) => val === "")) continue;
+        if (Object.values(row).every((val) => val === "")) continue;
 
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
@@ -809,6 +789,7 @@ $(document).on("click", "#key-bindings-1", function () {
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
+    console.log("Spreadsheet : ", spreadsheetData);
     const selectedModul = $("#modulSelect").val();
     const referenceModul = $("#modulReference").val();
 
@@ -825,6 +806,9 @@ $(document).on("click", "#key-bindings-2", function () {
 
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
+
+        // // Skip baris kosong
+        if (Object.values(row).every((val) => val === "")) continue;
 
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {

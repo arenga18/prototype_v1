@@ -407,7 +407,6 @@
                 <div id="modal-form-content">
                   <div class="mb-4 w-full">
                     <div class="form-container">
-
                       <div class="form-group m-4">
                         <label class="block mb-2 text-sm font-medium text-gray-700" for="report_type">Pilih
                           jenis reports</label>

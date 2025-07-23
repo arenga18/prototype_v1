@@ -28,16 +28,14 @@ Route::get('/model-data/{model}', [ModelDataController::class, 'getModelData']);
 Route::get('/modul-by-cabinet', [ModelDataController::class, 'getModulByCabinet']);
 Route::put('/update-modul', [ModelDataController::class, 'updateModul']);
 
-Route::get('/get-modul', [KomponenTable::class, 'loadUpdatedGroupedComponents']);
+Route::get('/get-modul', [KomponenTable::class,  'loadUpdatedGroupedComponents']);
 
 // Routes untuk laporan
 Route::prefix('reports')->controller(ReportController::class)->group(function () {
     // Route untuk menyimpan data
     Route::post('store-data', 'storeReportData')->name('reports.store-data');
-    // Route untuk menampilkan laporan (menggunakan parameter)
     Route::get('{reportType}', 'showReport')->name('reports.show');
 
-    // Route khusus untuk kompatibilitas (optional)
     Route::get('full-recap', function () {
         return redirect()->route('reports.show', ['reportType' => 'full-recap']);
     });

@@ -1,6 +1,7 @@
 $(document).ready(function () {
     const printButton = $("#print-report");
     const reportTypeSelect = $("#report_type");
+    const baseUrl = window.location.origin;
 
     function getAllData() {
         const workbook = univerAPI.getActiveWorkbook();
@@ -135,9 +136,9 @@ $(document).ready(function () {
             // Close modal using Flowbite
             const modal = FlowbiteInstances.getInstance(
                 "Modal",
-                "report-breakdown-modal" // Make sure this matches your modal ID
+                "report-modal"
             );
-            modal.hide();
+            console.log("Modal : ", modal);
         } catch (error) {
             console.error("Error sending data:", error);
 

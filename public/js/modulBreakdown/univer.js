@@ -14,6 +14,8 @@ const projectInformation = {
     project_status: projectData.project_status,
 };
 
+console.log("Grouped Components : ", groupedComponents);
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -119,20 +121,8 @@ function prepareBreakdownSheetData() {
     };
 
     if (groupedComponents?.array) {
-        const uniqueGroups = [];
-        const processedModuls = new Set();
-
-        // First pass: Collect all unique module groups
-        groupedComponents.array.forEach((group) => {
-            const modulName = group.modul?.nama_modul || "";
-            if (!processedModuls.has(modulName)) {
-                uniqueGroups.push(group);
-                processedModuls.add(modulName);
-            }
-        });
-
-        // Process each module group
-        uniqueGroups.forEach((group, modulIndex) => {
+        // Process each module group directly
+        groupedComponents.array.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
             const modulName = modulData.nama_modul || "";
 
@@ -142,28 +132,27 @@ function prepareBreakdownSheetData() {
             // Store starting row for formula adjustment
             modulStartRows[modulName] = currentRow + 1;
 
-            if (!data[currentRow]?.[namaModulIndex]?.v) {
-                data[currentRow] = {};
-                columns.forEach((col, colIndex) => {
-                    if (modulData[col] !== undefined) {
-                        data[currentRow][colIndex] = {
-                            v: modulData[col],
-                            s: modulStyle,
-                        };
-                    } else if (colIndex === namaModulIndex) {
-                        data[currentRow][colIndex] = {
-                            v: modulName,
-                            s: modulStyle,
-                        };
-                    } else {
-                        data[currentRow][colIndex] = {
-                            v: "",
-                            s: modulStyle,
-                        };
-                    }
-                });
-                currentRow++;
-            }
+            // Create modul row with style
+            data[currentRow] = {};
+            columns.forEach((col, colIndex) => {
+                if (modulData[col] !== undefined) {
+                    data[currentRow][colIndex] = {
+                        v: modulData[col],
+                        s: modulStyle,
+                    };
+                } else if (colIndex === namaModulIndex) {
+                    data[currentRow][colIndex] = {
+                        v: modulName,
+                        s: modulStyle,
+                    };
+                } else {
+                    data[currentRow][colIndex] = {
+                        v: "",
+                        s: modulStyle,
+                    };
+                }
+            });
+            currentRow++;
 
             // Process components array
             if (Array.isArray(group.component)) {
@@ -174,10 +163,7 @@ function prepareBreakdownSheetData() {
                             componentGroup.modul?.nama_modul || modulName;
 
                         // Add nested module header if different from parent
-                        if (
-                            nestedModulName !== modulName &&
-                            !processedModuls.has(nestedModulName)
-                        ) {
+                        if (nestedModulName !== modulName) {
                             data[currentRow] = {};
                             columns.forEach((col, colIndex) => {
                                 if (colIndex === namaModulIndex) {
@@ -193,7 +179,6 @@ function prepareBreakdownSheetData() {
                                 }
                             });
                             currentRow++;
-                            processedModuls.add(nestedModulName);
                         }
 
                         // Handle nested components structure
@@ -241,7 +226,7 @@ function prepareBreakdownSheetData() {
             }
 
             // Add space between module groups if not last
-            if (modulIndex < uniqueGroups.length - 1) {
+            if (modulIndex < groupedComponents.array.length - 1) {
                 data[currentRow] = {};
                 currentRow++;
             }
