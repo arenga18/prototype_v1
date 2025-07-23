@@ -705,13 +705,13 @@ $(document).on("click", "#key-bindings-1", function () {
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
 
-        // // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
-
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
             // Simpan modul sebelumnya jika ada
             if (currentModul) {
+                // Hapus baris kosong di akhir components sebelum menyimpan
+                cleanEmptyRowsAtEnd(currentComponents);
+
                 modulBreakdown.push({
                     modul: currentModulObject,
                     components: currentComponents,
@@ -732,23 +732,25 @@ $(document).on("click", "#key-bindings-1", function () {
             continue;
         }
 
-        // Proses baris komponen
+        // Proses baris komponen (tambahkan semua baris, termasuk yang kosong di tengah)
         const componentData = {};
+        let hasData = false;
         columns.forEach((col, colIndex) => {
-            if (Object.values(row).every((val) => val === "")) {
-                componentData[col] = "";
-            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
+            if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] = row[colIndex];
+                hasData = true;
+            } else {
+                componentData[col] = "";
             }
         });
 
-        if (Object.keys(componentData).length > 0) {
-            currentComponents.push(componentData);
-        }
+        currentComponents.push(componentData);
     }
 
-    // Simpan modul terakhir
+    // Simpan modul terakhir (dengan membersihkan baris kosong di akhir saja)
     if (currentModul) {
+        cleanEmptyRowsAtEnd(currentComponents);
+
         modulBreakdown.push({
             modul: currentModulObject,
             components: currentComponents,
@@ -760,6 +762,8 @@ $(document).on("click", "#key-bindings-1", function () {
         modul: selectedModul,
         reference_modul: referenceModul,
         components: modulBreakdown,
+        columns: columns,
+        recordId: recordId,
     };
 
     console.log("Payload untuk simpan:", payload);
@@ -770,18 +774,22 @@ $(document).on("click", "#key-bindings-1", function () {
         method: "POST",
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            "Content-Type": "application/json",
         },
-        contentType: "application/json",
         data: JSON.stringify(payload),
-        success: function (data) {
-            if (data.status === "success") {
+        success: function (response) {
+            if (response.status === "success") {
                 alert("Data berhasil disimpan!");
             } else {
-                alert("Gagal menyimpan data: " + data.message);
+                alert("Gagal menyimpan data: " + response.message);
             }
         },
         error: function (xhr, status, error) {
-            alert("Error: " + error);
+            let errorMsg = "Terjadi kesalahan saat menyimpan";
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            alert(errorMsg);
         },
     });
 });
@@ -807,13 +815,13 @@ $(document).on("click", "#key-bindings-2", function () {
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
 
-        // // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
-
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
             // Simpan modul sebelumnya jika ada
             if (currentModul) {
+                // Hanya hapus baris kosong di akhir array components
+                cleanEmptyRowsAtEnd(currentComponents);
+
                 modulBreakdown.push({
                     modul: currentModulObject,
                     components: currentComponents,
@@ -834,23 +842,20 @@ $(document).on("click", "#key-bindings-2", function () {
             continue;
         }
 
-        // Proses baris komponen
+        // Proses baris komponen (tambahkan semua baris, termasuk yang kosong di tengah)
         const componentData = {};
         columns.forEach((col, colIndex) => {
-            if (Object.values(row).every((val) => val === "")) {
-                componentData[col] = "";
-            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] = row[colIndex];
+            if (row[colIndex] !== undefined) {
+                componentData[col] = row[colIndex] || "";
             }
         });
-
-        if (Object.keys(componentData).length > 0) {
-            currentComponents.push(componentData);
-        }
+        currentComponents.push(componentData);
     }
 
-    // Simpan modul terakhir
+    // Simpan modul terakhir (dengan membersihkan baris kosong di akhir saja)
     if (currentModul) {
+        cleanEmptyRowsAtEnd(currentComponents);
+
         modulBreakdown.push({
             modul: currentModulObject,
             components: currentComponents,
@@ -879,7 +884,6 @@ $(document).on("click", "#key-bindings-2", function () {
         success: function (response) {
             if (response.status === "success") {
                 alert("Data berhasil diupdate!");
-                Livewire.emit("refresh"); // Tambahkan refresh Livewire jika perlu
             } else {
                 alert("Error: " + response.message);
             }
@@ -893,6 +897,22 @@ $(document).on("click", "#key-bindings-2", function () {
         },
     });
 });
+
+// Fungsi untuk menghapus baris kosong hanya di akhir array
+function cleanEmptyRowsAtEnd(components) {
+    let i = components.length - 1;
+    while (i >= 0 && isRowEmpty(components[i])) {
+        components.pop();
+        i--;
+    }
+}
+
+// Fungsi helper untuk mengecek apakah sebuah row kosong
+function isRowEmpty(row) {
+    return Object.values(row).every(
+        (val) => val === "" || val === undefined || val === null
+    );
+}
 
 function addModulToSpreadsheet(modulName) {
     try {

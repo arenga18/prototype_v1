@@ -813,13 +813,11 @@ $(document).on("click", "#key-bindings-2", function () {
     for (let i = 1; i < spreadsheetData.length; i++) {
         const row = spreadsheetData[i];
 
-        // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
-
         // Jika baris berisi nama modul
         if (row[namaModulIndex] && row[namaModulIndex] !== "") {
-            // Simpan modul sebelumnya jika ada
+            // Simpan modul sebelumnya jika ada (dengan membersihkan baris kosong di akhir)
             if (currentModul) {
+                cleanEmptyRowsAtEnd(currentComponents);
                 modulBreakdown.push({
                     modul: currentModulObject,
                     components: currentComponents,
@@ -840,21 +838,23 @@ $(document).on("click", "#key-bindings-2", function () {
             continue;
         }
 
-        // Proses baris komponen
+        // Proses baris komponen (tambahkan semua baris, termasuk yang kosong di tengah)
         const componentData = {};
+        let hasData = false;
         columns.forEach((col, colIndex) => {
             if (row[colIndex] !== undefined && row[colIndex] !== "") {
                 componentData[col] = row[colIndex];
+                hasData = true;
+            } else {
+                componentData[col] = "";
             }
         });
-
-        if (Object.keys(componentData).length > 0) {
-            currentComponents.push(componentData);
-        }
+        currentComponents.push(componentData);
     }
 
-    // Simpan modul terakhir
+    // Simpan modul terakhir (dengan membersihkan baris kosong di akhir)
     if (currentModul) {
+        cleanEmptyRowsAtEnd(currentComponents);
         modulBreakdown.push({
             modul: currentModulObject,
             components: currentComponents,
@@ -885,7 +885,7 @@ $(document).on("click", "#key-bindings-2", function () {
             }
         },
         error: function (xhr) {
-            let errorMsg = "Terjadi kesalahan";
+            let errorMsg = "Terjadi kesalahan saat mengupdate data";
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMsg = xhr.responseJSON.message;
             }
@@ -893,6 +893,22 @@ $(document).on("click", "#key-bindings-2", function () {
         },
     });
 });
+
+// Fungsi untuk menghapus baris kosong hanya di akhir array
+function cleanEmptyRowsAtEnd(components) {
+    let i = components.length - 1;
+    while (i >= 0 && isRowEmpty(components[i])) {
+        components.pop();
+        i--;
+    }
+}
+
+// Fungsi helper untuk mengecek apakah sebuah row kosong
+function isRowEmpty(row) {
+    return Object.values(row).every(
+        (val) => val === "" || val === undefined || val === null
+    );
+}
 
 function addModulToSpreadsheet(modulName, placementModulName = null) {
     try {
