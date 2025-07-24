@@ -131,7 +131,7 @@
       <thead>
         <tr>
           <th></th>
-          <th colspan="8" align="left">Rekap (KS)</th>
+          <th colspan="8" align="left">Rekap</th>
         </tr>
         <tr>
           <th>No</th>
@@ -151,58 +151,57 @@
               return isset($modul['modul']['kode']) && strtoupper($modul['modul']['kode']) === '(KS)';
           });
 
-          // Grouping filtered data by Tpk
+          // Group by Tpk first
           $groupedByTpk = $filteredModulBreakdown->groupBy('modul.Tpk');
 
-          $groupedByModul = $groupedByTpk->map(function ($tpkGroup) {
-              return $tpkGroup->groupBy('modul.nama_modul')->map(function ($modulGroup) {
-                  return [
-                      'count' => $modulGroup->count(),
-                      'items' => $modulGroup,
-                      'subtotal' => $modulGroup->sum('total'),
-                  ];
-              });
-          });
+          // Prepare data for merging same component names
+          $mergedComponents = [];
+          $rowspans = [];
 
-          // Calculate grand total for filtered items
+          foreach ($groupedByTpk as $tpk => $components) {
+              // Group components by name within each Tpk group
+              $groupedByName = $components->groupBy('modul.nama_modul');
+
+              foreach ($groupedByName as $name => $items) {
+                  $rowspan = $items->count();
+                  $rowspans[$tpk][$name] = $rowspan;
+
+                  foreach ($items as $index => $item) {
+                      $mergedComponents[] = [
+                          'tpk' => $tpk,
+                          'name' => $name,
+                          'data' => $item,
+                          'is_first' => $index === 0,
+                          'rowspan' => $rowspan,
+                      ];
+                  }
+              }
+          }
+
           $grandTotal = $filteredModulBreakdown->count();
         @endphp
 
-        @foreach ($groupedByModul as $tpk => $modulGroups)
-          @php $firstTpk = true; @endphp
-          @foreach ($modulGroups as $modulName => $modulData)
-            @php $firstModul = true; @endphp
-            @foreach ($modulData['items'] as $index => $modul)
-              <tr>
-                <td></td>
-                <td>
-                  @if ($firstModul)
-                    {{ $modulName }}
-                  @endif
-                </td>
-                <td align="center">{{ $modul['modul']['ukuran'] ?? '' }}</td>
+        @foreach ($mergedComponents as $index => $component)
+          <tr>
+            <td align="center">{{ $index + 1 }}</td>
 
-                {{-- Show Tpk only once with rowspan --}}
-                @if ($firstTpk && $firstModul)
-                  <td rowspan="{{ $modulGroups->sum(fn($group) => $group['count']) }}" align="center">
-                    {{ $tpk }}
-                  </td>
-                  @php $firstTpk = false; @endphp
-                @endif
+            @if ($component['is_first'])
+              <td rowspan="{{ $component['rowspan'] }}">{{ $component['name'] }}</td>
+            @endif
 
-                <td align="center">{{ $modul['modul']['kode'] ?? '' }}</td>
+            <td align="center">{{ $component['data']['modul']['ukuran'] ?? '' }}</td>
 
-                {{-- Show total count only once per module --}}
-                @if ($firstModul)
-                  <td rowspan="{{ $modulData['count'] }}" align="center">{{ $modulData['count'] }}</td>
-                  @php $firstModul = false; @endphp
-                @endif
+            @if ($component['is_first'] && ($index === 0 || $mergedComponents[$index - 1]['tpk'] !== $component['tpk']))
+              <td rowspan="{{ $groupedByTpk[$component['tpk']]->count() }}" align="center">
+                {{ $component['tpk'] }}
+              </td>
+            @endif
 
-                <td align="center"></td>
-                <td align="center"></td>
-              </tr>
-            @endforeach
-          @endforeach
+            <td align="center">{{ $component['data']['modul']['kode'] ?? '' }}</td>
+            <td align="center">1</td>
+            <td align="center"></td>
+            <td align="center"></td>
+          </tr>
         @endforeach
 
         {{-- Grand Total Row --}}
@@ -217,8 +216,5 @@
   </div>
 </body>
 
-<script>
-  console.log()
-</script>
 
 </html>

@@ -149,13 +149,12 @@ class ModelDataController extends Controller
 
                 // Update project
                 $project->modul_reference = $modulReferences;
-                Log::info('Project before update:', ['project' => $project]);
                 $updatedReference = $project->save();
 
                 // Debugging: Log hasil update
-                Log::info('Project after update:', ['project' => $project]);
-                Log::info('updated reference:', ['updatedReference' => $updatedReference]);
-                Log::info('Updated modul_reference:', ['new_references' => $modulReferences]);
+                // Log::info('Project after update:', ['project' => $project]);
+                // Log::info('updated reference:', ['updatedReference' => $updatedReference]);
+                // Log::info('Updated modul_reference:', ['new_references' => $modulReferences]);
             }
 
             return response()->json([
@@ -174,4 +173,6 @@ class ModelDataController extends Controller
             ], 500);
         }
     }
+
+    public function addModul(Request $request) {}
 }
