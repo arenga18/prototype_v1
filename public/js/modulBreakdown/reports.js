@@ -2,6 +2,8 @@ $(document).ready(function () {
     const printButton = $("#print-report");
     const reportTypeSelect = $("#report_type");
     const baseUrl = window.location.origin;
+    const pathSegments = window.location.pathname.split("/");
+    const projectId = pathSegments[3];
 
     function getAllData() {
         const workbook = univerAPI.getActiveWorkbook();
@@ -41,7 +43,8 @@ $(document).ready(function () {
         sendDataToReport(
             modulBreakdown,
             reportTypeSelect.val(),
-            projectInformation
+            projectInformation,
+            projectId
         );
     });
 
@@ -99,9 +102,14 @@ $(document).ready(function () {
         return modulBreakdown;
     }
 
-    async function sendDataToReport(data, reportType, projectInformation) {
+    async function sendDataToReport(
+        data,
+        reportType,
+        projectInformation,
+        projectId
+    ) {
         try {
-            const storeDataUrl = "/reports/store-data";
+            const storeDataUrl = `/admin/projects/${projectId}/reports/store-data`;
             const csrfToken = $('meta[name="csrf-token"]').attr("content");
 
             // Validate data before sending
@@ -130,8 +138,11 @@ $(document).ready(function () {
             });
 
             alert("sukses");
-            // Open report in new tab
-            window.open(`/reports/${reportType}`, "_blank");
+            // Open report in new tab with proper URL structure
+            window.open(
+                `/admin/projects/${projectId}/reports/${reportType}`,
+                "_blank"
+            );
 
             // Close modal using Flowbite
             const modal = FlowbiteInstances.getInstance(
@@ -141,18 +152,6 @@ $(document).ready(function () {
             console.log("Modal : ", modal);
         } catch (error) {
             console.error("Error sending data:", error);
-
-            let errorMessage = "Gagal mengirim data ke laporan";
-            if (error.responseJSON && error.responseJSON.errors) {
-                errorMessage +=
-                    ": " + Object.values(error.responseJSON.errors).join("\n");
-            } else if (error.responseJSON && error.responseJSON.message) {
-                errorMessage += ": " + error.responseJSON.message;
-            } else {
-                errorMessage += ": " + error.message;
-            }
-
-            alert(errorMessage);
         }
     }
 });

@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Project;
 
 class ReportController extends Controller
 {
-    public function storeReportData(Request $request)
+    public function storeReportData(Request $request, $project)
     {
         $validated = $request->validate([
             'data' => 'required|array',
@@ -21,12 +22,18 @@ class ReportController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data stored successfully',
-            'redirect_url' => route('reports.show', ['reportType' => $validated['report_type']])
+            'redirect_url' => route('reports.show', [
+                'project' => $project,
+                'reportType' => $validated['report_type']
+            ])
         ]);
     }
 
-    public function showReport(Request $request, $reportType = null)
+    public function showReport(Request $request, $project, $reportType = null)
     {
+        // Get the project
+        $project = Project::findOrFail($project);
+
         // Get data from session
         $reportData = session()->get('breakdown_data', []);
         $spekData = session()->get('spek_data', []);
@@ -45,7 +52,8 @@ class ReportController extends Controller
         return view($view, [
             'modulBreakdown' => $reportData,
             'spekData' => $spekData,
-            'reportType' => $reportType
+            'reportType' => $reportType,
+            'project' => $project
         ]);
     }
 }

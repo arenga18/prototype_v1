@@ -257,7 +257,7 @@ function prepareValidationSheetData() {
     // Fungsi untuk menyesuaikan formula
     const adjustFormula = (formulaText) => {
         return formulaText.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
-            return `${col}${parseInt(rowNum)}`; // Basic adjustment, modify as needed
+            return `${col}${parseInt(rowNum)}`;
         });
     };
 

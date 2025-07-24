@@ -30,19 +30,19 @@ Route::put('/update-modul', [ModelDataController::class, 'updateModul']);
 
 Route::get('/get-modul', [KomponenTable::class,  'loadUpdatedGroupedComponents']);
 
-// Routes untuk laporan
-Route::prefix('reports')->controller(ReportController::class)->group(function () {
+Route::prefix('admin/projects/{project}/reports')->controller(ReportController::class)->group(function () {
     // Route untuk menyimpan data
     Route::post('store-data', 'storeReportData')->name('reports.store-data');
     Route::get('{reportType}', 'showReport')->name('reports.show');
 
-    Route::get('full-recap', function () {
-        return redirect()->route('reports.show', ['reportType' => 'full-recap']);
+    // Redirect routes for specific report types
+    Route::get('full-recap', function ($project) {
+        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'full-recap']);
     });
-    Route::get('KS', function () {
-        return redirect()->route('reports.show', ['reportType' => 'KS']);
+    Route::get('KS', function ($project) {
+        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'KS']);
     });
-    Route::get('nonKS', function () {
-        return redirect()->route('reports.show', ['reportType' => 'nonKS']);
+    Route::get('nonKS', function ($project) {
+        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'nonKS']);
     });
 });
