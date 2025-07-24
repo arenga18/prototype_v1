@@ -121,33 +121,42 @@ function prepareBreakdownSheetData() {
     };
 
     if (groupedComponents?.array) {
-        // Process each module group directly
         groupedComponents.array.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
             const modulName = modulData.nama_modul || "";
 
-            // Skip if no modul name
             if (!modulName) return;
 
             // Store starting row for formula adjustment
             modulStartRows[modulName] = currentRow + 1;
 
-            // Create modul row with style
+            // Create modul row with style and process formulas
             data[currentRow] = {};
             columns.forEach((col, colIndex) => {
-                if (modulData[col] !== undefined) {
+                const cellValue =
+                    modulData[col] !== undefined
+                        ? modulData[col]
+                        : colIndex === namaModulIndex
+                        ? modulName
+                        : "";
+
+                // Process formulas in modul data
+                if (
+                    typeof cellValue === "string" &&
+                    cellValue.startsWith("=")
+                ) {
                     data[currentRow][colIndex] = {
-                        v: modulData[col],
-                        s: modulStyle,
-                    };
-                } else if (colIndex === namaModulIndex) {
-                    data[currentRow][colIndex] = {
-                        v: modulName,
+                        f: adjustFormula(
+                            cellValue,
+                            modulStartRows[modulName],
+                            group.isFilled || false
+                        ),
+                        v: "",
                         s: modulStyle,
                     };
                 } else {
                     data[currentRow][colIndex] = {
-                        v: "",
+                        v: cellValue,
                         s: modulStyle,
                     };
                 }
@@ -158,65 +167,49 @@ function prepareBreakdownSheetData() {
             if (Array.isArray(group.component)) {
                 group.component.forEach(
                     (componentGroup, componentGroupIndex) => {
-                        // Handle nested module names in component groups
                         const nestedModulName =
                             componentGroup.modul?.nama_modul || modulName;
 
-                        // Add nested module header if different from parent
                         if (nestedModulName !== modulName) {
                             data[currentRow] = {};
                             columns.forEach((col, colIndex) => {
-                                if (colIndex === namaModulIndex) {
-                                    data[currentRow][colIndex] = {
-                                        v: nestedModulName,
-                                        s: modulStyle,
-                                    };
-                                } else {
-                                    data[currentRow][colIndex] = {
-                                        v: "",
-                                        s: modulStyle,
-                                    };
-                                }
+                                data[currentRow][colIndex] = {
+                                    v:
+                                        colIndex === namaModulIndex
+                                            ? nestedModulName
+                                            : "",
+                                    s: modulStyle,
+                                };
                             });
                             currentRow++;
                         }
 
-                        // Handle nested components structure
                         const components = componentGroup.components || [];
+                        components.forEach((comp) => {
+                            data[currentRow] = {};
+                            const rowData = mapDataToColumns(comp);
 
-                        if (Array.isArray(components)) {
-                            components.forEach((comp) => {
-                                data[currentRow] = {};
-
-                                // Map component data to columns
-                                const rowData = mapDataToColumns(comp);
-
-                                Object.keys(rowData).forEach((col) => {
-                                    const colValue = rowData[col];
-                                    data[currentRow][col] =
-                                        typeof colValue === "string" &&
-                                        colValue.startsWith("=")
-                                            ? {
-                                                  f: adjustFormula(
-                                                      colValue,
-                                                      modulStartRows[
-                                                          nestedModulName
-                                                      ] ||
-                                                          modulStartRows[
-                                                              modulName
-                                                          ],
-                                                      group.isFilled || false
-                                                  ),
-                                                  v: "",
-                                              }
-                                            : { v: colValue };
-                                });
-
-                                currentRow++;
+                            Object.keys(rowData).forEach((col) => {
+                                const colValue = rowData[col];
+                                data[currentRow][col] =
+                                    typeof colValue === "string" &&
+                                    colValue.startsWith("=")
+                                        ? {
+                                              f: adjustFormula(
+                                                  colValue,
+                                                  modulStartRows[
+                                                      nestedModulName
+                                                  ] ||
+                                                      modulStartRows[modulName],
+                                                  group.isFilled || false
+                                              ),
+                                              v: "",
+                                          }
+                                        : { v: colValue };
                             });
-                        }
+                            currentRow++;
+                        });
 
-                        // Add space between component groups if not last
                         if (componentGroupIndex < group.component.length - 1) {
                             data[currentRow] = {};
                             currentRow++;
@@ -225,7 +218,6 @@ function prepareBreakdownSheetData() {
                 );
             }
 
-            // Add space between module groups if not last
             if (modulIndex < groupedComponents.array.length - 1) {
                 data[currentRow] = {};
                 currentRow++;
@@ -233,6 +225,7 @@ function prepareBreakdownSheetData() {
         });
     }
 
+    // Execute calculations for both modul and component formulas
     formula.executeCalculation();
 
     return {

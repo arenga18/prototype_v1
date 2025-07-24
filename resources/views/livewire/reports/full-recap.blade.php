@@ -60,7 +60,7 @@
 
 <body>
   <div class="full-recap-report-wrapper">
-    <div class="section-title"><u>REKAPITULASI PEMAKAIAN BAHAN</u></div>
+    <div class="section-title"><u>REKAPITULASI PEMAKAIAN BAHAN (KS)</u></div>
 
     <table class="header-table">
       <tr>
@@ -131,7 +131,7 @@
       <thead>
         <tr>
           <th></th>
-          <th colspan="8" align="left">Rekap</th>
+          <th colspan="8" align="left">Rekap (KS)</th>
         </tr>
         <tr>
           <th>No</th>
@@ -146,8 +146,13 @@
       </thead>
       <tbody>
         @php
-          // Grouping data by Tpk
-          $groupedByTpk = collect($modulBreakdown)->groupBy('modul.Tpk');
+          // Filter modules with kode = "(ks)"
+          $filteredModulBreakdown = collect($modulBreakdown)->filter(function ($modul) {
+              return isset($modul['modul']['kode']) && strtoupper($modul['modul']['kode']) === '(KS)';
+          });
+
+          // Grouping filtered data by Tpk
+          $groupedByTpk = $filteredModulBreakdown->groupBy('modul.Tpk');
 
           $groupedByModul = $groupedByTpk->map(function ($tpkGroup) {
               return $tpkGroup->groupBy('modul.nama_modul')->map(function ($modulGroup) {
@@ -159,8 +164,8 @@
               });
           });
 
-          // Calculate grand total
-          $grandTotal = collect($modulBreakdown)->count();
+          // Calculate grand total for filtered items
+          $grandTotal = $filteredModulBreakdown->count();
         @endphp
 
         @foreach ($groupedByModul as $tpk => $modulGroups)
@@ -211,5 +216,9 @@
     </table>
   </div>
 </body>
+
+<script>
+  console.log()
+</script>
 
 </html>
