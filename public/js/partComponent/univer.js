@@ -50,10 +50,11 @@ function prepareValidationSheetData() {
 
     let rowIndex = 1;
 
-    // Loop setiap part (perhatikan struktur data Anda)
+    // Loop setiap part
     partData.forEach((comp) => {
         const row = {};
         const componentData = comp.data || {};
+        const componentStyles = comp.styles || {};
 
         // Loop kolom sesuai header
         dataValidationCol.forEach((col, index) => {
@@ -64,7 +65,7 @@ function prepareValidationSheetData() {
             // Akses nilai dari componentData
             row[index] = {
                 v: fieldKey ? componentData[fieldKey] || "" : "",
-                s: { ht: 1, vt: 1, fs: 11 },
+                s: fieldKey ? componentStyles[fieldKey] || "" : "",
             };
         });
 
@@ -181,7 +182,8 @@ function getAllData() {
         worksheet.getMaxColumns()
     );
 
-    // Ambil data sel dan formula
+    // Ambil data sel, style dan formula
+    const cellStyles = range.getCellStyles();
     const cellDatas = range.getCellDatas();
     const formulas = range.getFormulas();
 
@@ -212,21 +214,39 @@ function getAllData() {
     // Proses data sel
     const cellData = [];
 
+    // Pertama, proses semua data sel termasuk formula dan nilai
     cellDatas.forEach((row, rowIndex) => {
         const rowData = {};
         row.forEach((cell, colIndex) => {
+            const cellObj = {};
+
             // Jika ada formula, simpan formula aslinya
-            if (formulas[rowIndex][colIndex]) {
-                rowData[colIndex] = formulas[rowIndex][colIndex];
+            if (formulas[rowIndex] && formulas[rowIndex][colIndex]) {
+                cellObj.f = formulas[rowIndex][colIndex];
             }
-            // Jika tidak ada formula, simpan nilai biasa
-            else if (cell?.v !== undefined) {
-                rowData[colIndex] = cell.v || "";
-            } else {
-                rowData[colIndex] = "";
+
+            // Simpan nilai (jika ada)
+            if (cell?.v !== undefined) {
+                cellObj.v = cell.v || "";
             }
+
+            rowData[colIndex] = cellObj;
         });
         cellData.push(rowData);
+    });
+
+    // Kemudian, tambahkan style ke dalam objek cellData yang sesuai
+    cellStyles.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+            if (
+                cell?._style &&
+                cellData[rowIndex] &&
+                cellData[rowIndex][colIndex]
+            ) {
+                // Tambahkan property 's' untuk style jika style ada
+                cellData[rowIndex][colIndex].s = cell._style;
+            }
+        });
     });
 
     return {
@@ -237,37 +257,50 @@ function getAllData() {
 
 $(document).on("click", "#key-bindings-1", function () {
     const spreadsheetData = getAllData();
-    const cellData = spreadsheetData.cellData; // Ambil cellData dari hasil getAllData()
-
+    const cellData = spreadsheetData.cellData;
     const processedData = [];
 
     // Mulai dari baris 1 (setelah header)
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
-
-        // Proses baris komponen
         const componentData = {};
+        const componentStyles = {};
+
         dataValidationCol.forEach((col, colIndex) => {
-            if (Object.values(row).every((val) => val === "")) {
+            const cell = row[colIndex];
+
+            // Handle value
+            if (cell && (cell.v !== undefined || cell.f !== undefined)) {
+                componentData[col] = cell.f ? cell.f : cell.v;
+            } else if (
+                cell &&
+                typeof cell === "object" &&
+                cell.value !== undefined
+            ) {
+                componentData[col] = cell.value;
+            } else if (cell !== undefined && cell !== "") {
+                componentData[col] = cell;
+            } else {
                 componentData[col] = "";
-            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] =
-                    typeof row[colIndex] === "object"
-                        ? row[colIndex].value
-                        : row[colIndex];
+            }
+
+            // Handle style
+            if (cell && cell.s) {
+                componentStyles[col] = cell.s;
             }
         });
 
-        if (Object.keys(componentData).length > 0) {
+        if (Object.values(componentData).some((val) => val !== "")) {
             processedData.push({
                 data: componentData,
+                styles: componentStyles,
             });
         }
     }
 
     const payload = {
         part_component: processedData,
-        defined_names: spreadsheetData.definedNames, // Sertakan defined names jika diperlukan
+        defined_names: spreadsheetData.definedNames,
     };
 
     console.log("Payload untuk simpan:", payload);
@@ -297,29 +330,41 @@ $(document).on("click", "#key-bindings-1", function () {
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
     const cellData = spreadsheetData.cellData;
-    console.log("Spreadsheet Data:", spreadsheetData);
-
     const processedData = [];
 
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
-
-        // Proses baris komponen
         const componentData = {};
+        const componentStyles = {};
+
         dataValidationCol.forEach((col, colIndex) => {
-            if (Object.values(row).every((val) => val === "")) {
+            const cell = row[colIndex];
+
+            // Handle value
+            if (cell && (cell.v !== undefined || cell.f !== undefined)) {
+                componentData[col] = cell.f ? cell.f : cell.v;
+            } else if (
+                cell &&
+                typeof cell === "object" &&
+                cell.value !== undefined
+            ) {
+                componentData[col] = cell.value;
+            } else if (cell !== undefined && cell !== "") {
+                componentData[col] = cell;
+            } else {
                 componentData[col] = "";
-            } else if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] =
-                    typeof row[colIndex] === "object"
-                        ? row[colIndex].value
-                        : row[colIndex];
+            }
+
+            // Handle style
+            if (cell && cell.s) {
+                componentStyles[col] = cell.s;
             }
         });
 
-        if (Object.keys(componentData).length > 0) {
+        if (Object.values(componentData).some((val) => val !== "")) {
             processedData.push({
                 data: componentData,
+                styles: componentStyles,
             });
         }
     }
@@ -328,7 +373,7 @@ $(document).on("click", "#key-bindings-2", function () {
         part_component: processedData,
         columns: dataValidationCol,
         recordId: recordId,
-        defined_names: spreadsheetData.definedNames, // Sertakan defined names jika diperlukan
+        defined_names: spreadsheetData.definedNames,
     };
 
     console.log("Processed Data:", payload);
