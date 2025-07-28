@@ -235,7 +235,6 @@ function getAllData() {
         cellData.push(rowData);
     });
 
-    // Kemudian, tambahkan style ke dalam objek cellData yang sesuai
     cellStyles.forEach((row, rowIndex) => {
         row.forEach((cell, colIndex) => {
             if (
@@ -243,7 +242,6 @@ function getAllData() {
                 cellData[rowIndex] &&
                 cellData[rowIndex][colIndex]
             ) {
-                // Tambahkan property 's' untuk style jika style ada
                 cellData[rowIndex][colIndex].s = cell._style;
             }
         });
@@ -329,6 +327,7 @@ $(document).on("click", "#key-bindings-1", function () {
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
+    console.log("SPREADSHEET : ", spreadsheetData);
     const cellData = spreadsheetData.cellData;
     const processedData = [];
 

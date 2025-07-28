@@ -151,20 +151,20 @@ class KomponenTable extends Component
                     continue;
                 }
 
-                // Build component types
-                if (isset($componentData['code'])) {
-                    $types[$componentData['code']] = [
-                        'value' => $componentData['code'],
-                        'label' => $componentData['code']
-                    ];
-                }
+                // // Build component types
+                // if (isset($componentData['code'])) {
+                //     $types[$componentData['code']] = [
+                //         'value' => $componentData['code'],
+                //         'label' => $componentData['code']
+                //     ];
+                // }
 
-                // Build component options
-                $options[] = [
-                    'value' => $componentData['name'],
-                    'label' => $componentData['name'],
-                    'data' => $componentData
-                ];
+                // // Build component options
+                // $options[] = [
+                //     'value' => $componentData['name'],
+                //     'label' => $componentData['name'],
+                //     'data' => $componentData
+                // ];
             }
         }
 

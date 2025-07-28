@@ -274,19 +274,19 @@ class KomponenModul extends Component
                 }
 
                 // Build component types
-                if (isset($componentData['code'])) {
-                    $types[$componentData['code']] = [
-                        'value' => $componentData['code'],
-                        'label' => $componentData['code']
-                    ];
-                }
+                // if (isset($componentData['code'])) {
+                //     $types[$componentData['code']] = [
+                //         'value' => $componentData['code'],
+                //         'label' => $componentData['code']
+                //     ];
+                // }
 
-                // Build component options
-                $options[] = [
-                    'value' => $componentData['name'],
-                    'label' => $componentData['name'],
-                    'data' => $componentData
-                ];
+                // // Build component options
+                // $options[] = [
+                //     'value' => $componentData['name'],
+                //     'label' => $componentData['name'],
+                //     'data' => $componentData
+                // ];
             }
         }
 
@@ -447,13 +447,10 @@ class KomponenModul extends Component
 
     public function loadPartComponentData()
     {
-        $allPartComponents = PartComponent::all()
-            ->map(function ($component) {
-                return $this->parsePartComponentData($component);
-            })
-            ->collapse();
+        $allPartComponents = PartComponent::all();
+        $decodedData = json_decode($allPartComponents[0]->part_component, true);
 
-        $this->partComponentsData = $allPartComponents;
+        $this->partComponentsData = is_array($decodedData) ? $decodedData : [];
     }
 
     public function loadDefinedNames()

@@ -2,6 +2,8 @@ const namaModulIndex = columns.indexOf("nama_modul");
 const componentIndex = columns.indexOf("component");
 const typeIndex = columns.indexOf("type");
 
+console.log("Part Data : ", partData);
+
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;

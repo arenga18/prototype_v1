@@ -120,96 +120,89 @@ function prepareBreakdownSheetData() {
         fs: 11, // font size
     };
 
+    const componentStyle = {
+        fs: 11, // font size
+    };
+
     if (groupedComponents?.array) {
         groupedComponents.array.forEach((group, modulIndex) => {
             const modulData = group.modul || {};
             const modulName = modulData.nama_modul || "";
 
+            // Skip if no modul name
             if (!modulName) return;
 
             // Store starting row for formula adjustment
             modulStartRows[modulName] = currentRow + 1;
 
-            // Create modul row with style and process formulas
+            // Create modul row with style
             data[currentRow] = {};
             columns.forEach((col, colIndex) => {
-                const cellValue =
-                    modulData[col] !== undefined
-                        ? modulData[col]
-                        : colIndex === namaModulIndex
-                        ? modulName
-                        : "";
-
-                // Process formulas in modul data
-                if (
-                    typeof cellValue === "string" &&
-                    cellValue.startsWith("=")
-                ) {
+                if (modulData[col] !== undefined) {
                     data[currentRow][colIndex] = {
-                        f: adjustFormula(
-                            cellValue,
-                            modulStartRows[modulName],
-                            group.isFilled || false
-                        ),
-                        v: "",
+                        v: modulData[col],
+                        s: modulStyle,
+                    };
+                } else if (colIndex === namaModulIndex) {
+                    data[currentRow][colIndex] = {
+                        v: modulName,
                         s: modulStyle,
                     };
                 } else {
                     data[currentRow][colIndex] = {
-                        v: cellValue,
+                        v: "",
                         s: modulStyle,
                     };
                 }
             });
             currentRow++;
 
-            // Process components array
+            // Process component groups
             if (Array.isArray(group.component)) {
                 group.component.forEach(
                     (componentGroup, componentGroupIndex) => {
-                        const nestedModulName =
-                            componentGroup.modul?.nama_modul || modulName;
+                        // Process components within each component group
+                        if (Array.isArray(componentGroup.components)) {
+                            componentGroup.components.forEach((component) => {
+                                data[currentRow] = {};
+                                const componentData = component.data || {};
+                                const componentStyles = component.styles || {};
 
-                        if (nestedModulName !== modulName) {
-                            data[currentRow] = {};
-                            columns.forEach((col, colIndex) => {
-                                data[currentRow][colIndex] = {
-                                    v:
-                                        colIndex === namaModulIndex
-                                            ? nestedModulName
-                                            : "",
-                                    s: modulStyle,
-                                };
+                                columns.forEach((col, colIndex) => {
+                                    const value =
+                                        componentData[col] !== undefined
+                                            ? componentData[col]
+                                            : "";
+                                    const style =
+                                        componentStyles[col] !== undefined
+                                            ? componentStyles[col]
+                                            : componentStyle;
+
+                                    if (
+                                        typeof value === "string" &&
+                                        value.startsWith("=")
+                                    ) {
+                                        data[currentRow][colIndex] = {
+                                            f: adjustFormula(
+                                                value,
+                                                modulStartRows[modulName],
+                                                group.isFilled || false
+                                            ),
+                                            v: "",
+                                            s: style,
+                                        };
+                                    } else {
+                                        data[currentRow][colIndex] = {
+                                            v: value,
+                                            s: style,
+                                        };
+                                    }
+                                });
+                                currentRow++;
                             });
-                            currentRow++;
                         }
 
-                        const components = componentGroup.components || [];
-                        components.forEach((comp) => {
-                            data[currentRow] = {};
-                            const rowData = mapDataToColumns(comp);
-
-                            Object.keys(rowData).forEach((col) => {
-                                const colValue = rowData[col];
-                                data[currentRow][col] =
-                                    typeof colValue === "string" &&
-                                    colValue.startsWith("=")
-                                        ? {
-                                              f: adjustFormula(
-                                                  colValue,
-                                                  modulStartRows[
-                                                      nestedModulName
-                                                  ] ||
-                                                      modulStartRows[modulName],
-                                                  group.isFilled || false
-                                              ),
-                                              v: "",
-                                          }
-                                        : { v: colValue };
-                            });
-                            currentRow++;
-                        });
-
+                        // Add empty row between component groups if needed
                         if (componentGroupIndex < group.component.length - 1) {
                             data[currentRow] = {};
                             currentRow++;
@@ -218,6 +211,7 @@ function prepareBreakdownSheetData() {
                 );
             }
 
+            // Add space between module groups if not last
             if (modulIndex < groupedComponents.array.length - 1) {
                 data[currentRow] = {};
                 currentRow++;
@@ -574,7 +568,6 @@ const worksheet = workbook.getActiveSheet();
 function applyFilteredDataValidations() {
     const definedNamed = JSON.parse(definedNames);
 
-    // Filter hanya definedNames dengan nama 'prt' atau 'menu'
     const filteredDefNames = definedNamed.filter(
         (defName) => defName.name === "prt" || defName.name === "menu"
     );
@@ -735,6 +728,7 @@ if (specSheet) {
 const validationSheet = workbook.getSheets()[2];
 if (validationSheet) {
     validationSheet.setColumnWidth(2, 300);
+    validationSheet.setRowHeight(0, 80);
     const definedNamed = JSON.parse(definedNames);
     definedNamed.forEach((defName) => {
         try {
@@ -770,6 +764,7 @@ function getAllData() {
         worksheet.getMaxColumns()
     );
 
+    const cellStyles = range.getCellStyles();
     const cellDatas = range.getCellDatas();
     const formulas = range.getFormulas();
 
@@ -790,6 +785,19 @@ function getAllData() {
             }
         });
         result.push(rowData);
+    });
+
+    cellStyles.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+            if (
+                cell?._style &&
+                cellData[rowIndex] &&
+                cellData[rowIndex][colIndex]
+            ) {
+                // Tambahkan property 's' untuk style jika style ada
+                cellData[rowIndex][colIndex].s = cell._style;
+            }
+        });
     });
 
     return result;

@@ -28,7 +28,6 @@ class PartComponentLivewire extends Component
 
             if ($partComponent && $partComponent->part_component) {
                 $decodedData = json_decode($partComponent->part_component, true);
-                // Pastikan struktur data sesuai dengan yang diharapkan
                 $this->partData = is_array($decodedData) ? $decodedData : [];
             } else {
                 $this->partData = [];

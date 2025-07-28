@@ -167,18 +167,18 @@ class RemovablePartLivewire extends Component
                     continue;
                 }
 
-                if (isset($componentData['code'])) {
-                    $types[$componentData['code']] = [
-                        'value' => $componentData['code'],
-                        'label' => $componentData['code']
-                    ];
-                }
+                // if (isset($componentData['code'])) {
+                //     $types[$componentData['code']] = [
+                //         'value' => $componentData['code'],
+                //         'label' => $componentData['code']
+                //     ];
+                // }
 
-                $options[] = [
-                    'value' => $componentData['name'],
-                    'label' => $componentData['name'],
-                    'data' => $componentData
-                ];
+                // $options[] = [
+                //     'value' => $componentData['name'],
+                //     'label' => $componentData['name'],
+                //     'data' => $componentData
+                // ];
             }
         }
 
