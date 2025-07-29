@@ -51,34 +51,55 @@ const { univerAPI } = createUniver({
 
 // Fungsi untuk memetakan data ke kolom
 function mapDataToColumns(comp) {
-    let componentRow = {};
-
-    componentRow[componentIndex] = comp.component || comp.name || "";
-
-    if (typeIndex >= 0) {
-        componentRow[typeIndex] = comp.code || "";
+    if (!comp || !comp.data || typeof comp.data !== "object") {
+        console.error("Invalid component data:", comp);
+        return {};
     }
 
+    let componentRow = {};
+    const compData = comp.data; // Reference to component data
+
+    // Map standard fields from comp.data
+    componentRow[componentIndex] = compData.component || compData.name || "";
+
+    if (typeIndex >= 0) {
+        componentRow[typeIndex] = compData.code || "";
+    }
+
+    if (namaModulIndex >= 0) {
+        componentRow[namaModulIndex] = compData.modul || "";
+    }
+
+    // Map all fields from the component data to their respective columns
+    Object.keys(compData).forEach((key) => {
+        const colIndex = columns.indexOf(key);
+        if (
+            colIndex >= 0 &&
+            compData[key] !== undefined &&
+            compData[key] !== null &&
+            compData[key] !== ""
+        ) {
+            componentRow[colIndex] = compData[key];
+        }
+    });
+
+    // Map fields according to fieldMapping (now checking comp.data instead of comp)
     Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
         const colIndex = columns.indexOf(targetColumn);
         if (
             colIndex >= 0 &&
-            comp[sourceField] !== undefined &&
-            comp[sourceField] !== null
+            compData[sourceField] !== undefined &&
+            compData[sourceField] !== null &&
+            compData[sourceField] !== ""
         ) {
-            componentRow[colIndex] = comp[sourceField];
+            componentRow[colIndex] = compData[sourceField];
         }
     });
 
-    columns.forEach((col, index) => {
-        if (
-            index !== componentIndex &&
-            comp[col] !== undefined &&
-            comp[col] !== null
-        ) {
-            componentRow[index] = comp[col];
-        }
-    });
+    // Optional: Add styles if they exist in the component
+    if (comp.styles && typeof comp.styles === "object") {
+        componentRow.styles = comp.styles;
+    }
 
     return componentRow;
 }
