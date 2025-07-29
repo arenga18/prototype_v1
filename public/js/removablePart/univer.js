@@ -26,43 +26,59 @@ const { univerAPI } = createUniver({
 
 // Fungsi untuk memetakan data ke kolom
 function mapDataToColumns(comp) {
-    let componentRow = {};
+    if (!comp || !comp.data || typeof comp.data !== "object") {
+        console.error("Invalid component data:", comp);
+        return {};
+    }
 
-    // Map standard fields
-    componentRow[componentIndex] = comp.component || comp.name || "";
+    let componentRow = {};
+    const compData = comp.data; // Reference to component data
+
+    // Map standard fields from comp.data
+    componentRow[componentIndex] = compData.component || compData.name || "";
 
     if (typeIndex >= 0) {
-        componentRow[typeIndex] = comp.code || "";
+        componentRow[typeIndex] = compData.code || "";
     }
 
     if (namaModulIndex >= 0) {
-        componentRow[namaModulIndex] = comp.modul || "";
+        componentRow[namaModulIndex] = compData.modul || "";
     }
 
     // Map all fields from the component data to their respective columns
-    Object.keys(comp).forEach((key) => {
+    Object.keys(compData).forEach((key) => {
         const colIndex = columns.indexOf(key);
-        if (colIndex >= 0 && comp[key] !== undefined && comp[key] !== null) {
-            componentRow[colIndex] = comp[key];
+        if (
+            colIndex >= 0 &&
+            compData[key] !== undefined &&
+            compData[key] !== null &&
+            compData[key] !== ""
+        ) {
+            componentRow[colIndex] = compData[key];
         }
     });
 
-    // Map fields according to fieldMapping
+    // Map fields according to fieldMapping (now checking comp.data instead of comp)
     Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
         const colIndex = columns.indexOf(targetColumn);
         if (
             colIndex >= 0 &&
-            comp[sourceField] !== undefined &&
-            comp[sourceField] !== null
+            compData[sourceField] !== undefined &&
+            compData[sourceField] !== null &&
+            compData[sourceField] !== ""
         ) {
-            componentRow[colIndex] = comp[sourceField];
+            componentRow[colIndex] = compData[sourceField];
         }
     });
+
+    // Optional: Add styles if they exist in the component
+    if (comp.styles && typeof comp.styles === "object") {
+        componentRow.styles = comp.styles;
+    }
 
     return componentRow;
 }
 
-// Siapkan data untuk Univer
 function prepareUniverData() {
     let data = {};
 
@@ -83,63 +99,53 @@ function prepareUniverData() {
     // Start data from row 1 (after header)
     let currentRow = 1;
 
-    // Process all components directly without module checking
-    let allComponents = [];
+    // Process partData
+    if (partData) {
+        // Iterate through each key in partData
+        Object.entries(partData).forEach(([partName, componentsJson]) => {
+            try {
+                // Parse the JSON string to array
+                const components = JSON.parse(componentsJson || "[]");
 
-    // 1. Add components from modulData if exists
-    if (modulData[modul]) {
-        try {
-            const parsedComponents = JSON.parse(modulData[modul] || "[]");
-            if (Array.isArray(parsedComponents)) {
-                allComponents = allComponents.concat(parsedComponents);
-            }
-        } catch (err) {
-            console.error("Error parsing modulData:", err);
-        }
-    }
+                // Process each component
+                components.forEach((compObj) => {
+                    if (compObj && typeof compObj === "object") {
+                        const componentWithModul = { ...compObj };
 
-    // 2. Add grouped components
-    Object.values(groupedComponents).forEach((components) => {
-        if (Array.isArray(components)) {
-            allComponents = allComponents.concat(components);
-        }
-    });
+                        // Map all data using the helper function
+                        const mappedData = mapDataToColumns(componentWithModul);
 
-    // Process all components
-    if (componentIndex >= 0 && allComponents.length > 0) {
-        allComponents.forEach((compObj) => {
-            if (compObj && typeof compObj === "object") {
-                data[currentRow] = {};
+                        console.log("MappedData : ", mappedData);
 
-                // Set component value
-                if (compObj.component) {
-                    data[currentRow][componentIndex] = {
-                        v: compObj.component,
-                    };
-                }
+                        // Convert to Univer cell format
+                        data[currentRow] = {};
+                        Object.entries(mappedData).forEach(
+                            ([colIndex, value]) => {
+                                data[currentRow][colIndex] = { v: value };
+                            }
+                        );
 
-                // Map other fields
-                Object.keys(compObj).forEach((key) => {
-                    const colIndex = columns.indexOf(key);
-                    if (colIndex >= 0) {
-                        data[currentRow][colIndex] = {
-                            v: compObj[key],
-                        };
+                        currentRow++;
                     }
                 });
-
-                currentRow++;
+            } catch (err) {
+                console.error(
+                    `Error parsing components for part ${partName}:`,
+                    err
+                );
             }
         });
-    } else {
-        // Add empty row if no components
+    }
+
+    // If no data was added, add an empty row
+    if (currentRow === 1) {
         data[currentRow] = {};
         currentRow++;
     }
 
     return {
         data,
-        mergeCells: [], // Return empty array for mergeCells
+        mergeCells: [],
     };
 }
 
@@ -428,26 +434,31 @@ function getAllData() {
     console.log(cellDatas);
     const formulas = range.getFormulas();
 
-    const result = [];
+    const cellData = [];
 
     cellDatas.forEach((row, rowIndex) => {
         const rowData = {};
         row.forEach((cell, colIndex) => {
+            const cellObj = {};
+
             // Jika ada formula, simpan formula aslinya
-            if (formulas[rowIndex][colIndex]) {
-                rowData[colIndex] = formulas[rowIndex][colIndex];
+            if (formulas[rowIndex] && formulas[rowIndex][colIndex]) {
+                cellObj.f = formulas[rowIndex][colIndex];
             }
-            // Jika tidak ada formula, simpan nilai biasa
-            else if (cell?.v !== undefined) {
-                rowData[colIndex] = cell.v || "";
-            } else {
-                rowData[colIndex] = "";
+
+            // Simpan nilai (jika ada)
+            if (cell?.v !== undefined) {
+                cellObj.v = cell.v || "";
             }
+
+            rowData[colIndex] = cellObj;
         });
-        result.push(rowData);
+        cellData.push(rowData);
     });
 
-    return result;
+    return {
+        cellData: cellData,
+    };
 }
 
 // Event handler untuk tombol simpan
@@ -508,76 +519,120 @@ $(document).on("click", "#key-bindings-1", function () {
 
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
-    const spreadsheetData = getAllData();
-    const selectedModul = $("#modulSelect").val();
-    const referenceModul = $("#modulReference").val();
+    try {
+        const spreadsheetData = getAllData();
+        const cellData = spreadsheetData.cellData || [];
 
-    if (!selectedModul) {
-        alert("Pilih modul terlebih dahulu!");
-        return;
-    }
-
-    // Rekonstruksi data dengan format yang benar
-    const processedData = [];
-    let currentModul = selectedModul;
-
-    for (let i = 1; i < spreadsheetData.length; i++) {
-        const row = spreadsheetData[i];
-
-        // Skip baris kosong
-        if (Object.values(row).every((val) => val === "")) continue;
-
-        // Jika baris berisi nama modul
-        if (row[namaModulIndex] && row[namaModulIndex] !== "") {
-            currentModul = row[namaModulIndex];
-            continue;
+        // Validate we have data to process
+        if (!Array.isArray(cellData)) {
+            throw new Error("Invalid cell data format");
         }
 
-        // Proses baris komponen
-        const componentData = {};
-        columns.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] = row[colIndex];
-            }
-        });
+        // Get part name from first row
+        const firstRow = cellData[1] || {};
+        const partName = firstRow[componentIndex]?.v || "default_part";
 
-        if (Object.keys(componentData).length > 0) {
-            processedData.push({
-                modul: currentModul,
-                data: componentData,
+        // Process data rows
+        const processedData = [];
+
+        for (let i = 1; i < cellData.length; i++) {
+            const row = cellData[i];
+            if (!row || typeof row !== "object") continue;
+
+            const componentData = {};
+            const componentStyles = {};
+            let hasValidData = false;
+
+            columns.forEach((col, colIndex) => {
+                const cell = row[colIndex];
+                if (!cell) return;
+
+                // Process cell value (skip empty values)
+                if (typeof cell === "object") {
+                    // Handle formula (always include if present)
+                    if (cell.f !== undefined) {
+                        componentData[col] = cell.f;
+                        hasValidData = true;
+                    }
+                    // Handle value (only if not empty)
+                    else if (
+                        cell.v !== undefined &&
+                        cell.v !== "" &&
+                        cell.v !== null
+                    ) {
+                        componentData[col] = cell.v;
+                        hasValidData = true;
+                    }
+                    // Handle style
+                    if (cell.s) {
+                        componentStyles[col] = cell.s;
+                    }
+                }
+                // Handle non-object values (only if not empty)
+                else if (cell !== "" && cell !== undefined && cell !== null) {
+                    componentData[col] = cell;
+                    hasValidData = true;
+                }
             });
+
+            // Only add to processedData if has valid data or styles
+            if (hasValidData || Object.keys(componentStyles).length > 0) {
+                processedData.push({
+                    data: componentData,
+                    ...(Object.keys(componentStyles).length > 0 && {
+                        styles: componentStyles,
+                    }),
+                });
+            }
         }
+
+        // Validate we have at least some data
+        if (processedData.length === 0) {
+            throw new Error("No valid data found to process");
+        }
+
+        const payload = {
+            part: partName,
+            component: processedData,
+            recordId: recordId,
+        };
+
+        console.log("Processed Data Payload:", payload);
+
+        $.ajax({
+            url: "/update-removable-part",
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                "Content-Type": "application/json",
+            },
+            data: JSON.stringify(payload),
+            success: function (response) {
+                if (response.status === "success") {
+                    Livewire.emit("refresh");
+                    showToast("Data updated successfully", "success");
+                } else {
+                    showToast(
+                        "Error: " + (response.message || "Unknown error"),
+                        "error"
+                    );
+                }
+            },
+            error: function (xhr) {
+                const errorMsg =
+                    xhr.responseJSON?.message || "Terjadi kesalahan";
+                showToast(errorMsg, "error");
+                console.error("API Error:", xhr.responseJSON || xhr.statusText);
+            },
+        });
+    } catch (error) {
+        console.error("Processing Error:", error);
+        showToast("Error processing data: " + error.message, "error");
     }
-
-    const payload = {
-        part: selectedModul,
-        components: processedData,
-        recordId: recordId,
-    };
-
-    console.log("Processed Data:", payload);
-
-    $.ajax({
-        url: "/update-removable-part",
-        method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            "Content-Type": "application/json",
-        },
-        data: JSON.stringify(payload),
-        success: function (response) {
-            if (response.status === "success") {
-                Livewire.emit("refresh");
-            } else {
-                alert("Error: " + response.message);
-            }
-        },
-        error: function (xhr) {
-            let errorMsg = "Terjadi kesalahan";
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMsg = xhr.responseJSON.message;
-            }
-            alert(errorMsg);
-        },
-    });
 });
+
+// Helper function for displaying notifications
+function showToast(message, type = "info") {
+    // Implement your preferred notification system here
+    alert(`${type.toUpperCase()}: ${message}`);
+}

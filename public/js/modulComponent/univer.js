@@ -37,38 +37,55 @@ const { univerAPI } = createUniver({
 const formula = univerAPI.getFormula();
 
 function mapDataToColumns(comp) {
-    let componentRow = {};
+    if (!comp || !comp.data || typeof comp.data !== "object") {
+        console.error("Invalid component data:", comp);
+        return {};
+    }
 
-    // Map standard fields
-    componentRow[componentIndex] = comp.data.component || comp.data.name || "";
+    let componentRow = {};
+    const compData = comp.data; // Reference to component data
+
+    // Map standard fields from comp.data
+    componentRow[componentIndex] = compData.component || compData.name || "";
 
     if (typeIndex >= 0) {
-        componentRow[typeIndex] = comp.data.code || "";
+        componentRow[typeIndex] = compData.code || "";
     }
 
     if (namaModulIndex >= 0) {
-        componentRow[namaModulIndex] = comp.data.modul || "";
+        componentRow[namaModulIndex] = compData.modul || "";
     }
 
     // Map all fields from the component data to their respective columns
-    Object.keys(comp).forEach((key) => {
+    Object.keys(compData).forEach((key) => {
         const colIndex = columns.indexOf(key);
-        if (colIndex >= 0 && comp[key] !== undefined && comp[key] !== null) {
-            componentRow[colIndex] = comp[key];
+        if (
+            colIndex >= 0 &&
+            compData[key] !== undefined &&
+            compData[key] !== null &&
+            compData[key] !== ""
+        ) {
+            componentRow[colIndex] = compData[key];
         }
     });
 
-    // Map fields according to fieldMapping
+    // Map fields according to fieldMapping (now checking comp.data instead of comp)
     Object.entries(fieldMapping).forEach(([sourceField, targetColumn]) => {
         const colIndex = columns.indexOf(targetColumn);
         if (
             colIndex >= 0 &&
-            comp[sourceField] !== undefined &&
-            comp[sourceField] !== null
+            compData[sourceField] !== undefined &&
+            compData[sourceField] !== null &&
+            compData[sourceField] !== ""
         ) {
-            componentRow[colIndex] = comp[sourceField];
+            componentRow[colIndex] = compData[sourceField];
         }
     });
+
+    // Optional: Add styles if they exist in the component
+    if (comp.styles && typeof comp.styles === "object") {
+        componentRow.styles = comp.styles;
+    }
 
     return componentRow;
 }
@@ -817,7 +834,6 @@ $(document).on("click", "#key-bindings-2", function () {
         return;
     }
 
-    // Format data untuk modul_breakdown sesuai struktur referensi
     const modulBreakdown = [];
     let currentModul = null;
     let currentModulObject = {};
@@ -848,7 +864,6 @@ $(document).on("click", "#key-bindings-2", function () {
                 modulBreakdown.push({
                     modul: currentModulObject,
                     components: currentComponents,
-                    styles: currentModulStyles,
                 });
             }
 
@@ -1234,6 +1249,7 @@ function addPartToSpreadsheet(partName) {
         selectedComponents.forEach((component, compIndex) => {
             const componentRow = newPartRow + compIndex;
             const mappedData = mapDataToColumns(component);
+            console.log("MappedData : ", mappedData);
 
             columns.forEach((col, colIndex) => {
                 if (mappedData[colIndex] !== undefined) {

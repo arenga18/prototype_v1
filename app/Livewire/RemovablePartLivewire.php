@@ -334,13 +334,13 @@ class RemovablePartLivewire extends Component
     {
         $validated = $request->validate([
             'part' => 'required|string',
-            'components' => 'required|array',
+            'component' => 'required|array',
             'recordId' => 'required|integer'
         ]);
 
         try {
             $part = $validated['part'];
-            $componentsData = $validated['components'];
+            $componentsData = $validated['component'];
             $recordId = $validated['recordId'];
 
             $removablePart = RemovablePart::findOrFail($recordId);
@@ -348,7 +348,7 @@ class RemovablePartLivewire extends Component
 
             foreach ($componentsData as $component) {
                 if (isset($component['data'])) {
-                    $componentsToSave[] = $component['data'];
+                    $componentsToSave[] = $component;
                 }
             }
 

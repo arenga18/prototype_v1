@@ -330,6 +330,7 @@ $(document).on("click", "#key-bindings-2", function () {
     console.log("SPREADSHEET : ", spreadsheetData);
     const cellData = spreadsheetData.cellData;
     const processedData = [];
+    console.log("Cell data : ", cellData);
 
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
