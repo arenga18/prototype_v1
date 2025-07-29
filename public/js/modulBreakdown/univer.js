@@ -126,47 +126,85 @@ function prepareBreakdownSheetData() {
 
     if (groupedComponents?.array) {
         groupedComponents.array.forEach((group, modulIndex) => {
-            const modulData = group.modul || {};
-            const modulName = modulData.nama_modul || "";
+            // Handle main module
+            const mainModulData = group.modul || {};
+            const mainModulName = mainModulData.nama_modul || "";
 
-            // Skip if no modul name
-            if (!modulName) return;
+            // if (mainModulName) {
+            //     // Store starting row for formula adjustment
+            //     modulStartRows[mainModulName] = currentRow + 1;
 
-            // Store starting row for formula adjustment
-            modulStartRows[modulName] = currentRow + 1;
+            //     // Create main modul row with style
+            //     data[currentRow] = {};
+            //     columns.forEach((col, colIndex) => {
+            //         if (mainModulData[col] !== undefined) {
+            //             data[currentRow][colIndex] = {
+            //                 v: mainModulData[col],
+            //                 s: modulStyle,
+            //             };
+            //         } else if (colIndex === namaModulIndex) {
+            //             data[currentRow][colIndex] = {
+            //                 v: mainModulName,
+            //                 s: modulStyle,
+            //             };
+            //         } else {
+            //             data[currentRow][colIndex] = {
+            //                 v: "",
+            //                 s: modulStyle,
+            //             };
+            //         }
+            //     });
+            //     currentRow++;
+            // }
 
-            // Create modul row with style
-            data[currentRow] = {};
-            columns.forEach((col, colIndex) => {
-                if (modulData[col] !== undefined) {
-                    data[currentRow][colIndex] = {
-                        v: modulData[col],
-                        s: modulStyle,
-                    };
-                } else if (colIndex === namaModulIndex) {
-                    data[currentRow][colIndex] = {
-                        v: modulName,
-                        s: modulStyle,
-                    };
-                } else {
-                    data[currentRow][colIndex] = {
-                        v: "",
-                        s: modulStyle,
-                    };
-                }
-            });
-            currentRow++;
-
-            // Process component groups
+            // Process all component groups
             if (Array.isArray(group.component)) {
                 group.component.forEach(
                     (componentGroup, componentGroupIndex) => {
+                        // Handle nested module if exists
+                        const nestedModulData = componentGroup.modul || {};
+                        const nestedModulName =
+                            nestedModulData.nama_modul || "";
+
+                        if (nestedModulName) {
+                            // Store starting row for formula adjustment
+                            modulStartRows[nestedModulName] = currentRow + 1;
+
+                            // Create nested modul row with style
+                            data[currentRow] = {};
+                            columns.forEach((col, colIndex) => {
+                                if (nestedModulData[col] !== undefined) {
+                                    data[currentRow][colIndex] = {
+                                        v: nestedModulData[col],
+                                        s: modulStyle,
+                                    };
+                                } else if (colIndex === namaModulIndex) {
+                                    data[currentRow][colIndex] = {
+                                        v: nestedModulName,
+                                        s: modulStyle,
+                                    };
+                                } else {
+                                    data[currentRow][colIndex] = {
+                                        v: "",
+                                        s: modulStyle,
+                                    };
+                                }
+                            });
+                            currentRow++;
+                        }
+
                         // Process components within each component group
                         if (Array.isArray(componentGroup.components)) {
                             componentGroup.components.forEach((component) => {
                                 data[currentRow] = {};
                                 const componentData = component.data || {};
                                 const componentStyles = component.styles || {};
+
+                                // Determine which modul to use for formula reference
+                                const referenceModulName =
+                                    nestedModulName || mainModulName;
+                                const referenceModulStartRow =
+                                    modulStartRows[referenceModulName];
 
                                 columns.forEach((col, colIndex) => {
                                     const value =
@@ -185,7 +223,7 @@ function prepareBreakdownSheetData() {
                                         data[currentRow][colIndex] = {
                                             f: adjustFormula(
                                                 value,
-                                                modulStartRows[modulName],
+                                                referenceModulStartRow,
                                                 group.isFilled || false
                                             ),
                                             v: "",
