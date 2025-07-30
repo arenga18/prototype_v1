@@ -317,6 +317,8 @@ function prepareValidationSheetData() {
     // Loop setiap part langsung (bukan per modul)
     partComponentsData.forEach((comp) => {
         const row = {};
+        const componentData = comp.data || {};
+        const componentStyles = comp.styles || {};
 
         // Loop kolom sesuai header
         dataValidationCol.forEach((col, index) => {
@@ -324,25 +326,19 @@ function prepareValidationSheetData() {
                 (key) => dataValMap[key] === col
             );
 
-            const value = fieldKey ? comp[fieldKey] || "" : "";
+            const value = fieldKey ? componentData[fieldKey] || "" : "";
 
             // Handle formula cells
             if (typeof value === "string" && value.startsWith("=")) {
                 row[index] = {
                     f: adjustFormula(value),
-                    v: "", // Nilai akan dihitung oleh engine formula
-                    s: {
-                        ht: 2,
-                        vt: 2,
-                    },
+                    v: "",
+                    s: fieldKey ? componentStyles[fieldKey] || "" : "",
                 };
             } else {
                 row[index] = {
                     v: value,
-                    s: {
-                        ht: 2,
-                        vt: 2,
-                    },
+                    s: fieldKey ? componentStyles[fieldKey] || "" : "",
                 };
             }
         });
@@ -569,7 +565,7 @@ const workbook = univerAPI.createWorkbook({
             },
             rowCount: Math.max(10, Object.keys(componentData).length),
             columnCount: columns.length,
-            defaultColumnWidth: 40,
+            defaultColumnWidth: 60,
             defaultRowHeight: 25,
             mergeData: componentMerge,
             cellData: componentData,
@@ -621,7 +617,6 @@ const workbook = univerAPI.createWorkbook({
     },
 });
 
-console.log("Workbook created:", workbook);
 const worksheet = workbook.getActiveSheet();
 
 function applyFilteredDataValidations() {
@@ -827,23 +822,26 @@ function getAllData() {
     const cellDatas = range.getCellDatas();
     const formulas = range.getFormulas();
 
-    const result = [];
+    const cellData = [];
 
     cellDatas.forEach((row, rowIndex) => {
         const rowData = {};
         row.forEach((cell, colIndex) => {
+            const cellObj = {};
+
             // Jika ada formula, simpan formula aslinya
-            if (formulas[rowIndex][colIndex]) {
-                rowData[colIndex] = formulas[rowIndex][colIndex];
+            if (formulas[rowIndex] && formulas[rowIndex][colIndex]) {
+                cellObj.f = formulas[rowIndex][colIndex];
             }
-            // Jika tidak ada formula, simpan nilai biasa
-            else if (cell?.v !== undefined) {
-                rowData[colIndex] = cell.v || "";
-            } else {
-                rowData[colIndex] = "";
+
+            // Simpan nilai (jika ada)
+            if (cell?.v !== undefined) {
+                cellObj.v = cell.v || "";
             }
+
+            rowData[colIndex] = cellObj;
         });
-        result.push(rowData);
+        cellData.push(rowData);
     });
 
     cellStyles.forEach((row, rowIndex) => {
@@ -853,31 +851,49 @@ function getAllData() {
                 cellData[rowIndex] &&
                 cellData[rowIndex][colIndex]
             ) {
-                // Tambahkan property 's' untuk style jika style ada
                 cellData[rowIndex][colIndex].s = cell._style;
             }
         });
     });
 
-    return result;
+    return {
+        cellData: cellData,
+    };
 }
 
 // Event handler untuk tombol update
 $(document).on("click", "#key-bindings-2", function () {
     const spreadsheetData = getAllData();
+    console.log("Spreadsheet : ", spreadsheetData);
     const modulBreakdown = [];
+    const cellData = spreadsheetData.cellData;
+
     let currentModul = null;
     let currentModulObject = {};
     let currentComponents = [];
 
-    for (let i = 1; i < spreadsheetData.length; i++) {
-        const row = spreadsheetData[i];
+    for (let i = 1; i < cellData.length; i++) {
+        const row = cellData[i];
+        const rowStyles = {};
+
+        // Proses styles untuk seluruh row
+        Object.keys(row).forEach((colIndex) => {
+            const cell = row[colIndex];
+            if (cell && cell.s) {
+                rowStyles[colIndex] = cell.s;
+            }
+        });
 
         // Jika baris berisi nama modul
-        if (row[namaModulIndex] && row[namaModulIndex] !== "") {
-            // Simpan modul sebelumnya jika ada (dengan membersihkan baris kosong di akhir)
+        if (
+            row[namaModulIndex] &&
+            row[namaModulIndex].v !== undefined &&
+            row[namaModulIndex].v !== ""
+        ) {
+            // Simpan modul sebelumnya jika ada
             if (currentModul) {
                 cleanEmptyRowsAtEnd(currentComponents);
+
                 modulBreakdown.push({
                     modul: currentModulObject,
                     components: currentComponents,
@@ -885,36 +901,68 @@ $(document).on("click", "#key-bindings-2", function () {
             }
 
             // Mulai modul baru
-            currentModul = row[namaModulIndex];
+            currentModul = row[namaModulIndex].v;
             currentModulObject = { nama_modul: currentModul };
             currentComponents = [];
 
-            // Isi data modul
+            // Isi data modul dari baris ini (skip nilai kosong)
             columns.forEach((col, colIndex) => {
-                if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                    currentModulObject[col] = row[colIndex];
+                if (row[colIndex] !== undefined) {
+                    // Handle value - hanya tambahkan jika tidak kosong
+                    if (
+                        row[colIndex].v !== undefined &&
+                        row[colIndex].v !== ""
+                    ) {
+                        currentModulObject[col] = row[colIndex].v;
+                    } else if (
+                        row[colIndex].f !== undefined &&
+                        row[colIndex].f !== ""
+                    ) {
+                        currentModulObject[col] = row[colIndex].f;
+                    }
                 }
             });
             continue;
         }
 
-        // Proses baris komponen (tambahkan semua baris, termasuk yang kosong di tengah)
+        // Proses baris komponen (skip nilai kosong)
         const componentData = {};
-        let hasData = false;
+        const componentStyles = {};
+
         columns.forEach((col, colIndex) => {
-            if (row[colIndex] !== undefined && row[colIndex] !== "") {
-                componentData[col] = row[colIndex];
-                hasData = true;
-            } else {
-                componentData[col] = "";
+            const cell = row[colIndex];
+
+            // Handle value - hanya tambahkan jika tidak kosong
+            if (cell) {
+                if (cell.v !== undefined && cell.v !== "") {
+                    componentData[col] = cell.v;
+                } else if (cell.f !== undefined && cell.f !== "") {
+                    componentData[col] = cell.f;
+                }
+
+                // Handle style
+                if (cell.s) {
+                    componentStyles[col] = cell.s;
+                }
             }
         });
-        currentComponents.push(componentData);
+
+        // Tambahkan komponen hanya jika ada data atau style
+        if (
+            Object.keys(componentData).length > 0 ||
+            Object.keys(componentStyles).length > 0
+        ) {
+            currentComponents.push({
+                data: componentData,
+                styles: componentStyles,
+            });
+        }
     }
 
-    // Simpan modul terakhir (dengan membersihkan baris kosong di akhir)
+    // Simpan modul terakhir
     if (currentModul) {
         cleanEmptyRowsAtEnd(currentComponents);
+
         modulBreakdown.push({
             modul: currentModulObject,
             components: currentComponents,
@@ -939,7 +987,7 @@ $(document).on("click", "#key-bindings-2", function () {
         data: JSON.stringify(payload),
         success: function (response) {
             if (response.status === "success") {
-                console.log("Data berhasil diupdate!");
+                alert("Data berhasil diupdate!");
             } else {
                 alert("Error: " + response.message);
             }

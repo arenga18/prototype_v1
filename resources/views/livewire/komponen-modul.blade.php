@@ -182,7 +182,7 @@
   </div>
 
   <!-- Spreadsheet container -->
-  <div id="app" style="height: 55vh;"></div>
+  <div id="app" style="height: 70vh;"></div>
 
 
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>

@@ -50,6 +50,8 @@ function prepareValidationSheetData() {
 
     let rowIndex = 1;
 
+    console.log("Part Data : ", partData);
+
     // Loop setiap part
     partData.forEach((comp) => {
         const row = {};
@@ -151,7 +153,7 @@ const validationSheet = workbook.getSheets()[0];
 if (validationSheet) {
     validationSheet.setColumnWidth(2, 300);
     const definedNamed = JSON.parse(definedNames);
-    definedNamed.forEach((defName) => {
+    definedNamed?.forEach((defName) => {
         try {
             validationSheet.insertDefinedName(
                 defName.name,
@@ -330,42 +332,53 @@ $(document).on("click", "#key-bindings-2", function () {
     console.log("SPREADSHEET : ", spreadsheetData);
     const cellData = spreadsheetData.cellData;
     const processedData = [];
-    console.log("Cell data : ", cellData);
 
     for (let i = 1; i < cellData.length; i++) {
         const row = cellData[i];
         const componentData = {};
         const componentStyles = {};
+        let hasData = false;
 
         dataValidationCol.forEach((col, colIndex) => {
             const cell = row[colIndex];
+            if (!cell) return; // Skip if cell is null/undefined
 
-            // Handle value
-            if (cell && (cell.v !== undefined || cell.f !== undefined)) {
+            // Handle value - skip if v is empty or undefined
+            if (cell.v !== undefined && cell.v !== null && cell.v !== "") {
                 componentData[col] = cell.f ? cell.f : cell.v;
-            } else if (
-                cell &&
-                typeof cell === "object" &&
-                cell.value !== undefined
-            ) {
+                hasData = true;
+            } else if (cell.f !== undefined) {
+                componentData[col] = cell.f;
+                hasData = true;
+            } else if (typeof cell === "object" && cell.value !== undefined) {
                 componentData[col] = cell.value;
-            } else if (cell !== undefined && cell !== "") {
+                hasData = true;
+            } else if (
+                typeof cell !== "object" &&
+                cell !== undefined &&
+                cell !== ""
+            ) {
                 componentData[col] = cell;
-            } else {
-                componentData[col] = "";
+                hasData = true;
             }
 
-            // Handle style
-            if (cell && cell.s) {
+            // Handle style - only add if s exists and is not empty
+            if (cell.s && Object.keys(cell.s).length > 0) {
                 componentStyles[col] = cell.s;
             }
         });
 
-        if (Object.values(componentData).some((val) => val !== "")) {
-            processedData.push({
+        if (hasData) {
+            const dataItem = {
                 data: componentData,
-                styles: componentStyles,
-            });
+            };
+
+            // Only add styles object if it's not empty
+            if (Object.keys(componentStyles).length > 0) {
+                dataItem.styles = componentStyles;
+            }
+
+            processedData.push(dataItem);
         }
     }
 

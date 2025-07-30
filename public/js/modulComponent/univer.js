@@ -273,6 +273,8 @@ function prepareUniverData() {
 }
 
 function prepareValidationSheetData() {
+    console.log("Data Validation Col : ", dataValidationCol);
+    console.log("Parts Components : ", partComponentsData);
     const formula = univerAPI.getFormula();
     let data = {};
     data[0] = {};
@@ -395,10 +397,10 @@ const workbook = univerAPI.createWorkbook({
             zoomRatio: 0.8,
             hidden: BooleanNumber.FALSE,
             freeze: {
-                xSplit: 0,
+                xSplit: 1,
                 ySplit: 1,
                 startRow: 1,
-                startColumn: 1,
+                startColumn: 0,
             },
             rowCount: Math.max(10, Object.keys(validationData).length),
             columnCount: dataValidationCol.length,

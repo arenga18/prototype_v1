@@ -474,31 +474,10 @@ class KomponenTable extends Component
 
     public function loadPartComponentData()
     {
-        $decodedModuls = $this->getDecodedModuls();
+        $allPartComponents = PartComponent::all();
+        $decodedData = json_decode($allPartComponents[0]->part_component, true);
 
-        // First get all component data from ModulComponent
-        $modulComponentsData = ModulComponent::whereIn('modul', $decodedModuls)
-            ->get()
-            ->flatMap(function ($modulComponent) {
-                $components = $this->parseComponentData($modulComponent->component);
-                return is_array($components) ? $components : [];
-            });
-
-        // Extract unique component names from modul components
-        $componentNames = $modulComponentsData
-            ->pluck('component')
-            ->filter()
-            ->unique()
-            ->values();
-
-        // Get all part components and parse their data
-        $allPartComponents = PartComponent::all()
-            ->map(function ($component) {
-                return $this->parsePartComponentData($component);
-            })
-            ->collapse();
-
-        $this->partComponentsData = $allPartComponents;
+        $this->partComponentsData = is_array($decodedData) ? $decodedData : [];
     }
 
     public function loadDefinedNames()
