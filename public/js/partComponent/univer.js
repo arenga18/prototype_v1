@@ -65,9 +65,16 @@ function prepareValidationSheetData() {
             );
 
             // Akses nilai dari componentData
+            const cellValue = fieldKey ? componentData[fieldKey] : undefined;
+            const cellStyle = fieldKey ? componentStyles[fieldKey] || {} : {};
+
             row[index] = {
-                v: fieldKey ? componentData[fieldKey] || "" : "",
-                s: fieldKey ? componentStyles[fieldKey] || "" : "",
+                v: fieldKey
+                    ? cellValue !== undefined && cellValue !== null
+                        ? cellValue
+                        : ""
+                    : "",
+                s: cellStyle,
             };
         });
 
@@ -227,9 +234,9 @@ function getAllData() {
                 cellObj.f = formulas[rowIndex][colIndex];
             }
 
-            // Simpan nilai (jika ada)
-            if (cell?.v !== undefined) {
-                cellObj.v = cell.v || "";
+            // Simpan nilai (jika ada), termasuk nilai 0
+            if (cell?.v !== undefined && cell?.v !== null) {
+                cellObj.v = cell.v; // Simpan nilai apa adanya, termasuk 0
             }
 
             rowData[colIndex] = cellObj;

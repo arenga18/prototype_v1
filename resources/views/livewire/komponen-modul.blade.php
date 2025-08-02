@@ -221,7 +221,7 @@
     const definedNames = @json($definedNames);
     const allModuls = @json($allModuls);
     const allParts = @json($allParts);
-    console.log("groupedComponents", groupedComponents);
   </script>
   <script src="{{ asset('js/modulComponent/univer.js') }}"></script>
+  <script src="{{ asset('js/modulComponent/conditionalFormatting.js') }}"></script>
 </div>

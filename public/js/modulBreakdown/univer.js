@@ -109,6 +109,7 @@ const formula = univerAPI.getFormula();
 function prepareBreakdownSheetData() {
     let data = {};
     const modulStartRows = {};
+    const formula = univerAPI.getFormula();
     let currentRow = 1;
 
     // Create header row
@@ -126,12 +127,21 @@ function prepareBreakdownSheetData() {
     });
 
     const adjustFormula = (formula, modulStartRow, isFilled) => {
-        return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
-            const newRow = isFilled
-                ? parseInt(rowNum)
-                : modulStartRow + parseInt(rowNum) - 2;
-            return `${col}${newRow}`;
-        });
+        // Hanya proses referensi sel (A1, $A1, A$1, $A$1) tapi skip defined names
+        return formula.replace(
+            /(^|[^A-Za-z_])(\$?[A-Z]+\$?)(\d+)(?![A-Za-z0-9_])/g,
+            (match, prefix, colPart, rowNum) => {
+                const newRow = isFilled
+                    ? parseInt(rowNum)
+                    : modulStartRow + parseInt(rowNum) - 2;
+
+                // Pisahkan bagian kolom dan $ baris jika ada
+                const hasRowDollar = colPart.endsWith("$");
+                const col = hasRowDollar ? colPart.slice(0, -1) : colPart;
+
+                return `${prefix}${col}${hasRowDollar ? "$" : ""}${newRow}`;
+            }
+        );
     };
 
     const modulStyle = {
@@ -151,35 +161,43 @@ function prepareBreakdownSheetData() {
             const mainModulData = group.modul || {};
             const mainModulName = mainModulData.nama_modul || "";
 
-            // if (mainModulName) {
-            //     // Store starting row for formula adjustment
-            //     modulStartRows[mainModulName] = currentRow + 1;
+            if (!group.component || group.component.length === 0) {
+                // Store starting row for formula adjustment
+                modulStartRows[mainModulName] = currentRow + 1;
 
-            //     // Create main modul row with style
-            //     data[currentRow] = {};
-            //     columns.forEach((col, colIndex) => {
-            //         if (mainModulData[col] !== undefined) {
-            //             data[currentRow][colIndex] = {
-            //                 v: mainModulData[col],
-            //                 s: modulStyle,
-            //             };
-            //         } else if (colIndex === namaModulIndex) {
-            //             data[currentRow][colIndex] = {
-            //                 v: mainModulName,
-            //                 s: modulStyle,
-            //             };
-            //         } else {
-            //             data[currentRow][colIndex] = {
-            //                 v: "",
-            //                 s: modulStyle,
-            //             };
-            //         }
-            //     });
-            //     currentRow++;
-            // }
+                // Create main modul row with style
+                data[currentRow] = {};
+                columns.forEach((col, colIndex) => {
+                    // Hanya tampilkan mainModulName jika component kosong dan ini kolom nama_modul
+                    if (
+                        (!group.component || group.component.length === 0) &&
+                        colIndex === namaModulIndex
+                    ) {
+                        data[currentRow][colIndex] = {
+                            v: mainModulName,
+                            s: modulStyle,
+                        };
+                    }
+                    // Jika ada data di mainModulData untuk kolom ini
+                    else if (mainModulData[col] !== undefined) {
+                        data[currentRow][colIndex] = {
+                            v: mainModulData[col],
+                            s: modulStyle,
+                        };
+                    }
+                    // Kolom lainnya (termasuk nama_modul ketika ada component)
+                    else {
+                        data[currentRow][colIndex] = {
+                            v: "",
+                            s: modulStyle,
+                        };
+                    }
+                });
+                currentRow++;
+            }
 
-            // Process all component groups
-            if (Array.isArray(group.component)) {
+            // Process all component groups hanya jika ada component
+            if (Array.isArray(group.component) && group.component.length > 0) {
                 group.component.forEach(
                     (componentGroup, componentGroupIndex) => {
                         // Handle nested module if exists
@@ -278,9 +296,6 @@ function prepareBreakdownSheetData() {
         });
     }
 
-    // Execute calculations for both modul and component formulas
-    formula.executeCalculation();
-
     return {
         data,
         mergeCells: [],
@@ -308,9 +323,13 @@ function prepareValidationSheetData() {
     let rowIndex = 1;
 
     // Fungsi untuk menyesuaikan formula
-    const adjustFormula = (formulaText) => {
-        return formulaText.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
-            return `${col}${parseInt(rowNum)}`;
+    const adjustFormula = (formula, modulStartRow, isFilled) => {
+        // Hanya sesuaikan referensi $G3
+        return formula.replace(/(\$G)(\d+)/g, (match, col, rowNum) => {
+            const newRow = isFilled
+                ? parseInt(rowNum)
+                : modulStartRow + parseInt(rowNum) - 2;
+            return `${col}${newRow}`;
         });
     };
 
@@ -326,7 +345,13 @@ function prepareValidationSheetData() {
                 (key) => dataValMap[key] === col
             );
 
-            const value = fieldKey ? componentData[fieldKey] || "" : "";
+            // Periksa jika fieldKey ada dan componentData[fieldKey] tidak null atau undefined
+            const value = fieldKey
+                ? componentData[fieldKey] !== null &&
+                  componentData[fieldKey] !== undefined
+                    ? componentData[fieldKey]
+                    : ""
+                : "";
 
             // Handle formula cells
             if (typeof value === "string" && value.startsWith("=")) {
@@ -622,19 +647,24 @@ const worksheet = workbook.getActiveSheet();
 function applyFilteredDataValidations() {
     const definedNamed = JSON.parse(definedNames);
 
+    // Filter hanya definedNames dengan nama 'prt' atau 'menu'
     const filteredDefNames = definedNamed.filter(
-        (defName) => defName.name === "prt" || defName.name === "menu"
+        (defName) => defName.name === "menu" || defName.name === "Prt"
     );
+
+    console.log("FilteredDefinedNames : ", filteredDefNames);
 
     // Mapping data
     const defNameToColumn = {
         menu: 1, // Kolom index 1 untuk menu
-        prt: 6, // Kolom index 6 untuk prt
+        Prt: 6, // Kolom index 6 untuk prt
     };
 
     filteredDefNames.forEach((defName) => {
         const targetRange = worksheet.getRange(defName.formulaOrRefString);
         const columnIndex = defNameToColumn[defName.name];
+
+        console.log("column Index : ", columnIndex);
 
         if (!columnIndex) return;
 
@@ -666,7 +696,7 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
             .newDataValidation()
             .requireValueInList(options.map((opt) => opt.value || opt))
             .setOptions({
-                renderMode: univerAPI.Enum.DataValidationRenderMode.TEXT,
+                renderMode: univerAPI.Enum.DataValidationRenderMode.ARROW,
                 allowInvalid: false,
                 showDropDown: true,
                 showErrorMessage: true,
@@ -675,12 +705,7 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
             })
             .build();
 
-        const range = worksheet.getRange(
-            1,
-            columnIndex,
-            worksheet.getMaxRows(),
-            1
-        );
+        const range = worksheet.getRange(1, columnIndex, 1000, 1);
 
         if (clearInvalid) {
             const currentValues = range.getValues();
@@ -698,10 +723,7 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
 
         range.setDataValidation(dropdownRule);
     } catch (error) {
-        console.error(
-            `Error applying dropdown to column ${columnIndex}:`,
-            error
-        );
+        console.log(`Error applying dropdown to column ${columnIndex}:`, error);
     }
 }
 
@@ -712,22 +734,10 @@ const breakdownSheet = workbook.getSheets("sheet1")[0];
 console.log("breakdownSheet", breakdownSheet);
 if (breakdownSheet) {
     // worksheet.setColumnWidth(1, 200);
-    breakdownSheet.setColumnWidth(5, 200);
+    breakdownSheet.setColumnWidth(5, 130);
     breakdownSheet.setColumnWidth(6, 200);
     breakdownSheet.setColumnWidth(7, 150);
     breakdownSheet.setRowHeight(0, 80);
-
-    // Conditional formatting
-    const range = breakdownSheet.getRange("R3:Z1000");
-    const rule = breakdownSheet
-        .newConditionalFormattingRule()
-        .whenNumberEqualTo(11)
-        .setRanges([range.getRange()])
-        .setItalic(true)
-        .setBackground("red")
-        .setFontColor("green")
-        .build();
-    breakdownSheet.addConditionalFormattingRule(rule);
 }
 
 const specSheet = workbook.getSheets("sheet2")[1];
@@ -1063,7 +1073,8 @@ function addModulToSpreadsheet(modulName, placementModulName = null) {
 
         // Define adjustFormula function
         const adjustFormula = (formula, modulStartRow, isFilled) => {
-            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+            // Hanya sesuaikan referensi $G3
+            return formula.replace(/(\$G)(\d+)/g, (match, col, rowNum) => {
                 const newRow = isFilled
                     ? parseInt(rowNum)
                     : modulStartRow + parseInt(rowNum) - 1;
@@ -1376,15 +1387,15 @@ function addPartToSpreadsheet(partName) {
         }
 
         // Define adjustFormula function
-        const adjustFormula = (formula, partStartRow, isFilled) => {
-            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
+        const adjustFormula = (formula, modulStartRow, isFilled) => {
+            // Hanya sesuaikan referensi $G3
+            return formula.replace(/(\$G)(\d+)/g, (match, col, rowNum) => {
                 const newRow = isFilled
                     ? parseInt(rowNum)
-                    : partStartRow + parseInt(rowNum) - 1;
+                    : modulStartRow + parseInt(rowNum) - 2;
                 return `${col}${newRow}`;
             });
         };
-
         // 2. Find the true last row with data (scan all columns)
         let lastDataRow = 0;
         const maxRows = breakdownSheet.getMaxRows();

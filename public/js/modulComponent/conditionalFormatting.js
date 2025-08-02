@@ -4,7 +4,7 @@ function conditionalFormattingKodeBahan() {
 
     // Buat array Range objects langsung
     const rangeObjects = columns.map((col) =>
-        breakdownSheet.getRange(1, col, rowCount, 1).getRange()
+        componentSheet.getRange(1, col, rowCount, 1).getRange()
     );
     const formatRules = [
         { value: 4, background: "#ed857e", fontColor: "black" },
@@ -20,7 +20,7 @@ function conditionalFormattingKodeBahan() {
     ];
 
     formatRules.forEach((rule) => {
-        const formattingRule = breakdownSheet
+        const formattingRule = componentSheet
             .newConditionalFormattingRule()
             .whenNumberEqualTo(rule.value)
             .setRanges(rangeObjects)
@@ -28,7 +28,7 @@ function conditionalFormattingKodeBahan() {
             .setFontColor(rule.fontColor)
             .setBold(true);
 
-        breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+        componentSheet.addConditionalFormattingRule(formattingRule.build());
     });
 }
 
@@ -38,7 +38,7 @@ function conditionalFormattingTbahan() {
 
     // Buat array Range objects langsung
     const rangeObjects = columns.map((col) =>
-        breakdownSheet.getRange(1, col, rowCount, 1).getRange()
+        componentSheet.getRange(1, col, rowCount, 1).getRange()
     );
     const formatRules = [
         { start: 0, end: 11, background: "#f2e86f", fontColor: "black" },
@@ -47,7 +47,7 @@ function conditionalFormattingTbahan() {
     ];
 
     formatRules.forEach((rule) => {
-        const formattingRule = breakdownSheet
+        const formattingRule = componentSheet
             .newConditionalFormattingRule()
             .whenNumberBetween(rule.start, rule.end)
             .setRanges(rangeObjects)
@@ -55,10 +55,10 @@ function conditionalFormattingTbahan() {
             .setFontColor(rule.fontColor)
             .setBold(true);
 
-        breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+        componentSheet.addConditionalFormattingRule(formattingRule.build());
     });
 
-    const formattingRule = breakdownSheet
+    const formattingRule = componentSheet
         .newConditionalFormattingRule()
         .whenNumberGreaterThanOrEqualTo(20)
         .setRanges(rangeObjects)
@@ -66,7 +66,7 @@ function conditionalFormattingTbahan() {
         .setFontColor("black")
         .setBold(true);
 
-    breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+    componentSheet.addConditionalFormattingRule(formattingRule.build());
 }
 
 function conditionalFormatting_P_L() {
@@ -75,7 +75,7 @@ function conditionalFormatting_P_L() {
 
     // Buat array Range objects langsung
     const rangeObjects = columns.map((col) =>
-        breakdownSheet.getRange(1, col, rowCount, 1).getRange()
+        componentSheet.getRange(1, col, rowCount, 1).getRange()
     );
     const formatRules = [
         { value: 2430, background: "#ed857e", fontColor: "black" },
@@ -83,7 +83,7 @@ function conditionalFormatting_P_L() {
     ];
 
     formatRules.forEach((rule) => {
-        const formattingRule = breakdownSheet
+        const formattingRule = componentSheet
             .newConditionalFormattingRule()
             .whenNumberGreaterThan(rule.value)
             .setRanges(rangeObjects)
@@ -91,7 +91,7 @@ function conditionalFormatting_P_L() {
             .setFontColor(rule.fontColor)
             .setBold(true);
 
-        breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+        componentSheet.addConditionalFormattingRule(formattingRule.build());
     });
 }
 
@@ -104,25 +104,25 @@ function conditionalFormatting_notEmpty() {
 
     // Buat array Range objects langsung
     const rangeObjects = columns.map((col) =>
-        breakdownSheet.getRange(1, col, rowCount, 1).getRange()
+        componentSheet.getRange(1, col, rowCount, 1).getRange()
     );
     const formatRules = [{ background: "#8bb2e8", fontColor: "red" }];
 
     formatRules.forEach((rule) => {
-        const formattingRule = breakdownSheet
+        const formattingRule = componentSheet
             .newConditionalFormattingRule()
             .whenCellNotEmpty()
             .setRanges(rangeObjects)
             .setBackground(rule.background)
             .setFontColor(rule.fontColor);
 
-        breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+        componentSheet.addConditionalFormattingRule(formattingRule.build());
     });
 }
 
-const prosesKhusus = breakdownSheet.getRange(1, 7, 1000, 1);
+const prosesKhusus = componentSheet.getRange(1, 7, 1000, 1);
 
-const formattingRule = breakdownSheet
+const formattingRule = componentSheet
     .newConditionalFormattingRule()
     .whenCellNotEmpty()
     .setRanges([prosesKhusus.getRange()])
@@ -130,7 +130,7 @@ const formattingRule = breakdownSheet
     .setFontColor("black")
     .setBold(true);
 
-breakdownSheet.addConditionalFormattingRule(formattingRule.build());
+componentSheet.addConditionalFormattingRule(formattingRule.build());
 
 conditionalFormattingKodeBahan();
 conditionalFormattingTbahan();
