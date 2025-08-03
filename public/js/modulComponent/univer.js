@@ -961,12 +961,21 @@ function addModulToSpreadsheet(modulName) {
 
         // Define adjustFormula function
         const adjustFormula = (formula, modulStartRow, isFilled) => {
-            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
-                const newRow = isFilled
-                    ? parseInt(rowNum)
-                    : modulStartRow + parseInt(rowNum) - 1;
-                return `${col}${newRow}`;
-            });
+            // Hanya proses referensi sel (A1, $A1, A$1, $A$1) tapi skip defined names
+            return formula.replace(
+                /(^|[^A-Za-z_])(\$?[A-Z]+\$?)(\d+)(?![A-Za-z0-9_])/g,
+                (match, prefix, colPart, rowNum) => {
+                    const newRow = isFilled
+                        ? parseInt(rowNum)
+                        : modulStartRow + parseInt(rowNum) - 1;
+
+                    // Pisahkan bagian kolom dan $ baris jika ada
+                    const hasRowDollar = colPart.endsWith("$");
+                    const col = hasRowDollar ? colPart.slice(0, -1) : colPart;
+
+                    return `${prefix}${col}${hasRowDollar ? "$" : ""}${newRow}`;
+                }
+            );
         };
 
         // 2. Find the true last row with data (scan all columns)
@@ -1127,13 +1136,22 @@ function addPartToSpreadsheet(partName) {
         }
 
         // Define adjustFormula function
-        const adjustFormula = (formula, partStartRow, isFilled) => {
-            return formula.replace(/([A-Z]+)(\d+)/g, (match, col, rowNum) => {
-                const newRow = isFilled
-                    ? parseInt(rowNum)
-                    : partStartRow + parseInt(rowNum) - 1;
-                return `${col}${newRow}`;
-            });
+        const adjustFormula = (formula, modulStartRow, isFilled) => {
+            // Hanya proses referensi sel (A1, $A1, A$1, $A$1) tapi skip defined names
+            return formula.replace(
+                /(^|[^A-Za-z_])(\$?[A-Z]+\$?)(\d+)(?![A-Za-z0-9_])/g,
+                (match, prefix, colPart, rowNum) => {
+                    const newRow = isFilled
+                        ? parseInt(rowNum)
+                        : modulStartRow + parseInt(rowNum) - 1;
+
+                    // Pisahkan bagian kolom dan $ baris jika ada
+                    const hasRowDollar = colPart.endsWith("$");
+                    const col = hasRowDollar ? colPart.slice(0, -1) : colPart;
+
+                    return `${prefix}${col}${hasRowDollar ? "$" : ""}${newRow}`;
+                }
+            );
         };
 
         // 2. Find the true last row with data (scan all columns)

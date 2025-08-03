@@ -499,4 +499,5 @@
   <script src="{{ asset('js/modulBreakdown/updateModul.js') }}"></script>
   <script src="{{ asset('js/modulBreakdown/reports.js') }}"></script>
   <script src="{{ asset('js/modulBreakdown/conditionalFormatting.js') }}"></script>
+  <script src="{{ asset('js/modulBreakdown/button.js') }}"></script>
 </div>

@@ -214,6 +214,10 @@
       </tbody>
     </table>
   </div>
+  <script>
+    const modulBreakdown = @json($modulBreakdown);
+    console.log("Modul Breakdown : ", modulBreakdown);
+  </script>
 </body>
 
 
