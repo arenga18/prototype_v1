@@ -146,56 +146,76 @@
       </thead>
       <tbody>
         @php
-          $groupedByTpk = collect($modulBreakdown)->groupBy('modul.Tpk');
-
-          $groupedByModul = $groupedByTpk->map(function ($tpkGroup) {
-              return $tpkGroup->groupBy('modul.nama_modul')->map(function ($modulGroup) {
-                  return [
-                      'count' => $modulGroup->count(),
-                      'items' => $modulGroup,
-                      'subtotal' => $modulGroup->sum('total'),
-                  ];
+          // Extract all components from all modules
+          $allComponents = collect($modulBreakdown)->flatMap(function ($module) {
+              return collect($module['components'])->map(function ($component) use ($module) {
+                  // Add Tpk from parent module to each component
+                  $component['Tpk'] = $module['modul']['Tpk'] ?? '';
+                  return $component;
               });
           });
 
-          // Calculate grand total
-          $grandTotal = collect($modulBreakdown)->count();
+          // Group by Tpk first
+          $groupedByTpk = $allComponents->groupBy('Tpk');
+
+          // Prepare data structure for pivot table
+          $pivotData = [];
+          $grandTotal = 0;
+
+          foreach ($groupedByTpk as $tpk => $components) {
+              // Group components by nama_komponen and ukuran within each Tpk
+              $groupedByComponent = $components->groupBy(function ($item) {
+                  return $item['nama_komponen'] . '|' . $item['ukuran'];
+              });
+
+              foreach ($groupedByComponent as $key => $group) {
+                  $splitKey = explode('|', $key);
+                  $nama_komponen = $splitKey[0];
+                  $ukuran = $splitKey[1];
+                  $count = $group->count();
+                  $kode = $group->first()['kode'] ?? '';
+
+                  $pivotData[] = [
+                      'tpk' => $tpk,
+                      'nama_komponen' => $nama_komponen,
+                      'ukuran' => $ukuran,
+                      'kode' => $kode,
+                      'count' => $count,
+                      'rowspan' => $count,
+                      'items' => $group,
+                  ];
+
+                  $grandTotal += $count;
+              }
+          }
         @endphp
 
-        @foreach ($groupedByModul as $tpk => $modulGroups)
-          @php $firstTpk = true; @endphp
-          @foreach ($modulGroups as $modulName => $modulData)
-            @php $firstModul = true; @endphp
-            @foreach ($modulData['items'] as $index => $modul)
-              <tr>
-                <td></td>
-                <td>
-                  @if ($firstModul)
-                    {{ $modulName }}
-                  @endif
+        @foreach ($pivotData as $index => $data)
+          @foreach ($data['items'] as $itemIndex => $item)
+            <tr>
+              <td align="center">{{ $index + 1 }}</td>
+
+              @if ($itemIndex === 0)
+                <td rowspan="{{ $data['rowspan'] }}">{{ $data['nama_komponen'] }}</td>
+              @endif
+
+              <td align="center">{{ $data['ukuran'] }}</td>
+
+              @if ($itemIndex === 0 && ($index === 0 || $pivotData[$index - 1]['tpk'] !== $data['tpk']))
+                <td rowspan="{{ $groupedByTpk[$data['tpk']]->count() }}" align="center">
+                  {{ $data['tpk'] }}
                 </td>
-                <td align="center">{{ $modul['modul']['ukuran'] ?? '' }}</td>
+              @endif
 
-                {{-- Show Tpk only once with rowspan --}}
-                @if ($firstTpk && $firstModul)
-                  <td rowspan="{{ $modulGroups->sum(fn($group) => $group['count']) }}" align="center">
-                    {{ $tpk }}
-                  </td>
-                  @php $firstTpk = false; @endphp
-                @endif
+              <td align="center">{{ $data['kode'] }}</td>
 
-                <td align="center">{{ $modul['modul']['kode'] ?? '' }}</td>
+              @if ($itemIndex === 0)
+                <td rowspan="{{ $data['rowspan'] }}" align="center">{{ $data['count'] }}</td>
+              @endif
 
-                {{-- Show total count only once per module --}}
-                @if ($firstModul)
-                  <td rowspan="{{ $modulData['count'] }}" align="center">{{ $modulData['count'] }}</td>
-                  @php $firstModul = false; @endphp
-                @endif
-
-                <td align="center"></td>
-                <td align="center"></td>
-              </tr>
-            @endforeach
+              <td align="center"></td>
+              <td align="center"></td>
+            </tr>
           @endforeach
         @endforeach
 
