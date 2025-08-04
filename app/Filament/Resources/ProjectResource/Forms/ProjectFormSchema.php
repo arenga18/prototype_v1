@@ -42,7 +42,7 @@ class ProjectFormSchema
                                     ->label('NIP')
                                     ->required()
                                     ->reactive()
-                                    ->afterStateUpdated(function (callable $set, $state) {
+                                    ->afterStateUpdated(function (callable $set, $state) use ($defaultSpecifications) {
 
                                         $moduls = Modul::where('nip', $state)->get();
 
@@ -54,34 +54,30 @@ class ProjectFormSchema
                                             $firstModul = $moduls->first();
                                             $set('product_name', $firstModul->product_name);
                                             $set('project_name', $firstModul->project_name);
+
+                                            $defaults = $defaultSpecifications[$firstModul->product_name] ?? $defaultSpecifications['pantry'];
+
+                                            $set('product_spesification', $defaults['product_spesification'] ?? []);
+                                            $set('material_thickness_spesification', $defaults['material_thickness_spesification'] ?? []);
+                                            $set('coating_standard', $defaults['coating_standard'] ?? []);
+                                            $set('coating_spesification', $defaults['coating_spesification'] ?? []);
+                                            $set('komp_anodize_spesification', $defaults['komp_anodize_spesification'] ?? []);
+                                            $set('alu_frame_spesification', $defaults['alu_frame_spesification'] ?? []);
+                                            $set('hinges_spesification', $defaults['hinges_spesification'] ?? []);
+                                            $set('rail_spesification', $defaults['rail_spesification'] ?? []);
+                                            $set('door_mechanism', $defaults['door_mechanism'] ?? []);
+                                            $set('glass_spesification', $defaults['glass_spesification'] ?? []);
+                                            $set('profile_spesification', $defaults['profile_spesification'] ?? []);
+                                            $set('size_distance_spesification', $defaults['size_distance_spesification'] ?? []);
                                         } else {
                                             $set('modul_reference', []);
                                             $set('product_name', null);
                                             $set('project_name', null);
                                         }
                                     }),
-                                TextInput::make('product_name')->label('Nama Produk')
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(function (callable $set, $state) use ($defaultSpecifications) {
-                                        $productName = strtolower(trim($state ?? 'pantry'));
-                                        $set('product_name', $productName);
-
-                                        $defaults = $defaultSpecifications[$productName] ?? $defaultSpecifications['pantry'];
-
-                                        $set('product_spesification', $defaults['product_spesification'] ?? []);
-                                        $set('material_thickness_spesification', $defaults['material_thickness_spesification'] ?? []);
-                                        $set('coating_standard', $defaults['coating_standard'] ?? []);
-                                        $set('coating_spesification', $defaults['coating_spesification'] ?? []);
-                                        $set('komp_anodize_spesification', $defaults['komp_anodize_spesification'] ?? []);
-                                        $set('alu_frame_spesification', $defaults['alu_frame_spesification'] ?? []);
-                                        $set('hinges_spesification', $defaults['hinges_spesification'] ?? []);
-                                        $set('rail_spesification', $defaults['rail_spesification'] ?? []);
-                                        $set('door_mechanism', $defaults['door_mechanism'] ?? []);
-                                        $set('glass_spesification', $defaults['glass_spesification'] ?? []);
-                                        $set('profile_spesification', $defaults['profile_spesification'] ?? []);
-                                        $set('size_distance_spesification', $defaults['size_distance_spesification'] ?? []);
-                                    }),
+                                TextInput::make('product_name')
+                                    ->label('Nama Produk')
+                                    ->required(),
                                 TextInput::make('project_name')
                                     ->label('Nama Proyek')
                                     ->required(),
@@ -140,11 +136,7 @@ class ProjectFormSchema
                                                 'style' => 'border: none !important; border-radius: 0 !important;',
                                             ]),
                                     ])
-                                    ->default(function (callable $get) use ($defaultSpecifications) {
-                                        $productName = strtolower($get('product_name') ?? 'pantry');
-
-                                        return $defaultSpecifications[$productName]['product_spesification'] ?? [];
-                                    })
+                                    ->default([])
                                     ->minItems(1)
                                     ->addActionLabel('Tambah Data')
                                     ->columnSpanFull(),
