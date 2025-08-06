@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Rekapitulasi Pemakaian Bahan</title>
+  <title>Bon Permintaan Pembelian</title>
   <style>
     @page {
       size: 8.5in 11in;
@@ -60,7 +60,7 @@
 
 <body>
   <div class="full-recap-report-wrapper">
-    <div class="section-title"><u>REKAPITULASI PEMAKAIAN BAHAN (non KS)</u></div>
+    <div class="section-title"><u>BON PERMINTAAN PEMBELIAN</u></div>
 
     <table class="header-table">
       <tr>
@@ -145,11 +145,10 @@
       </thead>
       <tbody>
         @php
-          // Filter components with kode 'KS' and is_module = false
           $allComponents = collect($modulBreakdown)->flatMap(function ($module) {
               return collect($module['components'])
                   ->filter(function ($component) {
-                      return ($component['kode'] ?? '') === '─';
+                      return ($component['kode'] ?? '') === 'k¢';
                   })
                   ->map(function ($component) {
                       $component['Tpk'] = $component['Tpk'] ?? '';
@@ -245,7 +244,7 @@
           </tr>
         @else
           <tr>
-            <td colspan="8" align="center">Tidak ada data dengan kode nonKS</td>
+            <td colspan="8" align="center">Tidak ada data dengan kode k¢</td>
           </tr>
         @endif
       </tbody>

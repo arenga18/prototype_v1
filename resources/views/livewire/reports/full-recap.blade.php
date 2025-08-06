@@ -146,59 +146,86 @@
       </thead>
       <tbody>
         @php
-          // Filter modules with kode = "(ks)"
-          $filteredModulBreakdown = collect($modulBreakdown)->filter(function ($modul) {
-              return isset($modul['modul']['kode']) && strtoupper($modul['modul']['kode']) === '(KS)';
-          });
+          // Initialize variables
+          $filteredComponents = [];
+          $componentIndex = 1;
+          $grandTotalQty = 0;
 
-          // Group by Tpk first
-          $groupedByTpk = $filteredModulBreakdown->groupBy('modul.Tpk');
+          // First pass: Filter components with kode = "(ks)"
+          foreach ($modulBreakdown as $module) {
+              if (!isset($module['components'])) {
+                  continue;
+              }
 
-          // Prepare data for merging same component names
-          $mergedComponents = [];
-          $rowspans = [];
+              $moduleName = $module['components'][0]['nama_modul'] ?? '';
+              $moduleTpk = $module['components'][0]['Tpk'] ?? '';
+              $moduleKode = $module['components'][0]['kode'] ?? '';
 
-          foreach ($groupedByTpk as $tpk => $components) {
-              // Group components by name within each Tpk group
-              $groupedByName = $components->groupBy('modul.nama_modul');
+              foreach ($module['components'] as $component) {
+                  if (isset($component['kode']) && strtoupper($component['kode']) === '(KS)') {
+                      $qty = $component['jml'] ?? 1;
+                      $grandTotalQty += $qty;
 
-              foreach ($groupedByName as $name => $items) {
-                  $rowspan = $items->count();
-                  $rowspans[$tpk][$name] = $rowspan;
-
-                  foreach ($items as $index => $item) {
-                      $mergedComponents[] = [
-                          'tpk' => $tpk,
-                          'name' => $name,
-                          'data' => $item,
-                          'is_first' => $index === 0,
-                          'rowspan' => $rowspan,
+                      $filteredComponents[] = [
+                          'module_name' => $moduleName,
+                          'module_tpk' => $moduleTpk,
+                          'module_kode' => $moduleKode,
+                          'component_name' => $component['component'] ?? '',
+                          'component_size' => $component['ukuran'] ?? '',
+                          'component_qty' => $qty,
+                          'component_data' => $component,
                       ];
                   }
               }
           }
 
-          $grandTotal = $filteredModulBreakdown->count();
+          // Group by module name and Tpk
+          $groupedData = collect($filteredComponents)->groupBy(['module_tpk', 'module_name']);
+
+          // Prepare display data with rowspans
+          $displayData = [];
+          $currentIndex = 1;
+
+          foreach ($groupedData as $tpk => $modules) {
+              foreach ($modules as $moduleName => $components) {
+                  $rowspan = $components->count();
+
+                  foreach ($components as $index => $comp) {
+                      $displayData[] = [
+                          'index' => $currentIndex++,
+                          'module_name' => $moduleName,
+                          'component_name' => $comp['component_name'],
+                          'component_size' => $comp['component_size'],
+                          'component_qty' => $comp['component_qty'],
+                          'tpk' => $tpk,
+                          'kode' => $comp['module_kode'],
+                          'is_first' => $index === 0,
+                          'rowspan' => $rowspan,
+                          'module_rowspan' => $rowspan,
+                      ];
+                  }
+              }
+          }
         @endphp
 
-        @foreach ($mergedComponents as $index => $component)
+        @foreach ($displayData as $item)
           <tr>
-            <td align="center">{{ $index + 1 }}</td>
+            <td align="center">{{ $item['index'] }}</td>
 
-            @if ($component['is_first'])
-              <td rowspan="{{ $component['rowspan'] }}">{{ $component['name'] }}</td>
+            @if ($item['is_first'])
+              <td rowspan="{{ $item['module_rowspan'] }}">{{ $item['module_name'] }}</td>
             @endif
 
-            <td align="center">{{ $component['data']['modul']['ukuran'] ?? '' }}</td>
+            <td align="center">{{ $item['component_size'] }}</td>
 
-            @if ($component['is_first'] && ($index === 0 || $mergedComponents[$index - 1]['tpk'] !== $component['tpk']))
-              <td rowspan="{{ $groupedByTpk[$component['tpk']]->count() }}" align="center">
-                {{ $component['tpk'] }}
+            @if ($item['is_first'])
+              <td rowspan="{{ $item['module_rowspan'] }}" align="center">
+                {{ $item['tpk'] }}
               </td>
             @endif
 
-            <td align="center">{{ $component['data']['modul']['kode'] ?? '' }}</td>
-            <td align="center">1</td>
+            <td align="center">{{ $item['kode'] }}</td>
+            <td align="center">{{ $item['component_qty'] }}</td>
             <td align="center"></td>
             <td align="center"></td>
           </tr>
@@ -207,7 +234,7 @@
         {{-- Grand Total Row --}}
         <tr>
           <td colspan="5" align="center"><b>Grand Total</b></td>
-          <td align="center"><b>{{ $grandTotal }}</b></td>
+          <td align="center"><b>{{ $grandTotalQty }}</b></td>
           <td align="center"></td>
           <td align="center"></td>
         </tr>

@@ -37,6 +37,7 @@ $(document).ready(function () {
         e.preventDefault();
         e.stopPropagation();
         const spreadsheetData = getAllData();
+        console.log("Spreadsheet : ", spreadsheetData);
         const modulBreakdown = processModulBreakdown(spreadsheetData);
 
         // Send data to server before opening report
@@ -61,14 +62,17 @@ $(document).ready(function () {
 
             if (row[namaModulIndex] && row[namaModulIndex] !== "") {
                 if (currentModul) {
+                    // Push the module as the first component
+                    currentComponents.unshift(currentModulObject);
                     modulBreakdown.push({
-                        modul: currentModulObject,
                         components: currentComponents,
                     });
                 }
 
                 currentModul = row[namaModulIndex];
-                currentModulObject = { nama_modul: currentModul };
+                currentModulObject = {
+                    nama_modul: currentModul,
+                };
                 currentComponents = [];
 
                 $.each(columns, function (colIndex, col) {
@@ -92,8 +96,9 @@ $(document).ready(function () {
         });
 
         if (currentModul) {
+            // Push the module as the first component
+            currentComponents.unshift(currentModulObject);
             modulBreakdown.push({
-                modul: currentModulObject,
                 components: currentComponents,
             });
         }

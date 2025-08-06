@@ -764,7 +764,6 @@ function applyDropdownToColumn(columnIndex, options, clearInvalid = true) {
 applyFilteredDataValidations();
 
 const breakdownSheet = workbook.getSheets("sheet1")[0];
-console.log("breakdownSheet", breakdownSheet);
 if (breakdownSheet) {
     // worksheet.setColumnWidth(1, 200);
     breakdownSheet.setColumnWidth(5, 130);

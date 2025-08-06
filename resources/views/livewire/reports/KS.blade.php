@@ -127,12 +127,11 @@
       </tr>
     </table>
 
-    <table>
+    <table border="1" cellpadding="5" cellspacing="0">
       <thead>
         <tr>
           <th></th>
-          <th colspan="8" align="left">Rekap</th>
-        </tr>
+          <th colspan="8" align="left">Rekap
         <tr>
           <th>No</th>
           <th>Nama Komponen</th>
@@ -146,89 +145,117 @@
       </thead>
       <tbody>
         @php
-          // Extract all components from all modules
+          // Filter components with kode 'KS' and is_module = false
           $allComponents = collect($modulBreakdown)->flatMap(function ($module) {
-              return collect($module['components'])->map(function ($component) use ($module) {
-                  // Add Tpk from parent module to each component
-                  $component['Tpk'] = $module['modul']['Tpk'] ?? '';
-                  return $component;
-              });
+              return collect($module['components'])
+                  ->filter(function ($component) {
+                      return ($component['kode'] ?? '') === 'KS' && ($component['is_module'] ?? false) === false;
+                  })
+                  ->map(function ($component) {
+                      $component['Tpk'] = $component['Tpk'] ?? '';
+                      $component['jml'] = $component['jml'] ?? 1; // Default to 1 if not set
+                      return $component;
+                  });
           });
 
-          // Group by Tpk first
-          $groupedByTpk = $allComponents->groupBy('Tpk');
+          // Group by component name first
+          $groupedByName = $allComponents->groupBy('nama_komponen');
 
-          // Prepare data structure for pivot table
-          $pivotData = [];
+          $tableData = [];
           $grandTotal = 0;
+          $rowNumber = 1;
 
-          foreach ($groupedByTpk as $tpk => $components) {
-              // Group components by nama_komponen and ukuran within each Tpk
-              $groupedByComponent = $components->groupBy(function ($item) {
-                  return $item['nama_komponen'] . '|' . $item['ukuran'];
-              });
+          foreach ($groupedByName as $name => $components) {
+              // Group by size within each component name
+              $groupedBySize = $components->groupBy('ukuran');
 
-              foreach ($groupedByComponent as $key => $group) {
-                  $splitKey = explode('|', $key);
-                  $nama_komponen = $splitKey[0];
-                  $ukuran = $splitKey[1];
-                  $count = $group->count();
-                  $kode = $group->first()['kode'] ?? '';
+              $nameRowspan = $components->sum('jml');
+              $isFirstName = true;
 
-                  $pivotData[] = [
-                      'tpk' => $tpk,
-                      'nama_komponen' => $nama_komponen,
-                      'ukuran' => $ukuran,
-                      'kode' => $kode,
-                      'count' => $count,
-                      'rowspan' => $count,
-                      'items' => $group,
-                  ];
+              foreach ($groupedBySize as $size => $sizeComponents) {
+                  $sizeRowspan = $sizeComponents->sum('jml');
+                  $sizeTotal = $sizeComponents->sum('jml');
+                  $isFirstSize = true;
 
-                  $grandTotal += $count;
+                  // Group by Tpk within each size
+                  $groupedByTpk = $sizeComponents->groupBy('Tpk');
+
+                  foreach ($groupedByTpk as $tpk => $tpkComponents) {
+                      $tpkRowspan = $tpkComponents->count();
+                      $isFirstTpk = true;
+
+                      foreach ($tpkComponents as $component) {
+                          $tableData[] = [
+                              'row_number' => $isFirstName ? $rowNumber : '',
+                              'nama_komponen' => $isFirstName ? $name : '',
+                              'name_rowspan' => $isFirstName ? $nameRowspan : 0,
+                              'ukuran' => $isFirstSize ? $size : '',
+                              'size_rowspan' => $isFirstSize ? $sizeRowspan : 0,
+                              'tpk' => $tpk,
+                              'tpk_rowspan' => $isFirstTpk ? $tpkRowspan : 0,
+                              'kode' => $component['kode'],
+                              'count' => $isFirstSize ? $sizeTotal : '',
+                              'jml' => $component['jml'],
+                              'is_first_name' => $isFirstName,
+                              'is_first_size' => $isFirstSize,
+                              'is_first_tpk' => $isFirstTpk,
+                          ];
+
+                          $grandTotal += $component['jml'];
+                          $isFirstTpk = false;
+                          $isFirstSize = false;
+                          $isFirstName = false;
+                      }
+                  }
               }
+
+              $rowNumber++;
           }
         @endphp
 
-        @foreach ($pivotData as $index => $data)
-          @foreach ($data['items'] as $itemIndex => $item)
+        @if (count($tableData) > 0)
+          @foreach ($tableData as $data)
             <tr>
-              <td align="center">{{ $index + 1 }}</td>
-
-              @if ($itemIndex === 0)
-                <td rowspan="{{ $data['rowspan'] }}">{{ $data['nama_komponen'] }}</td>
+              @if ($data['is_first_name'])
+                <td align="center" rowspan="{{ $data['name_rowspan'] }}">{{ $data['row_number'] }}</td>
+                <td align="center" rowspan="{{ $data['name_rowspan'] }}">{{ $data['nama_komponen'] }}</td>
               @endif
-
-              <td align="center">{{ $data['ukuran'] }}</td>
-
-              @if ($itemIndex === 0 && ($index === 0 || $pivotData[$index - 1]['tpk'] !== $data['tpk']))
-                <td rowspan="{{ $groupedByTpk[$data['tpk']]->count() }}" align="center">
-                  {{ $data['tpk'] }}
+              @if ($data['is_first_size'])
+                <td align="center" rowspan="{{ $data['size_rowspan'] }}" style="width: 110px">
+                  {{ $data['ukuran'] }}
                 </td>
               @endif
-
-              <td align="center">{{ $data['kode'] }}</td>
-
-              @if ($itemIndex === 0)
-                <td rowspan="{{ $data['rowspan'] }}" align="center">{{ $data['count'] }}</td>
+              @if ($data['is_first_tpk'])
+                <td align="center" rowspan="{{ $data['tpk_rowspan'] }}">{{ $data['tpk'] }}</td>
               @endif
-
+              <td align="center">{{ $data['kode'] }}</td>
+              @if ($data['is_first_size'])
+                <td align="center" rowspan="{{ $data['size_rowspan'] }}">{{ $data['count'] }}</td>
+              @endif
               <td align="center"></td>
               <td align="center"></td>
             </tr>
           @endforeach
-        @endforeach
 
-        {{-- Grand Total Row --}}
-        <tr>
-          <td colspan="5" align="center"><b>Grand Total</b></td>
-          <td align="center"><b>{{ $grandTotal }}</b></td>
-          <td align="center"></td>
-          <td align="center"></td>
-        </tr>
+          <tr>
+            <td colspan="5" align="center"><b>Grand Total (KS)</b></td>
+            <td align="center"><b>{{ $grandTotal }}</b></td>
+            <td align="center"></td>
+            <td align="center"></td>
+          </tr>
+        @else
+          <tr>
+            <td colspan="8" align="center">Tidak ada data dengan kode KS</td>
+          </tr>
+        @endif
       </tbody>
     </table>
   </div>
+
+  <script>
+    const breakdownModul = @json($modulBreakdown);
+    console.log(breakdownModul);
+  </script>
 </body>
 
 </html>

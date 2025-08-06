@@ -11,7 +11,7 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'data' => 'required|array',
-            'report_type' => 'required|string|in:full-recap,KS,nonKS,K+Eris,flatpack',
+            'report_type' => 'required|string|in:full-recap,KS,nonKS,K+Eris,flatpack,Kaca',
             'projectInformation' => 'required'
         ]);
 
@@ -45,6 +45,7 @@ class ReportController extends Controller
             'nonKS' => 'livewire.reports.nonKS',
             'K+Eris' => 'livewire.reports.K+Eris',
             'flatpack' => 'livewire.reports.flatpack',
+            'Kaca' => 'livewire.reports.kaca',
         ];
 
         $view = $viewMap[$reportType] ?? 'livewire.reports.full-recap';
