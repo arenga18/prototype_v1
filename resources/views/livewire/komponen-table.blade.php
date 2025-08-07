@@ -415,26 +415,18 @@
                           <option value="full-recap">Rekap full</option>
                           <option value="KS">KS</option>
                           <option value="nonKS">Non KS</option>
-                          <option value="K+Eris">K+Eris</option>
                           <option value="flatpack">√flatpack ID</option>
                           <option value="√+">√+</option>
                           <option value="Kaca">Kaca</option>
-                          <option value="Kerja-kaca">Kerja + Kaca</option>
-                          <option value="rework-kaca">Rework Kaca</option>
-                          <option value="frame-alu">Frame Alu.Yn</option>
-                          <option value="SJ">SJ</option>
+                          <option value="frame-alu-yn">Frame Alu.Yn</option>
                           <option value="frame-alu-ad">Frame Alu.Ad</option>
                           <option value="BPB-setting">BPB Setting</option>
                           <option value="BPB-setting-frame">BPB Setting frame dll</option>
-                          <option value="kerja+">Kerja+</option>
-                          <option value="rework">Rework</option>
                           <option value="handle">Handle</option>
                           <option value="handle+">Handle+</option>
                           <option value="cutting-ks">Cutting KS</option>
                           <option value="cutting-nonks">Cutting NonKS</option>
-                          <option value="raw-material">Raw Material</option>
-                          <option value="BPB-raw-material-man">BPB Raw Material man.</option>
-                          <option value="fitting-lap">Fitting lap.</option>
+                          <option value="BPB-raw-material">BPB Raw Material man.</option>
                         </select>
                       </div>
                     </div>
@@ -494,6 +486,12 @@
     const definedNames = @json($definedNames);
     const allModuls = @json($allModuls);
     const allParts = @json($allParts);
+    const materialsData = @json($materialsData);
+    const materialsCol = @json($materialsCol);
+    const materialsMapping = @json($materialsMapping);
+
+    console.log("materialsMapping : ", materialsMapping);
+    console.log("dataValMap : ", dataValMap);
   </script>
   <script src="{{ asset('js/modulBreakdown/univer.js') }}"></script>
   <script src="{{ asset('js/modulBreakdown/updateModul.js') }}"></script>

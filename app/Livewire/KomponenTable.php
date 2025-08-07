@@ -2,12 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Models\Material;
 use Livewire\Component;
 use App\Models\Modul;
 use App\Models\ModulComponent;
 use App\Models\Project;
 use App\Models\PartComponent;
 use App\Models\RemovablePart;
+use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
@@ -23,8 +25,11 @@ class KomponenTable extends Component
     public $allParts = [];
     public $definedNames = [];
     public $fieldMapping;
+    public $materialsData;
     public $dataValidationCol;
     public $dataValMap;
+    public $materialsCol;
+    public $materialsMapping;
     public $componentTypes = [];
     public $componentOptions = [];
     public $recordId;
@@ -53,6 +58,8 @@ class KomponenTable extends Component
         $this->fieldMapping = config('breakdown_fields.fields_mapping');
         $this->dataValidationCol = config("breakdown_fields.data_validation_col");
         $this->dataValMap = config("breakdown_fields.data_val_map");
+        $this->materialsCol = config("breakdown_fields.materials_col");
+        $this->materialsMapping = config("breakdown_fields.materials_map");
         $this->recordId = $recordId;
         $this->moduls = $moduls ?? [];
         $this->modulList = ModulComponent::all()->pluck('modul')->toArray();
@@ -123,6 +130,27 @@ class KomponenTable extends Component
         $this->loadPartComponentData();
         $this->loadAllModuls();
         $this->loadAllRemovableParts();
+        $this->loadMaterialData();
+    }
+
+    public function loadMaterialData()
+    {
+        $materials = Material::all();
+
+        $result = [];
+
+        foreach ($materials as $material) {
+            $result[] = [
+                'id' => $material->id,
+                'cat' => $material->cat,
+                'name' => $material->name,
+                'qty' => $material->qty,
+                'unit' => $material->unit,
+                'note' => $material->note,
+            ];
+        }
+
+        return $this->materialsData = $result;
     }
 
     public function loadDropdownData()

@@ -234,5 +234,23 @@ return [
         'L*' => 'L*',
         '@siku' => '@siku',
         '@screw' => '@screw',
+    ],
+
+    'materials_col' => [
+        'cat',
+        'id',
+        'name',
+        'qty',
+        'unit',
+        'note'
+    ],
+
+    'materials_map' => [
+        'cat' => 'cat',
+        'id' => 'id',
+        'name' => 'name',
+        'qty' => "qty",
+        'unit' => 'unit',
+        'note' => 'note'
     ]
 ];

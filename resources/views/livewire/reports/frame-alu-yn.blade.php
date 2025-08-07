@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Rekapitulasi Pemakaian Bahan</title>
+  <title>Bon Permintaan Pembelian</title>
   <style>
     @page {
       size: 8.5in 11in;
@@ -60,7 +60,7 @@
 
 <body>
   <div class="full-recap-report-wrapper">
-    <div class="section-title"><u>REKAPITULASI PEMAKAIAN BAHAN (KS)</u></div>
+    <div class="section-title"><u>BON PERMINTAAN PEMBELIAN</u></div>
 
     <table class="header-table">
       <tr>
@@ -149,11 +149,11 @@
           $allComponents = collect($modulBreakdown)->flatMap(function ($module) {
               return collect($module['components'])
                   ->filter(function ($component) {
-                      return ($component['kode'] ?? '') === 'KS';
+                      return ($component['kode'] ?? '') === 'fr';
                   })
                   ->map(function ($component) {
                       $component['Tpk'] = $component['Tpk'] ?? '';
-                      $component['jml'] = $component['jml'] ?? 1;
+                      $component['jml'] = $component['jml'] ?? 1; // Default to 1 if not set
                       return $component;
                   });
           });
@@ -238,14 +238,14 @@
           @endforeach
 
           <tr>
-            <td colspan="5" align="center"><b>Grand Total (KS)</b></td>
+            <td colspan="5" align="center"><b>Grand Total</b></td>
             <td align="center"><b>{{ $grandTotal }}</b></td>
             <td align="center"></td>
             <td align="center"></td>
           </tr>
         @else
           <tr>
-            <td colspan="8" align="center">Tidak ada data dengan kode KS</td>
+            <td colspan="8" align="center">Tidak ada data dengan kode fr</td>
           </tr>
         @endif
       </tbody>

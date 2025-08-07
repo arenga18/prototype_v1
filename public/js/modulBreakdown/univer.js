@@ -593,6 +593,73 @@ function prepareSpecSheetData() {
     };
 }
 
+function prepareStockSheetData() {
+    const formula = univerAPI.getFormula();
+    let data = {};
+    data[0] = {};
+
+    // Baris 0 untuk header
+    materialsCol.forEach((col, index) => {
+        data[0][index] = {
+            v: col,
+            s: {
+                bl: 1,
+                ht: 2,
+                vt: 2,
+                fs: 11,
+            },
+        };
+    });
+
+    let rowIndex = 1;
+
+    // Fungsi untuk menyesuaikan formula
+    const adjustFormula = (formula, modulStartRow, isFilled) => {
+        // Hanya sesuaikan referensi $G3
+        return formula.replace(/(\$G)(\d+)/g, (match, col, rowNum) => {
+            const newRow = isFilled
+                ? parseInt(rowNum)
+                : modulStartRow + parseInt(rowNum) - 2;
+            return `${col}${newRow}`;
+        });
+    };
+
+    // Loop setiap part langsung (bukan per modul)
+    materialsData.forEach((comp) => {
+        const row = {};
+        const materialData = comp;
+
+        // Loop kolom sesuai header
+        materialsCol.forEach((col, index) => {
+            const fieldKey = Object.keys(materialsMapping).find(
+                (key) => materialsMapping[key] === col
+            );
+            // Periksa jika fieldKey ada dan materialData[fieldKey] tidak null atau undefined
+            const value = fieldKey
+                ? materialData[fieldKey] !== null &&
+                  materialData[fieldKey] !== undefined
+                    ? materialData[fieldKey]
+                    : ""
+                : "";
+
+            row[index] = {
+                v: value,
+            };
+        });
+
+        data[rowIndex] = row;
+        rowIndex++;
+    });
+
+    // Eksekusi formula setelah data dimuat
+    setTimeout(() => formula.executeCalculation(), 100);
+
+    return {
+        data,
+        mergeCells: [],
+    };
+}
+
 const { data: componentData, mergeCells: componentMerge } =
     prepareBreakdownSheetData();
 const { data: validationData, mergeCells: validationMerge } =
@@ -602,6 +669,8 @@ const {
     mergeCells: specMerge,
     rowCount: specRowCount,
 } = prepareSpecSheetData();
+const { data: materialData, mergeCells: materialMerge } =
+    prepareStockSheetData();
 
 console.log("component Data : ", componentData);
 
@@ -669,6 +738,23 @@ const workbook = univerAPI.createWorkbook({
             cellData: validationData,
             rowData: [],
             columnData: dataValidationCol.map((col) => ({ name: col })),
+            rowHeader: { width: 40 },
+            columnHeader: { height: 20 },
+        },
+        sheet4: {
+            id: "sheet4",
+            name: "Stock",
+            tabColor: "#2563EB",
+            zoomRatio: 0.8,
+            hidden: BooleanNumber.FALSE,
+            rowCount: 30,
+            columnCount: materialsCol.length,
+            defaultColumnWidth: 60,
+            defaultRowHeight: 25,
+            mergeData: materialMerge,
+            cellData: materialData,
+            rowData: [],
+            columnData: materialsCol.map((col) => ({ name: col })),
             rowHeader: { width: 40 },
             columnHeader: { height: 20 },
         },
@@ -842,6 +928,39 @@ if (validationSheet) {
     const maxRows = validationSheet.getMaxRows();
     if (maxRows > 0) {
         validationSheet.insertDefinedName(
+            "data_validation_range",
+            `'Data Validation'!$A$1:$Z$${maxRows}`,
+            "Range seluruh data validasi"
+        );
+    }
+}
+
+const stockSheet = workbook.getSheets()[3];
+if (stockSheet) {
+    stockSheet.setColumnWidth(0, 150);
+    stockSheet.setColumnWidth(1, 100);
+    stockSheet.setColumnWidth(2, 350);
+    stockSheet.setColumnWidth(3, 50);
+    stockSheet.setColumnWidth(4, 60);
+    stockSheet.setColumnWidth(5, 130);
+    stockSheet.setRowHeight(0, 80);
+    const definedNamed = JSON.parse(definedNames);
+    definedNamed.forEach((defName) => {
+        try {
+            stockSheet.insertDefinedName(
+                defName.name,
+                defName.formulaOrRefString,
+                `Defined name untuk ${defName.sheetReference}`
+            );
+        } catch (error) {
+            console.error(`Gagal membuat defined name ${defName.name}:`, error);
+        }
+    });
+
+    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
+    const maxRows = stockSheet.getMaxRows();
+    if (maxRows > 0) {
+        stockSheet.insertDefinedName(
             "data_validation_range",
             `'Data Validation'!$A$1:$Z$${maxRows}`,
             "Range seluruh data validasi"

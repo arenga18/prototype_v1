@@ -38,15 +38,14 @@ Route::prefix('admin/projects/{project}/reports')->controller(ReportController::
     // Route untuk menyimpan data
     Route::post('store-data', 'storeReportData')->name('reports.store-data');
     Route::get('{reportType}', 'showReport')->name('reports.show');
-
-    // Redirect routes for specific report types
-    Route::get('full-recap', function ($project) {
-        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'full-recap']);
-    });
-    Route::get('KS', function ($project) {
-        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'KS']);
-    });
-    Route::get('nonKS', function ($project) {
-        return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'nonKS']);
-    });
+    // // Redirect routes for specific report types
+    // Route::get('full-recap', function ($project) {
+    //     return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'full-recap']);
+    // });
+    // Route::get('KS', function ($project) {
+    //     return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'KS']);
+    // });
+    // Route::get('nonKS', function ($project) {
+    //     return redirect()->route('reports.show', ['project' => $project, 'reportType' => 'nonKS']);
+    // });
 });
