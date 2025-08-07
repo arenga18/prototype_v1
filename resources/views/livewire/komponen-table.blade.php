@@ -489,9 +489,6 @@
     const materialsData = @json($materialsData);
     const materialsCol = @json($materialsCol);
     const materialsMapping = @json($materialsMapping);
-
-    console.log("materialsMapping : ", materialsMapping);
-    console.log("dataValMap : ", dataValMap);
   </script>
   <script src="{{ asset('js/modulBreakdown/univer.js') }}"></script>
   <script src="{{ asset('js/modulBreakdown/updateModul.js') }}"></script>

@@ -1,7 +1,6 @@
 $(document).ready(function () {
     const printButton = $("#print-report");
     const reportTypeSelect = $("#report_type");
-    const baseUrl = window.location.origin;
     const pathSegments = window.location.pathname.split("/");
     const projectId = pathSegments[3];
 
@@ -40,7 +39,7 @@ $(document).ready(function () {
         console.log("Spreadsheet : ", spreadsheetData);
         const modulBreakdown = processModulBreakdown(spreadsheetData);
 
-        // Send data to server before opening report
+        // Send data to server
         sendDataToReport(
             modulBreakdown,
             reportTypeSelect.val(),
@@ -143,13 +142,13 @@ $(document).ready(function () {
             });
 
             alert("sukses");
-            // Open report in new tab with proper URL structure
+            // Open report in new tab
             window.open(
                 `/admin/projects/${projectId}/reports/${reportType}`,
                 "_blank"
             );
 
-            // Close modal using Flowbite
+            // Close modal
             const modal = FlowbiteInstances.getInstance(
                 "Modal",
                 "report-modal"

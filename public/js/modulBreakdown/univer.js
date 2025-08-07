@@ -16,6 +16,11 @@ const projectInformation = {
 
 console.log("Grouped Components : ", groupedComponents);
 
+const CalculationMode = {
+    FORCED: 0,
+    WHEN_EMPTY: 1,
+    NO_CALCULATION: 2,
+};
 // Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
@@ -27,6 +32,7 @@ const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
 const { UniverSheetsConditionalFormattingPreset } =
     UniverPresetSheetsConditionalFormatting;
 
+// Create Univer instance with formula configuration
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
     locales: {
@@ -41,13 +47,24 @@ const { univerAPI } = createUniver({
     },
     theme: defaultTheme,
     presets: [
-        UniverSheetsCorePreset(),
+        UniverSheetsCorePreset({
+            formula: {
+                initialFormulaComputing: CalculationMode.FORCED, // Force calculation on initialization
+            },
+        }),
         UniverSheetsDataValidationPreset(),
         UniverSheetsFindReplacePreset(),
         UniverSheetsFilterPreset(),
         UniverSheetsConditionalFormattingPreset(),
     ],
 });
+
+// Get the formula facade
+const formula = univerAPI.getFormula();
+
+// Force calculation
+formula.setInitialFormulaComputing(CalculationMode.FORCED);
+formula.executeCalculation();
 
 // Fungsi untuk memetakan data ke kolom
 function mapDataToColumns(comp) {
@@ -103,8 +120,6 @@ function mapDataToColumns(comp) {
 
     return componentRow;
 }
-
-const formula = univerAPI.getFormula();
 
 function prepareBreakdownSheetData() {
     let data = {};
@@ -298,11 +313,13 @@ function prepareBreakdownSheetData() {
                                             ),
                                             v: "",
                                             s: style,
+                                            t: 1,
                                         };
                                     } else {
                                         data[currentRow][colIndex] = {
                                             v: value,
                                             s: style,
+                                            t: 1,
                                         };
                                     }
                                 });
@@ -376,7 +393,6 @@ function prepareValidationSheetData() {
                 (key) => dataValMap[key] === col
             );
 
-            // Periksa jika fieldKey ada dan componentData[fieldKey] tidak null atau undefined
             const value = fieldKey
                 ? componentData[fieldKey] !== null &&
                   componentData[fieldKey] !== undefined
@@ -644,15 +660,16 @@ function prepareStockSheetData() {
 
             row[index] = {
                 v: value,
+                s: {
+                    ht: 2,
+                    vt: 2,
+                },
             };
         });
 
         data[rowIndex] = row;
         rowIndex++;
     });
-
-    // Eksekusi formula setelah data dimuat
-    setTimeout(() => formula.executeCalculation(), 100);
 
     return {
         data,
@@ -708,7 +725,7 @@ const workbook = univerAPI.createWorkbook({
             zoomRatio: 0.8,
             hidden: BooleanNumber.FALSE,
             rowCount: Math.max(10, specRowCount),
-            columnCount: 7, // Kolom A sampai G
+            columnCount: 7,
             defaultColumnWidth: 100,
             defaultRowHeight: 25,
             mergeData: specMerge,
@@ -718,8 +735,8 @@ const workbook = univerAPI.createWorkbook({
             rowHeader: { width: 40 },
             columnHeader: { height: 20 },
             freeze: {
-                xSplit: 1, // Freeze kolom A
-                ySplit: 1, // Freeze baris header
+                xSplit: 1,
+                ySplit: 1,
                 startRow: 1,
                 startColumn: 1,
             },
@@ -766,7 +783,6 @@ const worksheet = workbook.getActiveSheet();
 function applyFilteredDataValidations() {
     const definedNamed = JSON.parse(definedNames);
 
-    // Filter hanya definedNames dengan nama 'prt' atau 'menu'
     const filteredDefNames = definedNamed.filter(
         (defName) => defName.name === "menu" || defName.name === "Prt"
     );
@@ -791,7 +807,6 @@ function applyFilteredDataValidations() {
             // Ambil nilai dari range referensi
             const values = targetRange.getValues().flat().filter(Boolean);
 
-            // Terapkan dropdown ke kolom yang sesuai
             applyDropdownToColumn(
                 columnIndex,
                 values.map((value) => ({ value })),
@@ -875,7 +890,7 @@ if (specSheet) {
     // Loop through rows to find Kabinet entries
     for (let row = 0; row < maxRows; row++) {
         // Get cell value from column B (index 1)
-        const range = specSheet.getRange(row, 1, 1, 1); // Single cell at row, column 1 (B)
+        const range = specSheet.getRange(row, 1, 1, 1);
         const cellData = range.getCellDatas();
 
         if (
@@ -887,7 +902,7 @@ if (specSheet) {
         ) {
             const kabinetNumber = cellData[0][0].v.match(/\d+/)?.[0] || "0";
             kabinetRows.push({
-                row: row + 1, // Convert to 1-based index
+                row: row + 1,
                 number: kabinetNumber,
             });
         }
@@ -923,16 +938,6 @@ if (validationSheet) {
             console.error(`Gagal membuat defined name ${defName.name}:`, error);
         }
     });
-
-    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
-    const maxRows = validationSheet.getMaxRows();
-    if (maxRows > 0) {
-        validationSheet.insertDefinedName(
-            "data_validation_range",
-            `'Data Validation'!$A$1:$Z$${maxRows}`,
-            "Range seluruh data validasi"
-        );
-    }
 }
 
 const stockSheet = workbook.getSheets()[3];
@@ -956,16 +961,6 @@ if (stockSheet) {
             console.error(`Gagal membuat defined name ${defName.name}:`, error);
         }
     });
-
-    // Contoh tambahan untuk membuat defined name khusus jika diperlukan
-    const maxRows = stockSheet.getMaxRows();
-    if (maxRows > 0) {
-        stockSheet.insertDefinedName(
-            "data_validation_range",
-            `'Data Validation'!$A$1:$Z$${maxRows}`,
-            "Range seluruh data validasi"
-        );
-    }
 }
 
 // Fungsi untuk mendapatkan semua data

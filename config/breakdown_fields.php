@@ -237,20 +237,20 @@ return [
     ],
 
     'materials_col' => [
-        'cat',
-        'id',
-        'name',
-        'qty',
-        'unit',
-        'note'
+        'KATEGORI',
+        'ID BARANG',
+        'NAMA BARANG',
+        'JML',
+        'SATUAN',
+        'KETERANGAN'
     ],
 
     'materials_map' => [
-        'cat' => 'cat',
-        'id' => 'id',
-        'name' => 'name',
-        'qty' => "qty",
-        'unit' => 'unit',
-        'note' => 'note'
+        'cat' => 'KATEGORI',
+        'id' => 'ID BARANG',
+        'name' => 'NAMA BARANG',
+        'qty' => 'JML',
+        'unit' => 'SATUAN',
+        'note' =>  'KETERANGAN'
     ]
 ];
