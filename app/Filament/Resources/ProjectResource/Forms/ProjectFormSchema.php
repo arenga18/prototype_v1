@@ -116,7 +116,6 @@ class ProjectFormSchema
                                     ])
                                     ->required(),
                             ])->columns(2),
-
                         Section::make('Spesifikasi')
                             ->schema([
                                 TableRepeater::make('product_spesification')
@@ -170,7 +169,10 @@ class ProjectFormSchema
                                         Header::make('Jenis')->width('50%'),
                                     ])
                                     ->schema([
-                                        SelectComponents::materialCategorySelect("Kategori"),
+                                        TextInput::make('key')->label('Kategori')
+                                            ->extraAttributes([
+                                                'style' => 'border: none !important; border-radius: 0 !important;',
+                                            ]),
                                         SelectComponents::materialNameSelect("Jenis"),
                                     ])
                                     ->default([])

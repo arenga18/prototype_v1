@@ -73,14 +73,14 @@
                     <label for="modul-placement" class="block mb-2 text-sm font-medium text-gray-700">Ditambah di
                       modul:</label>
                     <select id="modul-placement" class="border border-gray-300 text-sm rounded p-2 w-full">
-                      @if (count($allModuls['array']) > 1)
+                      @if (count($groupedComponents['array']) > 1)
                         <option value="">--Pilih Modul--</option>
                       @endif
 
-                      @forelse($allModuls['array'] as $item)
+                      @forelse($groupedComponents['array'] as $item)
                         @if (isset($item['modul']['nama_modul']))
                           <option value="{{ $item['modul']['nama_modul'] }}"
-                            {{ count($allModuls['array']) === 1 ? 'selected' : '' }}>
+                            {{ count($groupedComponents['array']) === 1 ? 'selected' : '' }}>
                             {{ $item['modul']['nama_modul'] }}
                           </option>
                         @endif
@@ -453,7 +453,6 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/rxjs/dist/bundles/rxjs.umd.min.js"></script>
   <script src="https://unpkg.com/echarts@5.6.0/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@univerjs/data-validation@latest/dist/univer-data-validation.umd.js"></script>
   <script src="https://unpkg.com/@univerjs/presets/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-core/lib/umd/index.js"></script>
   <script src="https://unpkg.com/@univerjs/preset-sheets-core/lib/umd/locales/en-US.js"></script>

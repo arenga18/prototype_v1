@@ -5,6 +5,12 @@ const typeIndex = columns.indexOf("type");
 console.log("grouped Components : ", groupedComponents);
 
 // Inisialisasi Univer
+const CalculationMode = {
+    FORCED: 0,
+    WHEN_EMPTY: 1,
+    NO_CALCULATION: 2,
+};
+// Inisialisasi Univer
 const { createUniver } = UniverPresets;
 const { LocaleType, merge, BooleanNumber } = UniverCore;
 const { defaultTheme } = UniverDesign;
@@ -15,6 +21,7 @@ const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
 const { UniverSheetsConditionalFormattingPreset } =
     UniverPresetSheetsConditionalFormatting;
 
+// Create Univer instance with formula configuration
 const { univerAPI } = createUniver({
     locale: LocaleType.EN_US,
     locales: {
@@ -29,14 +36,24 @@ const { univerAPI } = createUniver({
     },
     theme: defaultTheme,
     presets: [
-        UniverSheetsCorePreset(),
+        UniverSheetsCorePreset({
+            formula: {
+                initialFormulaComputing: CalculationMode.FORCED, // Force calculation on initialization
+            },
+        }),
         UniverSheetsDataValidationPreset(),
         UniverSheetsFindReplacePreset(),
         UniverSheetsFilterPreset(),
         UniverSheetsConditionalFormattingPreset(),
     ],
 });
+
+// Get the formula facade
 const formula = univerAPI.getFormula();
+
+// Force calculation
+formula.setInitialFormulaComputing(CalculationMode.FORCED);
+formula.executeCalculation();
 
 function mapDataToColumns(comp) {
     if (!comp || !comp.data || typeof comp.data !== "object") {
@@ -113,7 +130,6 @@ function prepareUniverData() {
     });
 
     const adjustFormula = (formula, modulStartRow, isFilled) => {
-        // Hanya proses referensi sel (A1, $A1, A$1, $A$1) tapi skip defined names
         return formula.replace(
             /(^|[^A-Za-z_])(\$?[A-Z]+\$?)(\d+)(?![A-Za-z0-9_])/g,
             (match, prefix, colPart, rowNum) => {
@@ -147,35 +163,43 @@ function prepareUniverData() {
             const mainModulData = group.modul || {};
             const mainModulName = mainModulData.nama_modul || "";
 
-            // if (mainModulName) {
-            //     // Store starting row for formula adjustment
-            //     modulStartRows[mainModulName] = currentRow + 1;
+            if (!group.component || group.component.length === 0) {
+                // Store starting row for formula adjustment
+                modulStartRows[mainModulName] = currentRow + 1;
 
-            //     // Create main modul row with style
-            //     data[currentRow] = {};
-            //     columns.forEach((col, colIndex) => {
-            //         if (mainModulData[col] !== undefined) {
-            //             data[currentRow][colIndex] = {
-            //                 v: mainModulData[col],
-            //                 s: modulStyle,
-            //             };
-            //         } else if (colIndex === namaModulIndex) {
-            //             data[currentRow][colIndex] = {
-            //                 v: mainModulName,
-            //                 s: modulStyle,
-            //             };
-            //         } else {
-            //             data[currentRow][colIndex] = {
-            //                 v: "",
-            //                 s: modulStyle,
-            //             };
-            //         }
-            //     });
-            //     currentRow++;
-            // }
+                // Create main modul row with style
+                data[currentRow] = {};
+                columns.forEach((col, colIndex) => {
+                    // Hanya tampilkan mainModulName jika component kosong dan ini kolom nama_modul
+                    if (
+                        (!group.component || group.component.length === 0) &&
+                        colIndex === namaModulIndex
+                    ) {
+                        data[currentRow][colIndex] = {
+                            v: mainModulName,
+                            s: modulStyle,
+                        };
+                    }
+                    // Jika ada data di mainModulData untuk kolom ini
+                    else if (mainModulData[col] !== undefined) {
+                        data[currentRow][colIndex] = {
+                            v: mainModulData[col],
+                            s: modulStyle,
+                        };
+                    }
+                    // Kolom lainnya (termasuk nama_modul ketika ada component)
+                    else {
+                        data[currentRow][colIndex] = {
+                            v: "",
+                            s: modulStyle,
+                        };
+                    }
+                });
+                currentRow++;
+            }
 
-            // Process all component groups
-            if (Array.isArray(group.component)) {
+            // Process all component groups hanya jika ada component
+            if (Array.isArray(group.component) && group.component.length > 0) {
                 group.component.forEach(
                     (componentGroup, componentGroupIndex) => {
                         // Handle nested module if exists
@@ -189,21 +213,53 @@ function prepareUniverData() {
 
                             // Create nested modul row with style
                             data[currentRow] = {};
+                            const referenceModulName = nestedModulName;
+                            const referenceModulStartRow =
+                                modulStartRows[referenceModulName] ||
+                                currentRow;
+
                             columns.forEach((col, colIndex) => {
-                                if (nestedModulData[col] !== undefined) {
-                                    data[currentRow][colIndex] = {
-                                        v: nestedModulData[col],
-                                        s: modulStyle,
-                                    };
-                                } else if (colIndex === namaModulIndex) {
+                                const value =
+                                    nestedModulData[col] !== undefined
+                                        ? nestedModulData[col]
+                                        : "";
+                                const style = modulStyle;
+
+                                if (colIndex === namaModulIndex) {
+                                    // Handle nama_modul column specially
                                     data[currentRow][colIndex] = {
                                         v: nestedModulName,
-                                        s: modulStyle,
+                                        s: style,
+                                    };
+                                } else if (
+                                    typeof value === "string" &&
+                                    value.startsWith("=")
+                                ) {
+                                    // Handle formula cells
+                                    data[currentRow][colIndex] = {
+                                        f: adjustFormula(
+                                            value,
+                                            referenceModulStartRow,
+                                            true
+                                        ),
+                                        v: "",
+                                        s: style,
+                                        t: 1,
+                                    };
+                                } else if (
+                                    value !== undefined &&
+                                    value !== ""
+                                ) {
+                                    // Handle regular values
+                                    data[currentRow][colIndex] = {
+                                        v: value,
+                                        s: style,
                                     };
                                 } else {
+                                    // Empty cells
                                     data[currentRow][colIndex] = {
                                         v: "",
-                                        s: modulStyle,
+                                        s: style,
                                     };
                                 }
                             });
@@ -221,7 +277,8 @@ function prepareUniverData() {
                                 const referenceModulName =
                                     nestedModulName || mainModulName;
                                 const referenceModulStartRow =
-                                    modulStartRows[referenceModulName];
+                                    modulStartRows[referenceModulName] ||
+                                    currentRow;
 
                                 columns.forEach((col, colIndex) => {
                                     const value =
@@ -241,15 +298,17 @@ function prepareUniverData() {
                                             f: adjustFormula(
                                                 value,
                                                 referenceModulStartRow,
-                                                group.isFilled || false
+                                                true
                                             ),
                                             v: "",
                                             s: style,
+                                            t: 1,
                                         };
                                     } else {
                                         data[currentRow][colIndex] = {
                                             v: value,
                                             s: style,
+                                            t: 1,
                                         };
                                     }
                                 });
@@ -273,9 +332,6 @@ function prepareUniverData() {
             }
         });
     }
-
-    // Execute calculations for both modul and component formulas
-    formula.executeCalculation();
 
     return {
         data,
@@ -326,7 +382,6 @@ function prepareValidationSheetData() {
                 (key) => dataValMap[key] === col
             );
 
-            // Periksa jika fieldKey ada dan componentData[fieldKey] tidak null atau undefined
             const value = fieldKey
                 ? componentData[fieldKey] !== null &&
                   componentData[fieldKey] !== undefined
@@ -352,9 +407,6 @@ function prepareValidationSheetData() {
         data[rowIndex] = row;
         rowIndex++;
     });
-
-    // Eksekusi formula setelah data dimuat
-    setTimeout(() => formula.executeCalculation(), 100);
 
     return {
         data,
@@ -467,7 +519,10 @@ function applyFilteredDataValidations() {
 
     // Filter hanya definedNames dengan nama 'prt' atau 'menu'
     const filteredDefNames = definedNamed.filter(
-        (defName) => defName.name === "menu" || defName.name === "Prt"
+        (defName) =>
+            defName.name === "menu" ||
+            defName.name === "Prt" ||
+            defName.name === "pk"
     );
 
     console.log("FilteredDefinedNames : ", filteredDefNames);
@@ -476,6 +531,7 @@ function applyFilteredDataValidations() {
     const defNameToColumn = {
         menu: 1, // Kolom index 1 untuk menu
         Prt: 6, // Kolom index 6 untuk prt
+        pk: 7, // kolom index 7 untuk pk
     };
 
     filteredDefNames.forEach((defName) => {
@@ -744,191 +800,6 @@ $("#modulReference").on("change", async function () {
         console.error("Error dalam memproses perubahan modul:", error);
     }
 });
-
-// Event handler untuk tombol simpan
-$(document).on("click", "#key-bindings-1, #key-bindings-2", function () {
-    // Common variables and functions for both save and update
-    const isUpdate = $(this).attr("id") === "key-bindings-2";
-    const spreadsheetData = getAllData();
-    let selectedModul = $("#modulSelect").val();
-    const referenceModul = $("#modulReference").val();
-    const cellData = spreadsheetData.cellData;
-
-    console.log("cell data : ", cellData);
-
-    // Helper function to get cell value (prioritizes formula over value)
-    const getCellValue = (cell) => {
-        if (cell?.f !== undefined && cell.f !== "") return cell.f;
-        if (cell?.v !== undefined && cell.v !== "") return cell.v;
-        return "";
-    };
-
-    // Helper function to check if a cell has content
-    const hasContent = (cell) => {
-        return (
-            (cell?.f !== undefined && cell.f !== "") ||
-            (cell?.v !== undefined && cell.v !== "")
-        );
-    };
-
-    // Auto-detect module if not selected
-    if (!selectedModul) {
-        for (let i = 1; i < cellData.length; i++) {
-            const row = cellData[i];
-            if (row[namaModulIndex] && hasContent(row[namaModulIndex])) {
-                selectedModul = getCellValue(row[namaModulIndex]);
-                break;
-            }
-        }
-
-        if (!selectedModul) {
-            alert("Tidak dapat menemukan modul dalam data!");
-            return;
-        }
-    }
-
-    // Process spreadsheet data into module breakdown structure
-    const modulBreakdown = [];
-    let currentModul = null;
-    let currentModulObject = {};
-    let currentComponents = [];
-
-    for (let i = 1; i < cellData.length; i++) {
-        const row = cellData[i];
-        const rowStyles = {};
-
-        // Process styles for the row
-        Object.keys(row).forEach((colIndex) => {
-            if (row[colIndex]?.s) {
-                rowStyles[colIndex] = row[colIndex].s;
-            }
-        });
-
-        // Check if this is a module row
-        if (row[namaModulIndex] && hasContent(row[namaModulIndex])) {
-            // Save previous module if exists
-            if (currentModul) {
-                cleanEmptyRowsAtEnd(currentComponents);
-                modulBreakdown.push({
-                    modul: currentModulObject,
-                    components: currentComponents,
-                });
-            }
-
-            // Start new module
-            currentModul = getCellValue(row[namaModulIndex]);
-            currentModulObject = { nama_modul: currentModul };
-            currentComponents = [];
-
-            // Add module data from this row
-            columns.forEach((col, colIndex) => {
-                if (row[colIndex] !== undefined) {
-                    const value = getCellValue(row[colIndex]);
-                    if (value !== "") {
-                        currentModulObject[col] = value;
-                    }
-                }
-            });
-            continue;
-        }
-
-        // Process component row
-        const componentData = {};
-        const componentStyles = {};
-
-        columns.forEach((col, colIndex) => {
-            const cell = row[colIndex];
-            if (cell) {
-                // Get value (formula or value)
-                const value = getCellValue(cell);
-                if (value !== "") {
-                    componentData[col] = value;
-                }
-
-                // Get style if exists
-                if (cell.s) {
-                    componentStyles[col] = cell.s;
-                }
-            }
-        });
-
-        // Add component if has data or style
-        if (
-            Object.keys(componentData).length > 0 ||
-            Object.keys(componentStyles).length > 0
-        ) {
-            currentComponents.push({
-                data: componentData,
-                styles: componentStyles,
-            });
-        }
-    }
-
-    // Add the last module
-    if (currentModul) {
-        cleanEmptyRowsAtEnd(currentComponents);
-        modulBreakdown.push({
-            modul: currentModulObject,
-            components: currentComponents,
-        });
-    }
-
-    // Prepare payload
-    const payload = {
-        modul: selectedModul,
-        reference_modul: referenceModul,
-        components: modulBreakdown,
-        columns: columns,
-        recordId: recordId,
-    };
-
-    console.log(`Payload untuk ${isUpdate ? "update" : "simpan"}:`, payload);
-
-    // Send to server
-    $.ajax({
-        url: isUpdate ? "/update-spreadsheet" : "/save-spreadsheet",
-        method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            "Content-Type": "application/json",
-        },
-        data: JSON.stringify(payload),
-        success: function (response) {
-            if (response.status === "success") {
-                alert(`Data berhasil ${isUpdate ? "diupdate" : "disimpan"}!`);
-            } else {
-                alert(
-                    `${isUpdate ? "Update" : "Save"} failed: ${
-                        response.message
-                    }`
-                );
-            }
-        },
-        error: function (xhr) {
-            let errorMsg = "Terjadi kesalahan";
-            if (xhr.responseJSON?.message) {
-                errorMsg = xhr.responseJSON.message;
-            }
-            alert(errorMsg);
-        },
-    });
-});
-
-// Fungsi untuk menghapus baris kosong hanya di akhir array
-function cleanEmptyRowsAtEnd(components) {
-    let i = components.length - 1;
-    while (i >= 0 && isRowEmpty(components[i])) {
-        components.pop();
-        i--;
-    }
-}
-
-// Fungsi helper untuk mengecek apakah sebuah row kosong
-function isRowEmpty(row) {
-    return Object.values(row).every(
-        (val) => val === "" || val === undefined || val === null
-    );
-}
 
 function addModulToSpreadsheet(modulName) {
     try {

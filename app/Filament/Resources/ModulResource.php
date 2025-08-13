@@ -87,7 +87,7 @@ class ModulResource extends Resource
                         $get('box_carcase_shape'),
                         finishing: $get('finishing'),
                         layerposition: $get('layer_position'),
-                        boxContent: $get('box_carcase_content'),
+                        boxContent: $get('box_carcase_contents'),
                         closingSystem: $get('closing_system'),
                         numberOfClosures: $get('number_of_closures'),
                         typeOfClosure: $get('type_of_closure'),

@@ -65,9 +65,17 @@ class KomponenTable extends Component
         $this->modulList = ModulComponent::all()->pluck('modul')->toArray();
         $this->loadInitialData();
         $this->loadModulsByNip($recordId);
+    }
+
+    protected function loadInitialData()
+    {
         $this->loadSpecData();
         $this->loadDefinedNames();
-        $this->loadDropdownData();
+        $this->loadGroupedComponents();
+        $this->loadPartComponentData();
+        $this->loadAllModuls();
+        $this->loadAllRemovableParts();
+        $this->loadMaterialData();
     }
 
     public function typeChanged($type)
@@ -123,16 +131,6 @@ class KomponenTable extends Component
         return $data;
     }
 
-    protected function loadInitialData()
-    {
-        $this->loadDropdownData();
-        $this->loadGroupedComponents();
-        $this->loadPartComponentData();
-        $this->loadAllModuls();
-        $this->loadAllRemovableParts();
-        $this->loadMaterialData();
-    }
-
     public function loadMaterialData()
     {
         $materials = Material::all();
@@ -151,53 +149,6 @@ class KomponenTable extends Component
         }
 
         return $this->materialsData = $result;
-    }
-
-    public function loadDropdownData()
-    {
-        $parts = PartComponent::all();
-        $types = [];
-        $options = [];
-
-        foreach ($parts as $part) {
-            $decoded = json_decode($part->part_component, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                continue;
-            }
-
-            // Process each item in the array
-            foreach ($decoded as $item) {
-                // Skip if item doesn't have data
-                if (!isset($item['data'])) {
-                    continue;
-                }
-
-                $componentData = $item['data'];
-
-                if (!isset($componentData['name'])) {
-                    continue;
-                }
-
-                // // Build component types
-                // if (isset($componentData['code'])) {
-                //     $types[$componentData['code']] = [
-                //         'value' => $componentData['code'],
-                //         'label' => $componentData['code']
-                //     ];
-                // }
-
-                // // Build component options
-                // $options[] = [
-                //     'value' => $componentData['name'],
-                //     'label' => $componentData['name'],
-                //     'data' => $componentData
-                // ];
-            }
-        }
-
-        $this->componentTypes = array_values($types);
-        $this->componentOptions = $options;
     }
 
     public function loadGroupedComponents()

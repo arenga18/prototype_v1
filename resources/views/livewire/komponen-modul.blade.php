@@ -223,5 +223,6 @@
     const allParts = @json($allParts);
   </script>
   <script src="{{ asset('js/modulComponent/univer.js') }}"></script>
+  <script src="{{ asset('js/modulComponent/saveModul.js') }}"></script>
   <script src="{{ asset('js/modulComponent/conditionalFormatting.js') }}"></script>
 </div>
